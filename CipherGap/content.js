@@ -41,6 +41,39 @@ window.addEventListener("focus", () => {
 
 
 /**
+ * Build unique storage key
+ * for current messenger chat
+ */
+function get_storage_key() {
+
+    const url =
+        new URL(window.location.href);
+
+    const hostname =
+        url.hostname;
+
+    /**
+     * Bale chat uid
+     */
+    if (hostname === "web.bale.ai") {
+
+        const uid =
+            url.searchParams.get("uid");
+
+        if (uid) {
+            return `${hostname}_${uid}`;
+        }
+    }
+
+    /**
+     * Fallback
+     */
+    return hostname;
+}
+
+
+
+/**
  * Detect supported messenger web applications
  * and determine whether the user is currently
  * inside an active chat page.
@@ -120,7 +153,7 @@ function messenger_detection() {
              * Inject CipherGap UI
              */
             inject_encrypt_button_bale();
-            check_encrypt_message_exists_in_bale();
+            // check_encrypt_message_exists_in_bale();
 
 
             return {
@@ -313,34 +346,6 @@ function inject_encrypt_button_bale() {
     }
 
 
-    /**
-     * Find all buttons inside footer
-     */
-    const buttons =
-        footerContainer.querySelectorAll(
-            '[role="button"]'
-        );
-
-
-    /**
-     * Mic button is usually
-     * the last button in footer
-     */
-    const micButton =
-        buttons[
-            buttons.length - 1
-        ];
-
-
-    if (!micButton) {
-
-        console.log(
-            "CipherGap: mic button not found"
-        );
-
-        return;
-    }
-
 
     /**
      * Create CipherGap button
@@ -422,7 +427,8 @@ function inject_encrypt_button_bale() {
                  */
                 const plainText =
                     input.textContent?.trim();
-
+                
+                
                 if (!plainText) {
 
                     console.log(
@@ -437,21 +443,27 @@ function inject_encrypt_button_bale() {
                  * Read encryption key
                  * from extension storage
                  */
-                const hostname =
-                    window.location.hostname;
+
+                const storageKey =
+                    get_storage_key();
+
+                console.log(
+                    "CipherGap storage key:",
+                    storageKey
+                );
 
                 const storage =
                     await chrome.storage.local.get(
-                        [hostname]
+                        [storageKey]
                     );
 
                 const secretKey =
-                    storage[hostname];
-
+                    storage[storageKey];
+                
                 if (!secretKey) {
 
                     alert(
-                        "No encryption key configured for this website"
+                        "No encryption key configured for this current chat, please open Extension and set a key."
                     );
 
                     return;
@@ -504,11 +516,11 @@ function inject_encrypt_button_bale() {
 
 
                 /**
-                 * Find native send button
+                 * Find native send button and click it 
                  */
                 const sendButton =
                     document.querySelector(
-                        '[role="button"][aria-label="send-button"]'
+                        '[aria-label="send-button"]'
                     );
 
                 if (!sendButton) {
@@ -553,10 +565,8 @@ function inject_encrypt_button_bale() {
      * Insert CipherGap button
      * next to attachment button
      */
- micButton.insertAdjacentElement(
-    "beforebegin",
-    button
-);
+    footerContainer.insertBefore(button, footerContainer.children[4]);
+
 
     console.log(
         "CipherGap button injected"
@@ -758,21 +768,25 @@ document.addEventListener(
             /**
              * Load secret key
              */
-            const hostname =
-                window.location.hostname;
+
+
+            const storageKey =
+                get_storage_key();
+
+            console.log(
+                "CipherGap storage key:",
+                storageKey
+            );
 
             const storage =
                 await chrome.storage.local.get(
-                    [hostname]
+                    [storageKey]
                 );
 
             const secretKey =
-                storage[hostname];
-
-            console.log(
-                "Secret key:",
-                secretKey
-            );
+                storage[storageKey];
+            console.log(secretKey);
+            
 
             if (!secretKey) {
 
