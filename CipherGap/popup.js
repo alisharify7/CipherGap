@@ -29,6 +29,9 @@ const supportedHosts = [
 ];
 
 let currentHostname = null;
+let currentChatId = null;
+let storageKey = null;
+
 
 async function init() {
 
@@ -44,8 +47,19 @@ async function init() {
     currentHostname =
         url.hostname;
 
+    currentChatId =
+        url.searchParams.get("uid");
+
+    storageKey =
+        currentChatId
+            ? `${currentHostname}_${currentChatId}`
+            : currentHostname;
+
     siteNameEl.innerText =
-        currentHostname;
+    currentChatId
+        ? `${currentHostname} • Chat ${currentChatId}`
+        : currentHostname;
+
 
     // بررسی پشتیبانی سایت
     if (!supportedHosts.includes(currentHostname)) {
@@ -93,11 +107,11 @@ async function loadSavedKey() {
 
     const result =
         await chrome.storage.local.get([
-            currentHostname
+            storageKey
         ]);
 
     const savedKey =
-        result[currentHostname];
+        result[storageKey];
 
     if (savedKey) {
 
@@ -153,7 +167,7 @@ saveBtn.addEventListener(
         }
 
         await chrome.storage.local.set({
-            [currentHostname]: key
+            [storageKey]: key
         });
 
         statusEl.innerText =
