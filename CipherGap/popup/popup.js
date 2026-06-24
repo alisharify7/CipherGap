@@ -180,10 +180,26 @@ function hide_sas_panel() {
     sasPanel.style.display = "none";
 }
 
-sasVerifiedBtn.addEventListener("click", () => {
+sasVerifiedBtn.addEventListener("click", async () => {
     hide_sas_panel();
-    statusEl.innerText = "✅ Key verified — SAS codes matched";
-    statusEl.style.color = "#4ade80";
+    statusEl.innerText = "⏳ Confirming key exchange…";
+    statusEl.style.color = "#fbbf24";
+
+    try {
+        // Send an encrypted confirmation message so the peer sees that this
+        // side has verified the SAS code and trusts the exchanged key.
+        const response = await chrome.tabs.sendMessage(activeTabId, { action: "send_confirmation" });
+        if (!response?.ok) {
+            throw new Error(response?.error ?? "Failed to send confirmation.");
+        }
+
+        statusEl.innerText = "✅ Key verified — confirmation sent";
+        statusEl.style.color = "#4ade80";
+    } catch (error) {
+        console.error("[CipherGap] Confirmation failed:", error);
+        statusEl.innerText = `✅ Key verified locally — confirmation failed: ${error.message}`;
+        statusEl.style.color = "#fbbf24";
+    }
 });
 
 sasDismissBtn.addEventListener("click", () => {

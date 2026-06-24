@@ -6,6 +6,10 @@ const EXCHANGE_ACK_PREFIX = "start exchange ack:";
 const EXCHANGE_SAS_PREFIX = "cg-sas";
 const EXCHANGE_TIMEOUT_MS = 5 * 60 * 1000;
 
+// Sent as an encrypted CGP packet when a user confirms the SAS code,
+// proving the key was successfully exchanged and verified from their side.
+const CONFIRMATION_MESSAGE = "✅ I confirm the SAS code matches — key exchange verified from my side.";
+
 const pending_exchanges = new Map();
 let handled_exchange_nonces = new Set();
 let nonces_loaded = false;
@@ -322,7 +326,36 @@ async function start_key_exchange() {
     const startMessage = build_start_exchange_message(session.nonce, session.publicKeyB64);
     await adapter.send_message(startMessage);
 
+    // Mark our own start nonce as handled so that on page refresh, the
+    // scanner doesn't see our old start message and re-respond to ourselves.
+    await mark_exchange_handled(storageKey, session.nonce, "start");
+
     return { nonce: session.nonce, storageKey };
+}
+
+// =========================
+// Verification confirmation
+// =========================
+
+// Called when the user confirms the SAS code. Encrypts a confirmation
+// message with the current chat key and sends it as a CGP packet so the
+// peer can see (and decrypt) that the exchange was verified from this side.
+async function send_verification_confirmation() {
+    const adapter = get_active_messenger_adapter();
+    if (!adapter) {
+        throw new Error("No supported messenger detected on this page.");
+    }
+
+    const secretKey = await get_secret_key();
+    if (!secretKey) {
+        throw new Error("No encryption key set for this chat.");
+    }
+
+    const encrypted = await encrypt_message(CONFIRMATION_MESSAGE, secretKey);
+    const packet = build_ciphergap_packet(encrypted);
+    await adapter.send_message(packet);
+
+    console.log("[CipherGap] Verification confirmation sent for", get_storage_key());
 }
 
 // =========================
@@ -378,6 +411,13 @@ function init_key_exchange_listener() {
                 await chrome.storage.local.remove(`peer_fp_${storageKey}`);
                 sendResponse({ ok: true });
             })().catch((err) => sendResponse({ ok: false, error: err.message }));
+            return true;
+        }
+
+        if (message.action === "send_confirmation") {
+            send_verification_confirmation()
+                .then(() => sendResponse({ ok: true }))
+                .catch((err) => sendResponse({ ok: false, error: err.message }));
             return true;
         }
     });

@@ -4,6 +4,10 @@ const BALE_MESSAGE_SCROLLER = "#message_list_scroller_id";
 const BALE_CHAT_INPUT = "#editable-message-text";
 const BALE_SEND_BUTTON = '[aria-label="send-button"]';
 
+// Flag: when true, sanitize_bale_input will skip stripping — prevents the
+// sanitizer from eating exchange text while bale_send_message is using it.
+let cg_sending = false;
+
 function normalize_message_text(text) {
     return text
         .replace(/[\u200B-\u200D\uFEFF]/g, "")
@@ -17,11 +21,15 @@ async function bale_send_message(text) {
         throw new Error("Bale chat input not found.");
     }
 
+    // Block the sanitizer while we fill the input and click send.
+    cg_sending = true;
+
     input.textContent = text;
     input.dispatchEvent(new Event("input", { bubbles: true }));
 
     const sendButton = document.querySelector(BALE_SEND_BUTTON);
     if (!sendButton) {
+        cg_sending = false;
         throw new Error("Bale send button not found.");
     }
 
@@ -32,6 +40,7 @@ async function bale_send_message(text) {
     setTimeout(() => {
         input.textContent = "";
         input.dispatchEvent(new Event("input", { bubbles: true }));
+        cg_sending = false;
     }, 150);
 }
 
@@ -50,6 +59,10 @@ function clear_bale_input() {
 // Guard: strip any exchange/SAS text that may have lingered in the input.
 // Called on input changes so a stray "cg-sas|..." never gets sent again.
 function sanitize_bale_input() {
+    if (cg_sending) {
+        return; // Skip — bale_send_message is actively using the input
+    }
+
     const input = document.querySelector(BALE_CHAT_INPUT);
     if (!input) {
         return;
