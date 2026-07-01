@@ -68,8 +68,13 @@ Released under the MIT License.
 ⭐ If you find CipherGap useful, consider starring the repository.
 
 
+# Demo
+### Extension Main Panel
+<img src="./docs/index.png">
 
-<img src="./docs/ext.png">
-<img src="./docs/chat.png">
-<img src="./docs/chat1.png">
-<img src="./docs/chat2.png">
+### Exchange Key using diffie hellman
+<img src="./docs/1.png">
+<img src="./docs/2.png">
+
+### Verify the key
+<img src="./docs/2.png">
