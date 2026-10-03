@@ -10,6 +10,7 @@ Messages are encrypted locally in your browser before being sent, ensuring that 
 
 * AES-256-GCM message and attachment encryption in the browser
 * Per-chat keys and optional automatic message decryption
+* An installation guide for recipients without CipherGap, hidden while the extension is enabled
 * Separate Security, Files, Settings and Guide pages with light/dark themes
 * A chat security indicator and secure file picker inside Bale's composer
 * Direct attachment download/decryption and optional automatic receipt of new files
@@ -20,7 +21,7 @@ Messages are encrypted locally in your browser before being sent, ensuring that 
 
 [Security interface](docs/images/security.png) · [File interface](docs/images/files.png)
 
-[Changelog](CHANGELOG.md) · [Release notes for v1.2.0](docs/releases/v1.2.0.md)
+[Changelog](CHANGELOG.md) · [Release notes for v1.2.1](docs/releases/v1.2.1.md)
 
 ## Installation
 
@@ -57,6 +58,11 @@ install, package and sign the extension through Firefox Add-ons (AMO).
 5. Use the injected **Encrypt** button to send an encrypted message. Use **Encrypted file** to send `.cgpe` attachments. Bale’s ordinary attachment picker sends ordinary files.
 
 A manually shared key is available under **Settings → Advanced**, but it remains marked unverified.
+
+Encrypted messages end with a Persian installation guide and the GitHub link.
+CipherGap hides this guide in the conversation while enabled and shows it again
+when paused. Both participants should use 1.2.1 or later for messages with this
+guide; older encrypted messages remain readable with their original key.
 
 Open **Files → Choose secure files**, or use **Encrypted file** above Bale's composer.
 Select files and confirm Bale's preview, which contains encrypted `.cgpe` files.

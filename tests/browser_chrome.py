@@ -28,6 +28,42 @@ with sync_playwright() as p:
  page.locator('#ciphergap-chat-toggle').click();page.wait_for_selector('#ciphergap-secure-files[disabled]');assert not page.locator('#ciphergap-btn').is_visible()
  page.locator('#ciphergap-chat-toggle').click();page.wait_for_selector('#ciphergap-secure-files:not([disabled])')
  print('PASS explicit ordinary/encrypted files, pause during selection, global and per-chat resume')
+ # The sent wire message includes the notice; enabled readers hide it even
+ # before manual decryption and when Bale renders its URL as a separate link.
+ page.locator('#editable-message-text').fill('سلام — notice round trip')
+ page.locator('#ciphergap-btn').click();page.wait_for_function('testSent.length===1')
+ packet=page.evaluate('testSent[0]');notice=packet.split('\n\n',1)[1]
+ assert notice.endswith('https://github.com/alisharify7/CipherGap')
+ page.evaluate('''([packet,notice])=>{
+   const core=packet.split('\\n\\n')[0],scroller=document.getElementById('message_list_scroller_id');
+   for(const mode of ['single','split','nested']){
+     const row=document.createElement('div');row.dataset.sid='notice-'+mode;row.setAttribute('aria-label','message-item');
+     const body=document.createElement('div');row.append(body);
+     if(mode==='single'){const p=document.createElement('p');p.textContent=packet;body.append(p);}
+     else {const p=document.createElement('p');p.textContent=core;if(mode==='nested'){const span=document.createElement('span');span.textContent=core;p.replaceChildren(span);}body.append(p);
+       const hint=document.createElement('p');hint.textContent=notice.split('\\n')[0];body.append(hint);
+       const a=document.createElement('a');a.href=notice.split('\\n')[1];a.textContent=a.href;body.append(a);
+       const time=document.createElement('small');time.textContent='12:34';body.append(time);}
+     scroller.append(row);
+   }
+   const ordinary=document.createElement('div');ordinary.dataset.sid='notice-ordinary';ordinary.setAttribute('aria-label','message-item');const p=document.createElement('p');p.textContent=notice;ordinary.append(p);scroller.append(ordinary);
+ }''',[packet,notice])
+ page.wait_for_function('document.querySelectorAll("[data-ciphergap-message-notice][hidden]").length===3')
+ for mode in ['single','split','nested']:
+  row=page.locator(f'[data-sid="notice-{mode}"]');assert notice.split('\n')[0] not in row.inner_text();assert row.locator('.ciphergap-decrypt-button').count()==1
+ assert notice.split('\n')[0] in page.locator('[data-sid="notice-ordinary"]').inner_text()
+ page.locator('[data-sid="notice-single"] .ciphergap-decrypt-button').click()
+ page.wait_for_function('document.querySelector("[data-sid=notice-single]").dataset.ciphergapDecrypted==="true"')
+ assert 'سلام — notice round trip' in page.locator('[data-sid="notice-single"]').inner_text()
+ assert notice.split('\n')[0] not in page.locator('[data-sid="notice-single"]').inner_text()
+ page.locator('#ciphergap-chat-toggle').click();page.wait_for_function('document.querySelectorAll("[data-ciphergap-message-notice][hidden]").length===0')
+ for mode in ['single','split','nested']:assert notice.split('\n')[0] in page.locator(f'[data-sid="notice-{mode}"]').inner_text()
+ page.locator('#ciphergap-chat-toggle').click();page.wait_for_function('document.querySelectorAll("[data-ciphergap-message-notice][hidden]").length===3')
+ worker.evaluate("chrome.storage.local.set({'web.bale.ai_601__auto_decrypt':true})")
+ page.evaluate('''packet=>{const row=document.createElement('div');row.dataset.sid='notice-auto';row.setAttribute('aria-label','message-item');const p=document.createElement('p');p.textContent=packet;row.append(p);document.getElementById('message_list_scroller_id').append(row);}''',packet)
+ page.wait_for_function('document.querySelector("[data-sid=notice-auto]").dataset.ciphergapDecrypted==="true"')
+ assert notice.split('\n')[0] not in page.locator('[data-sid="notice-auto"]').inner_text()
+ print('PASS notice serialization, split/nested/link rendering, manual/auto decryption, pause/resume and ordinary text')
  popup=context.new_page();popup.goto(f'chrome-extension://{id}/popup/popup.html?tabId='+str(worker.evaluate("chrome.tabs.query({url:'https://web.bale.ai/*'}).then(t=>t[0].id)")))
  popup.wait_for_selector('#languageSelect');popup.locator('#languageSelect').select_option('fa');popup.wait_for_function('document.documentElement.lang==="fa"')
  assert 'امنیت' in popup.locator('#nav-security').inner_text();popup.locator('#nav-settings').click();assert 'فعال بودن' in popup.locator('#page-settings').inner_text()

@@ -81,7 +81,10 @@ try:
  # Wait for this send; an earlier verification confirmation is also a CGP packet.
  poll(lambda:script('return document.getElementById("ciphergap-btn").disabled'),lambda x:not x)
  packet=script('return testSent.at(-1)');append_message(handles[1],packet)
+ assert packet.endswith('https://github.com/alisharify7/CipherGap')
  text=poll(lambda:script('return document.getElementById("message_list_scroller_id").textContent'),lambda s:'Firefox — سلام، پیام رمز‌شده' in s)
+ assert script('return document.querySelector("[data-ciphergap-message-notice]").hidden')
+ assert 'https://github.com/alisharify7/CipherGap' not in script('return document.getElementById("message_list_scroller_id").innerText')
  print('PASS encrypted composer text and automatic peer decryption',flush=True)
  m.switch_to_window(extension_handle)
  check(async_js('''for(const file of ['encoding','crypto','file_crypto']) {await new Promise((resolve,reject)=>{const s=document.createElement('script');s.src='../share/'+file+'.js';s.onload=resolve;s.onerror=reject;document.head.append(s)});}return true;'''))
