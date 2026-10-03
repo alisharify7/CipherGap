@@ -31,8 +31,9 @@ The custom synchronization workflow is prepared locally; its initial push is
 blocked by the configured GitHub token missing workflow scope. Until that
 permission is available, builds share all code and branch updates are performed
 manually. Once deployed, `.github/workflows/sync-firefox.yml` validates shared Node tests and package
-identity, builds both targets, lints Firefox, merges main into firefox, regenerates
-the Firefox manifest and pushes without rewriting branch history. Changes should
+identity, builds both targets, lints Firefox, copies the shared product source into firefox, regenerates
+the Firefox manifest and pushes without rewriting branch history. Workflow files
+are owned by main and are excluded from the product copy. Changes should
 be made on main. Edit the generator for platform manifest differences. The
 workflow uses the repository GITHUB_TOKEN with contents:write. Uploading the
 workflow initially requires GitHub credentials with workflow permission.
