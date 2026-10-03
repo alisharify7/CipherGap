@@ -164,6 +164,15 @@ async function cleanup_stale_exchange_status(storageKey) {
         return;
     }
 
+    // Private ECDH material deliberately stays in memory. After a page reload
+    // its outgoing request can no longer complete and must not block setup.
+    let ownOutgoingNonce = null;
+    try { ownOutgoingNonce = sessionStorage.getItem(`ciphergap_outgoing_${storageKey}`); } catch {}
+    if (entry.status === "waiting" && ownOutgoingNonce === entry.nonce && !get_pending_key(storageKey, entry.nonce)) {
+        await chrome.storage.local.remove(statusKey);
+        return;
+    }
+
     // Already complete — keep it, but only for a limited time
     if (entry.status === "complete" && Date.now() - entry.at > EXCHANGE_STATUS_EXPIRY_MS) {
         await chrome.storage.local.remove(statusKey);

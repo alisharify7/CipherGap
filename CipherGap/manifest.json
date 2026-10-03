@@ -2,8 +2,15 @@
 {
   "manifest_version": 3,
   "name": "CipherGap",
-  "version": "1.0",
+  "version": "1.1.0",
   "description": "Client-side encrypted messages and files for Bale Web.",
+
+  "icons": {
+    "16": "assets/icon16.png",
+    "32": "assets/icon32.png",
+    "48": "assets/icon48.png",
+    "128": "assets/icon128.png"
+  },
 
   "permissions": [
     "storage",
@@ -19,6 +26,12 @@
     ]
   },
   "content_scripts": [
+    {
+      "matches": ["https://web.bale.ai/*"],
+      "js": ["content/main_world_bridge.js"],
+      "world": "MAIN",
+      "run_at": "document_start"
+    },
     {
       "matches": [
         "https://web.bale.ai/*"
@@ -45,12 +58,16 @@
 
   "action": {
     "default_title": "CipherGap",
+    "default_icon": {
+      "16": "assets/icon16.png",
+      "32": "assets/icon32.png"
+    },
     "default_popup": "popup/popup.html"
   },
   "browser_specific_settings": {
     "gecko": {
       "id": "{7b3c6e34-9953-4dbb-b9b9-b5d55a5b333e}",
-      "strict_min_version": "121.0",
+      "strict_min_version": "128.0",
       "data_collection_permissions": {
         "required": [
           "none"

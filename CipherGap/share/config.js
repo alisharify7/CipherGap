@@ -94,7 +94,8 @@
     const messenger_roadmap = Object.freeze([
         Object.freeze({ id: "rubika", display_name: "Rubika" }),
         Object.freeze({ id: "eitaa", display_name: "Eitaa" }),
-        Object.freeze({ id: "telegram", display_name: "Telegram" })
+        Object.freeze({ id: "telegram", display_name: "Telegram" }),
+        Object.freeze({ id: "whatsapp", display_name: "WhatsApp" })
     ]);
 
     const messengers = Object.freeze({
@@ -116,6 +117,12 @@
         },
         auto_decrypt(chatStorageKey) {
             return `${chatStorageKey}__auto_decrypt`;
+        },
+        auto_files(chatStorageKey) {
+            return `${chatStorageKey}__auto_files`;
+        },
+        downloaded_files(chatStorageKey) {
+            return `${chatStorageKey}__downloaded_files`;
         },
         exchange_status(chatStorageKey) {
             return `exchange_status_${chatStorageKey}`;

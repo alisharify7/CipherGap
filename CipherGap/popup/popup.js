@@ -55,6 +55,37 @@ const securityActionButtons = Array.from(
 
 const autoDecryptCard = document.getElementById("autoDecryptCard");
 const autoDecryptToggle = document.getElementById("autoDecryptToggle");
+const autoFilesToggle = document.getElementById("autoFilesToggle");
+const chooseFilesBtn = document.getElementById("chooseFilesBtn");
+
+function select_page(name, focus = false) {
+    document.querySelectorAll('[role="tab"]').forEach((tab) => {
+        const selected = tab.dataset.page === name;
+        tab.setAttribute("aria-selected", String(selected));
+        tab.tabIndex = selected ? 0 : -1;
+        if (selected && focus) tab.focus();
+    });
+    document.querySelectorAll('[role="tabpanel"]').forEach((page) => {
+        page.hidden = page.id !== `page-${name}`;
+    });
+    if (name !== "settings") {
+        isKeyRevealed = false;
+        render_key_material();
+    }
+}
+
+document.querySelectorAll('[role="tab"]').forEach((tab, index, tabs) => {
+    tab.addEventListener("click", () => select_page(tab.dataset.page));
+    tab.addEventListener("keydown", (event) => {
+        const offset = { ArrowRight: 1, ArrowLeft: -1, Home: -index, End: tabs.length - 1 - index }[event.key];
+        if (offset === undefined) return;
+        event.preventDefault();
+        select_page(tabs[(index + offset + tabs.length) % tabs.length].dataset.page, true);
+    });
+});
+document.querySelectorAll('[data-go-page]').forEach((button) => {
+    button.addEventListener("click", () => select_page(button.dataset.goPage, true));
+});
 
 const manageKeyDetails = document.getElementById("manageKeyDetails");
 const fingerprintGroup = document.getElementById("fingerprintGroup");
@@ -208,6 +239,11 @@ function set_status(message, tone = "neutral") {
     statusEl.dataset.tone = tone;
     statusIcon.textContent = icons[tone] ?? icons.neutral;
     statusText.textContent = message;
+    if (tone === "success") {
+        setTimeout(() => {
+            if (statusText.textContent === message && statusEl.dataset.tone === "success") clear_status();
+        }, 5000);
+    }
 }
 
 function clear_status() {
@@ -633,6 +669,11 @@ function render_action_availability() {
     secretKeyInput.disabled = !ready || exchangeActive || is_button_busy(saveBtn);
     saveBtn.disabled = !ready || exchangeActive || is_button_busy(saveBtn);
     autoDecryptToggle.disabled = !ready || is_button_busy(autoDecryptToggle);
+    autoFilesToggle.disabled = !ready || !currentSecretKey || is_button_busy(autoFilesToggle);
+    chooseFilesBtn.disabled = !ready || !currentSecretKey;
+    document.getElementById("fileKeyHint").textContent = currentSecretKey
+        ? "Up to 100 MB combined · Bale previews encrypted files only"
+        : "Set up a key in Security before sending files.";
     revealKeyBtn.disabled = !ready || !currentSecretKey;
     copyKeyBtn.disabled = !ready || !currentSecretKey;
     clearKeyBtn.disabled = !ready ||
@@ -685,6 +726,7 @@ function render_popup() {
     const state = resolve_current_popup_state();
     renderedPopupState = state;
     securityCard.dataset.view = state.view;
+    document.getElementById("page-security").dataset.state = state.panel || state.view;
 
     const activePanel = state.panel || state.view;
 
@@ -721,6 +763,7 @@ function render_popup() {
 }
 
 function focus_active_view_heading() {
+    select_page("security");
     requestAnimationFrame(() => {
         securityHeading.focus();
     });
@@ -872,7 +915,10 @@ async function send_tab_message(message) {
     }
 
     try {
-        return await chrome.tabs.sendMessage(activeTabId, message);
+        return await chrome.tabs.sendMessage(activeTabId, {
+            ...message,
+            expectedStorageKey: storageKey
+        });
     } catch (error) {
         console.error("[CipherGap] Could not reach the messenger content script:", error);
         throw new Error(
@@ -1647,6 +1693,8 @@ async function load_auto_decrypt() {
     try {
         const response = await send_tab_message({ action: "get_auto_decrypt" });
         autoDecryptToggle.checked = Boolean(response?.ok && response.enabled);
+        const result = await chrome.storage.local.get(globalThis.CipherGapShared.storage_keys.auto_files(storageKey));
+        autoFilesToggle.checked = Boolean(result[globalThis.CipherGapShared.storage_keys.auto_files(storageKey)]);
     } catch {
         autoDecryptToggle.checked = false;
     }
@@ -1691,10 +1739,10 @@ async function init() {
     render_popup();
 
     try {
-        const [tab] = await chrome.tabs.query({
-            active: true,
-            currentWindow: true
-        });
+        const requestedTabId = new URL(location.href).searchParams.get("tabId");
+        const [tab] = requestedTabId && /^\d+$/.test(requestedTabId)
+            ? [await chrome.tabs.get(Number(requestedTabId))]
+            : await chrome.tabs.query({ active: true, currentWindow: true });
 
         activeTabId = Number.isInteger(tab?.id) ? tab.id : null;
 
@@ -1793,6 +1841,28 @@ sasDismissBtn.addEventListener("click", handle_sas_dismiss);
 resumeSasBtn.addEventListener("click", handle_sas_resume);
 staleDismissBtn.addEventListener("click", handle_stale_dismiss);
 autoDecryptToggle.addEventListener("change", handle_auto_decrypt_change);
+autoFilesToggle.addEventListener("change", async () => {
+    const enabled = autoFilesToggle.checked;
+    set_button_busy(autoFilesToggle, true);
+    try {
+        const response = await send_tab_message({ action: "set_auto_files", enabled });
+        if (!response?.ok) throw new Error(response?.error || "Could not save file settings.");
+        set_status(enabled ? "New incoming files will be decrypted and downloaded automatically." : "Automatic file downloads disabled.", "success");
+    } catch (error) {
+        autoFilesToggle.checked = !enabled;
+        set_status(error.message, "error");
+    } finally {
+        set_button_busy(autoFilesToggle, false);
+        render_action_availability();
+    }
+});
+chooseFilesBtn.addEventListener("click", async () => {
+    try {
+        const response = await send_tab_message({ action: "choose_secure_files" });
+        if (!response?.ok) throw new Error(response?.error || "Could not open the file picker.");
+        window.close();
+    } catch (error) { set_status(error.message, "error"); }
+});
 themeToggle.addEventListener("click", handle_theme_toggle);
 
 initialize_theme();

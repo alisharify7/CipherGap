@@ -360,7 +360,7 @@ test("manifest loads shared utilities before runtime and adapter code", () => {
     const manifest = JSON.parse(
         fs.readFileSync(path.join(extensionRoot, "manifest.json"), "utf8")
     );
-    const scripts = manifest.content_scripts[0].js;
+    const scripts = manifest.content_scripts.find((entry) => entry.world !== "MAIN").js;
     const firstRuntimeIndex = scripts.indexOf("content/storage.js");
     const expectedSharedOrder = [
         "share/namespace.js",
@@ -406,7 +406,7 @@ test("manifest supplies the supported Chrome and Firefox background contexts", (
 
     const gecko = manifest.browser_specific_settings?.gecko;
     assert.match(gecko?.id || "", /^\{[0-9a-f-]{36}\}$/i);
-    assert.equal(gecko?.strict_min_version, "121.0");
+    assert.equal(gecko?.strict_min_version, "128.0");
     assert.deepEqual(gecko?.data_collection_permissions, { required: ["none"] });
 });
 

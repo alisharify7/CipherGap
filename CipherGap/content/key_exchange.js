@@ -225,7 +225,7 @@ async function finalize_exchange(
             fpCheck.fingerprint,
             exchangeCodec.id
         );
-        await adapter.send_message(sasMessage).catch((err) => {
+        await adapter.send_message(sasMessage, { storageKey }).catch((err) => {
             console.warn("[CipherGap] Could not send SAS message:", err);
         });
     }
@@ -366,7 +366,7 @@ async function respond_to_incoming_exchange(accept, expectedNonce) {
         pending.publicKeyB64,
         exchangeCodec.id
     );
-    await adapter.send_message(ackMessage);
+    await adapter.send_message(ackMessage, { storageKey });
 
     const result = await finalize_exchange(
         storageKey,
@@ -470,6 +470,9 @@ async function start_key_exchange() {
         role: "initiator",
         codecId: session.codecId
     });
+    // Keep only a public nonce across reloads, never the private ECDH key.
+    // A second tab must not clean up the first tab's live exchange.
+    try { sessionStorage.setItem(`ciphergap_outgoing_${storageKey}`, session.nonce); } catch {}
 
     await chrome.storage.local.set({
         [statusKey]: {
@@ -485,7 +488,7 @@ async function start_key_exchange() {
         session.publicKeyB64,
         session.codecId
     );
-    await adapter.send_message(startMessage);
+    await adapter.send_message(startMessage, { storageKey });
 
     // Mark our own start nonce as handled so that on page refresh, the
     // scanner doesn't see our old start message and re-respond to ourselves.
@@ -632,12 +635,12 @@ async function send_verification_confirmation() {
         throw new Error("No supported messenger detected on this page.");
     }
 
+    const storageKey = get_storage_key();
     const secretKey = await get_secret_key();
     if (!secretKey) {
         throw new Error("No encryption key set for this chat.");
     }
 
-    const storageKey = get_storage_key();
     const statusKey = globalThis.CipherGapShared.storage_keys
         .exchange_status(storageKey);
     const stored = await chrome.storage.local.get([statusKey]);
@@ -665,7 +668,7 @@ async function send_verification_confirmation() {
         null,
         messageCodec.id
     );
-    await adapter.send_message(packet);
+    await adapter.send_message(packet, { storageKey });
 
 }
 
@@ -675,6 +678,27 @@ async function send_verification_confirmation() {
 
 function init_key_exchange_listener() {
     chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+        if (message.expectedStorageKey && message.expectedStorageKey !== get_storage_key()) {
+            sendResponse({ ok: false, error: "The active chat changed. Reopen CipherGap in the matching conversation." });
+            return false;
+        }
+        if (message.action === "choose_secure_files") {
+            choose_bale_secure_files()
+                .then(() => sendResponse({ ok: true }))
+                .catch((error) => sendResponse({ ok: false, error: error.message }));
+            return true;
+        }
+        if (message.action === "set_auto_files") {
+            if (typeof message.enabled !== "boolean") {
+                sendResponse({ ok: false, error: "The enabled field must be a boolean." });
+                return false;
+            }
+            chrome.storage.local.set({
+                [globalThis.CipherGapShared.storage_keys.auto_files(get_storage_key())]: message.enabled
+            }).then(() => sendResponse({ ok: true }))
+                .catch((error) => sendResponse({ ok: false, error: error.message }));
+            return true;
+        }
         if (message.action === "start_key_exchange") {
             start_key_exchange()
                 .then((result) => sendResponse({ ok: true, ...result }))

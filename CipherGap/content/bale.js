@@ -17,7 +17,8 @@ const BALE_LIFECYCLE_SELECTOR = [
     BALE_MESSAGE_SCROLLER,
     BALE_CHAT_INPUT,
     "#chat_footer",
-    "#ciphergap-btn"
+    "#ciphergap-btn",
+    "#ciphergap-toolbar"
 ].join(",");
 
 // Flag: when true, sanitize_bale_input will skip stripping — prevents the
@@ -39,9 +40,9 @@ function inject_ciphergap_content_styles() {
             min-block-size: 40px !important;
             margin: 0 !important;
             padding: 8px 12px !important;
-            border: 1px solid #0b5e58 !important;
+            border: 1px solid #553aaf !important;
             border-radius: 9px !important;
-            background: #0f766e !important;
+            background: #6950c8 !important;
             box-shadow: none !important;
             color: #fff !important;
             cursor: pointer !important;
@@ -53,8 +54,8 @@ function inject_ciphergap_content_styles() {
             white-space: nowrap !important;
         }
         .ciphergap-action:hover:not(:disabled) {
-            border-color: #084c47 !important;
-            background: #0b5e58 !important;
+            border-color: #493297 !important;
+            background: #553aaf !important;
         }
         .ciphergap-action:focus-visible {
             outline: 2px solid #f6c453 !important;
@@ -65,6 +66,32 @@ function inject_ciphergap_content_styles() {
             cursor: wait !important;
             opacity: .62 !important;
         }
+        #chat_footer .ciphergap-send-controls {
+            display: inline-flex;
+            align-items: center;
+        }
+        #ciphergap-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 5px 12px;
+            border-block-end: 1px solid rgba(128,128,128,.16);
+            font: 600 11px/1.4 system-ui, sans-serif;
+            color: #6950c8;
+            direction: ltr;
+        }
+        #ciphergap-toolbar button {
+            appearance: none;
+            padding: 5px 8px;
+            border: 1px solid rgba(128,128,128,.3);
+            border-radius: 7px;
+            background: transparent;
+            color: inherit;
+            cursor: pointer;
+            font: inherit;
+        }
+        #ciphergap-toolbar button:disabled { opacity: .5; cursor: not-allowed; }
         #ciphergap-btn {
             flex: 0 0 auto !important;
             min-inline-size: 68px !important;
@@ -321,6 +348,67 @@ function show_ciphergap_notice(message, kind = "info", durationMs = 5000) {
     }, durationMs);
 }
 
+function inject_bale_security_toolbar() {
+    const footer = document.getElementById("chat_footer");
+    if (!footer || document.getElementById("ciphergap-toolbar")) return;
+    const toolbar = document.createElement("div");
+    toolbar.id = "ciphergap-toolbar";
+    toolbar.dataset.ciphergapUi = "toolbar";
+    const status = document.createElement("button");
+    status.id = "ciphergap-security-status";
+    status.type = "button";
+    status.textContent = "CipherGap · Checking…";
+    status.addEventListener("click", () => {
+        chrome.runtime.sendMessage({ action: "open_ciphergap" }).catch(() => {
+            show_ciphergap_notice("Open CipherGap from the browser toolbar.", "info");
+        });
+    });
+    const files = document.createElement("button");
+    files.id = "ciphergap-secure-files";
+    files.type = "button";
+    files.textContent = "↗ Secure files";
+    files.disabled = true;
+    files.addEventListener("click", () => choose_bale_secure_files().catch((error) => {
+        show_ciphergap_notice(error.message, "error");
+    }));
+    toolbar.append(status, files);
+    footer.prepend(toolbar);
+    // The footer can arrive after the key cache has already resolved.
+    refresh_cg_chat_cache(true).catch(() => {});
+}
+
+function update_bale_security_toolbar(trust, exchange) {
+    const status = document.getElementById("ciphergap-security-status");
+    if (status) {
+        const label = exchange?.status === "incoming" ? "Review key request"
+            : exchange?.status === "waiting" ? "Waiting for partner"
+            : !cg_cached_key ? "Set up security"
+            : trust?.state === "verified" ? "Verified"
+            : trust?.state === "changed" ? "Identity changed · Review"
+            : "Verify your key";
+        status.textContent = `CipherGap · ${label}`;
+        status.title = "Open chat security settings";
+    }
+    const files = document.getElementById("ciphergap-secure-files");
+    if (files) files.disabled = !cg_cached_key;
+}
+
+async function choose_bale_secure_files() {
+    const storageKey = get_storage_key();
+    await refresh_cg_chat_cache();
+    if (!get_current_chat_id() || !cg_cached_key || storageKey !== get_storage_key()) {
+        throw new Error("Set up a key for this chat before choosing secure files.");
+    }
+    const input = document.getElementById("chat_footer")?.querySelector('input[type="file"]');
+    if (!input) throw new Error("Bale’s file picker is unavailable. Reopen the chat.");
+    // Use Bale's native preview and upload flow, with our capture-phase
+    // encryption already installed. No original bytes reach its change handler.
+    intercept_file_selection(input);
+    input.accept = "";
+    input.multiple = true;
+    input.click();
+}
+
 function redispatch_file_selection(fileInput, files) {
     const dataTransfer = new DataTransfer();
     files.forEach((file) => dataTransfer.items.add(file));
@@ -447,6 +535,10 @@ function intercept_file_selection(fileInput) {
                 encryptedFiles.push(encrypted);
             }
 
+            if (get_storage_key() !== currentStorageKey || cg_cached_key !== secretKey) {
+                throw new Error("The chat or key changed while encrypting the attachment.");
+            }
+
             // Put encrypted files back and re-dispatch a change event so
             // Bale's React handler picks them up.
             redispatch_file_selection(fileInput, encryptedFiles);
@@ -471,6 +563,7 @@ function intercept_file_selection(fileInput) {
 let cg_cached_storage_key = null;
 let cg_cached_key = null;
 let cg_cached_auto_decrypt = false;
+let cg_cached_auto_files = false;
 let cg_cached_message_key = null;
 let cg_cache_ready = false;
 let cg_cache_refresh_token = 0;
@@ -482,6 +575,7 @@ function invalidate_cg_chat_cache(storageKey = get_storage_key()) {
     cg_cached_storage_key = storageKey;
     cg_cached_key = null;
     cg_cached_auto_decrypt = false;
+    cg_cached_auto_files = false;
     cg_cached_message_key = null;
     cg_cache_ready = false;
 }
@@ -508,10 +602,13 @@ async function refresh_cg_chat_cache(force = false) {
     const refreshToken = ++cg_cache_refresh_token;
     const autoDecryptKey = globalThis.CipherGapShared.storage_keys
         .auto_decrypt(storageKey);
+    const autoFilesKey = globalThis.CipherGapShared.storage_keys.auto_files(storageKey);
+    const trustKey = globalThis.CipherGapShared.storage_keys.key_trust(storageKey);
+    const exchangeKey = globalThis.CipherGapShared.storage_keys.exchange_status(storageKey);
     cg_cache_refresh_storage_key = storageKey;
 
     const refreshPromise = (async () => {
-        const result = await chrome.storage.local.get([storageKey, autoDecryptKey]);
+        const result = await chrome.storage.local.get([storageKey, autoDecryptKey, autoFilesKey, trustKey, exchangeKey]);
         const secretKey = result[storageKey] ?? null;
         const messageKey = secretKey
             ? await BALE_SHARED_CRYPTO.derive_ciphergap_message_key(secretKey)
@@ -527,8 +624,10 @@ async function refresh_cg_chat_cache(force = false) {
         cg_cached_storage_key = storageKey;
         cg_cached_key = secretKey;
         cg_cached_auto_decrypt = Boolean(result[autoDecryptKey]);
+        cg_cached_auto_files = Boolean(result[autoFilesKey]);
         cg_cached_message_key = messageKey;
         cg_cache_ready = true;
+        update_bale_security_toolbar(result[trustKey], result[exchangeKey]);
     })();
 
     cg_cache_refresh_promise = refreshPromise;
@@ -554,7 +653,16 @@ if (IS_BALE_HOST) {
         const storageKey = get_storage_key();
         const autoDecryptKey = globalThis.CipherGapShared.storage_keys
             .auto_decrypt(storageKey);
-        if (changes[storageKey] || changes[autoDecryptKey]) {
+        const keys = globalThis.CipherGapShared.storage_keys;
+        if (changes[storageKey] || changes[autoDecryptKey] || changes[keys.auto_files(storageKey)] || changes[keys.key_trust(storageKey)] || changes[keys.exchange_status(storageKey)]) {
+            // A request that arrived while another consent prompt was open
+            // must be reconsidered after that prompt is declined or cancelled.
+            if (changes[keys.exchange_status(storageKey)]?.oldValue && !changes[keys.exchange_status(storageKey)].newValue && bale_observed_scroller) {
+                bale_observed_scroller.querySelectorAll('[data-ciphergap-exchange-handled]').forEach((row) => {
+                    delete row.dataset.ciphergapExchangeHandled;
+                    schedule_bale_message_processing(row, storageKey);
+                });
+            }
             const chatKeyChanged = Boolean(changes[storageKey]);
             invalidate_cg_chat_cache(storageKey);
             refresh_cg_chat_cache(true)
@@ -638,7 +746,8 @@ function find_exchange_protocol_payload(messageElement) {
     );
 }
 
-async function bale_send_message(text) {
+async function bale_send_message(text, { storageKey = get_storage_key(), preserveDraft = true } = {}) {
+    if (storageKey !== get_storage_key()) throw new Error("The active chat changed before sending.");
     const input = document.querySelector(BALE_CHAT_INPUT);
     if (!input) {
         throw new Error("Bale chat input not found.");
@@ -649,21 +758,29 @@ async function bale_send_message(text) {
         throw new Error("Bale send button not found.");
     }
 
+    if (cg_sending) throw new Error("A message is already being sent. Please try again.");
+    const draft = input.textContent;
+    let sent = false;
     // Block the sanitizer while we fill the input and click send.
     cg_sending = true;
-
-    input.textContent = text;
-    input.dispatchEvent(new Event("input", { bubbles: true }));
-
-    sendButton.click();
-
-    // Clear the input after sending so exchange/SAS messages don't linger
-    // in the field and risk being re-processed or re-sent.
-    setTimeout(() => {
-        input.textContent = "";
+    try {
+        input.textContent = text;
         input.dispatchEvent(new Event("input", { bubbles: true }));
+        await wait_for_main_thread();
+        if (storageKey !== get_storage_key() || !input.isConnected) throw new Error("The active chat changed before sending.");
+        const currentSendButton = document.querySelector(BALE_SEND_BUTTON);
+        if (!currentSendButton) throw new Error("Bale send button is no longer available.");
+        currentSendButton.click();
+        sent = true;
+        await new Promise((resolve) => setTimeout(resolve, 150));
+    } finally {
+        // Do not erase a newly typed draft or touch another chat after navigation.
+        if (storageKey === get_storage_key() && input.isConnected && (!input.textContent || input.textContent === text)) {
+            input.textContent = preserveDraft || !sent ? draft : "";
+            input.dispatchEvent(new Event("input", { bubbles: true }));
+        }
         cg_sending = false;
-    }, 150);
+    }
 }
 
 // Clear the chat input field (used after exchange success / SAS verification).
@@ -737,6 +854,9 @@ function inject_encrypt_button_bale() {
         return;
     }
 
+    // Bale's inline display:none still hides both controls for an empty draft.
+    buttonContainer.classList.add("ciphergap-send-controls");
+
     const button = document.createElement("button");
     button.id = "ciphergap-btn";
     button.className = "ciphergap-action";
@@ -758,6 +878,7 @@ function inject_encrypt_button_bale() {
             }
 
             const plainText = input.textContent?.trim();
+            const storageKey = get_storage_key();
             if (!plainText) {
                 return;
             }
@@ -780,8 +901,10 @@ function inject_encrypt_button_bale() {
             );
             const finalMessage = BALE_SHARED_PROTOCOL
                 .build_ciphergap_packet(encryptedMessage);
-
-            await bale_send_message(finalMessage);
+            if (storageKey !== get_storage_key() || cg_cached_key !== secretKey) {
+                throw new Error("The chat or key changed while encrypting the message.");
+            }
+            await bale_send_message(finalMessage, { storageKey, preserveDraft: false });
             show_ciphergap_notice("Encrypted message sent.", "success", 3000);
         } catch (error) {
             console.error("[CipherGap] Encrypt failed:", error);
@@ -1156,8 +1279,8 @@ function create_file_decrypt_button() {
     const button = document.createElement("button");
     button.className = "ciphergap-action ciphergap-file-decrypt-button";
     button.type = "button";
-    button.innerText = "Decrypt file";
-    button.setAttribute("aria-label", "Choose and decrypt this CipherGap file");
+    button.innerText = "Decrypt & download";
+    button.setAttribute("aria-label", "Download and decrypt this CipherGap attachment");
     return button;
 }
 
@@ -1196,9 +1319,9 @@ async function decrypt_and_download_file(
     show_ciphergap_notice(`${decrypted.name} was decrypted and downloaded.`, "success");
 }
 
-// Primary decrypt path: open a hidden file picker so the user can select
+// Fallback decrypt path: open a hidden file picker so the user can select
 // the .cgpe file they downloaded via Bale's own دانلود button.
-function handle_file_decrypt_click(event, messageElement, decryptButton) {
+function choose_downloaded_cgpe_file(event, messageElement, decryptButton) {
     event.preventDefault();
     event.stopPropagation();
     event.stopImmediatePropagation();
@@ -1216,6 +1339,7 @@ function handle_file_decrypt_click(event, messageElement, decryptButton) {
             return;
         }
 
+        const storageKey = get_storage_key();
         try {
             decryptButton.disabled = true;
             decryptButton.innerText = "Decrypting…";
@@ -1238,6 +1362,7 @@ function handle_file_decrypt_click(event, messageElement, decryptButton) {
             }
 
             const encryptedBuffer = await file.arrayBuffer();
+            if (storageKey !== get_storage_key()) throw new Error("The active chat changed before decryption.");
             await decrypt_and_download_file(
                 encryptedBuffer,
                 secretKey,
@@ -1265,6 +1390,126 @@ function handle_file_decrypt_click(event, messageElement, decryptButton) {
     fileInput.click();
     // Clean up the hidden input shortly after
     setTimeout(() => fileInput.remove(), 60000);
+}
+
+let bale_file_download_chain = Promise.resolve();
+let bale_file_bridge_request = null;
+let bale_chat_opened_at = Date.now();
+const bale_auto_file_attempts = new Set();
+
+function request_bale_encrypted_file(messageElement, filename, storageKey) {
+    return new Promise((resolve, reject) => {
+        const id = crypto.randomUUID();
+        let retryTimer;
+        let settled = false;
+        const finish = (error, bytes) => {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timeout);
+            clearInterval(retryTimer);
+            window.removeEventListener("message", onMessage);
+            if (bale_file_bridge_request?.id === id) bale_file_bridge_request = null;
+            window.postMessage({ source: "ciphergap-content", type: "cancel_file", id }, location.origin);
+            error ? reject(error) : resolve(bytes);
+        };
+        const clickAttachment = () => {
+            if (settled) return;
+            if (storageKey !== get_storage_key() || !messageElement.isConnected) {
+                finish(new Error("The active chat changed during file download."));
+                return;
+            }
+            const carrier = find_cgpe_file_in_message(messageElement)?.element;
+            const anchor = carrier?.closest("a, button");
+            if (!anchor || !messageElement.contains(anchor)) {
+                finish(new Error("Bale’s attachment download control is unavailable. Choose the downloaded file instead."));
+                return;
+            }
+            // While loading, clicking the cancel/progress icon would abort the
+            // native transfer. Retry only once Bale renders its document icon.
+            const cached = Boolean(anchor.querySelector('img[alt="file"]'));
+            if (!retryTimer || cached) {
+                // Bale attaches handlers to the icon and filename children,
+                // rather than to the enclosing link. These structural paths
+                // stay independent of its generated style class names.
+                const control = anchor.tagName === "A"
+                    ? (cached ? carrier : anchor.firstElementChild?.firstElementChild)
+                    : anchor;
+                control?.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+            }
+        };
+        const onMessage = (event) => {
+            if (event.source !== window || event.origin !== location.origin || event.data?.source !== "ciphergap-main" || event.data.id !== id) return;
+            if (event.data.type === "file_ready") {
+                clickAttachment();
+                if (!settled && !retryTimer) retryTimer = setInterval(clickAttachment, 1500);
+            }
+            if (event.data.type === "file_bytes") {
+                const bytes = event.data.bytes;
+                if (!(bytes instanceof ArrayBuffer) || bytes.byteLength > BALE_SHARED_FILE_CRYPTO.get_cgpe_max_container_bytes()) {
+                    finish(new Error("The downloaded file exceeds the safety limit or is invalid."));
+                } else finish(null, bytes);
+            }
+        };
+        const timeout = setTimeout(() => finish(new Error("Bale did not provide this file in time. Try again or choose the downloaded .cgpe file.")), 45000);
+        bale_file_bridge_request = { id, storageKey, cancel: () => finish(new Error("The active chat changed during file download.")) };
+        window.addEventListener("message", onMessage);
+        window.postMessage({ source: "ciphergap-content", type: "read_file", id, filename, maxBytes: BALE_SHARED_FILE_CRYPTO.get_cgpe_max_container_bytes() }, location.origin);
+    });
+}
+
+function download_bale_encrypted_file(messageElement, button, automatic = false) {
+    const storageKey = get_storage_key();
+    button.disabled = true;
+    button.textContent = "Downloading…";
+    button.setAttribute("aria-busy", "true");
+    const job = bale_file_download_chain.catch(() => {}).then(async () => {
+        if (storageKey !== get_storage_key() || !messageElement.isConnected) throw new Error("The active chat changed before downloading.");
+        await refresh_cg_chat_cache();
+        const secretKey = cg_cached_key;
+        if (!secretKey) throw new Error("Set up a chat key before decrypting attachments.");
+        const payload = find_cgpe_file_in_message(messageElement);
+        if (!payload) throw new Error("This attachment is no longer available.");
+        const encrypted = await request_bale_encrypted_file(messageElement, payload.normalized, storageKey);
+        if (storageKey !== get_storage_key() || secretKey !== cg_cached_key) throw new Error("The chat or key changed during download.");
+        button.textContent = "Decrypting…";
+        await decrypt_and_download_file(encrypted, secretKey, button, cg_cached_message_key);
+        if (automatic) {
+            const key = globalThis.CipherGapShared.storage_keys.downloaded_files(storageKey);
+            const result = await chrome.storage.local.get(key);
+            await chrome.storage.local.set({ [key]: [...(result[key] || []), messageElement.dataset.sid].slice(-100) });
+        }
+    }).catch((error) => {
+        button.textContent = "Try again";
+        button.dataset.state = "error";
+        show_ciphergap_notice(error.message, "error", 7000);
+    }).finally(() => {
+        button.disabled = false;
+        button.removeAttribute("aria-busy");
+    });
+    bale_file_download_chain = job;
+    return job;
+}
+
+function handle_file_decrypt_click(event, messageElement, button) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    download_bale_encrypted_file(messageElement, button);
+}
+
+async function auto_receive_bale_file(messageElement, button) {
+    const storageKey = get_storage_key();
+    const sid = messageElement.dataset.sid;
+    const sentAt = Number(messageElement.dataset.date);
+    if (!Number.isFinite(sentAt) || sentAt < bale_chat_opened_at || !messageElement.querySelector('[aria-label="LeftBubble-icon"]') || bale_auto_file_attempts.has(sid)) return;
+    // Bind before the first await, so repeated DOM mutations cannot queue it twice.
+    bale_auto_file_attempts.add(sid);
+    if (bale_auto_file_attempts.size > 1000) bale_auto_file_attempts.delete(bale_auto_file_attempts.values().next().value);
+    await refresh_cg_chat_cache();
+    if (!cg_cached_auto_files || !cg_cached_key || get_storage_key() !== storageKey) return;
+    const key = globalThis.CipherGapShared.storage_keys.downloaded_files(storageKey);
+    const result = await chrome.storage.local.get(key);
+    if ((result[key] || []).includes(sid) || get_storage_key() !== storageKey) return;
+    return download_bale_encrypted_file(messageElement, button, true);
 }
 
 // Attach a Decrypt File button next to the filename inside Bale's bubble.
@@ -1304,7 +1549,7 @@ function attach_file_decrypt_button(messageElement, filePayload) {
     const hint = document.createElement("span");
     hint.className = "ciphergap-file-decrypt-hint";
     hint.innerText =
-        `Download the ${BALE_SHARED_FILE_CRYPTO.write_format.extension} attachment from Bale, then choose it here.`;
+        "Encrypted attachment · decrypt directly from Bale.";
     hint.dir = "auto";
 
     const wrapper = document.createElement("span");
@@ -1312,6 +1557,12 @@ function attach_file_decrypt_button(messageElement, filePayload) {
     wrapper.dataset.ciphergapUi = "file-action";
     wrapper.appendChild(hint);
     wrapper.appendChild(decryptButton);
+    const localButton = document.createElement("button");
+    localButton.type = "button";
+    localButton.textContent = "Choose downloaded file instead";
+    localButton.style.cssText = "border:0;background:transparent;color:inherit;font:inherit;font-size:11px;text-decoration:underline;cursor:pointer;padding:4px";
+    localButton.addEventListener("click", (event) => choose_downloaded_cgpe_file(event, messageElement, decryptButton));
+    wrapper.appendChild(localButton);
 
     // The filename carrier gives us a semantic in-bubble anchor and avoids
     // Bale's generated class names and fragile parent-count traversal.
@@ -1320,6 +1571,7 @@ function attach_file_decrypt_button(messageElement, filePayload) {
         ? interactiveAttachment
         : filePayload.element;
     mountAnchor.insertAdjacentElement("afterend", wrapper);
+    auto_receive_bale_file(messageElement, decryptButton).catch(() => {});
 }
 
 // Scan a message element for .cgpe encrypted file attachments.
@@ -1500,7 +1752,9 @@ function process_bale_message(
         ) {
             messageElement.dataset.ciphergapExchangeHandled =
                 protocolPayload.signature;
-            handle_incoming_exchange_message(protocolPayload.protocolText)
+            const sentAt = Number(messageElement.dataset.date);
+            const stale = Number.isFinite(sentAt) && Date.now() - sentAt > EXCHANGE_TIMEOUT_MS;
+            (stale ? Promise.resolve() : handle_incoming_exchange_message(protocolPayload.protocolText))
                 .catch((error) => {
                     if (
                         messageElement.dataset.ciphergapExchangeHandled ===
@@ -1769,12 +2023,15 @@ function reconcile_bale_lifecycle() {
     const storageKey = get_storage_key();
     const chatChanged = storageKey !== bale_active_storage_key;
     if (chatChanged) {
+        bale_chat_opened_at = Date.now();
+        bale_file_bridge_request?.cancel();
         bale_active_storage_key = storageKey;
         invalidate_cg_chat_cache(storageKey);
         refresh_cg_chat_cache().catch(() => {});
         cleanup_stale_exchange_status(storageKey).catch(() => {});
     }
 
+    inject_bale_security_toolbar();
     inject_encrypt_button_bale();
 
     const chatInput = document.querySelector(BALE_CHAT_INPUT);
