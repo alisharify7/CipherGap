@@ -189,5 +189,7 @@ window.CipherGapEnglish = {
   "کپی آدرس صفحهٔ افزونه‌های کروم": "Copy the Chrome extensions address",
   "کپی آدرس ابزار توسعهٔ فایرفاکس": "Copy the Firefox developer tools address",
   "نمای بخش امنیت CipherGap پس از تأیید کلید مشترک": "CipherGap security screen after shared key verification",
-  "صفحهٔ Files با انتخاب فایل امن و تنظیم دریافت خودکار": "Files screen with secure file selection and automatic receiving"
+  "صفحهٔ Files با انتخاب فایل امن و تنظیم دریافت خودکار": "Files screen with secure file selection and automatic receiving",
+  "CipherGap؛ افزونهٔ متن‌باز برای رمزگذاری پیام و فایل در مرورگر. راهنمای نصب در کروم و فایرفاکس، تبادل کلید و استفاده در بله وب.": "CipherGap is an open-source extension for browser-side message and file encryption. Install in Chrome or Firefox, exchange a key, and use it on Bale Web.",
+  "پیام و فایل را پیش از ارسال رمزگذاری کنید. نصب، تبادل کلید و شروع یک گفتگوی رمز‌شده، قدم به قدم.": "Encrypt messages and files before sending. Installation, key exchange, and your first private conversation, step by step."
 };
