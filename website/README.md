@@ -1,33 +1,19 @@
 # CipherGap website
 
-Persian RTL product site and installation/user guide, maintained on the
-`website` branch. Plain HTML, CSS and JavaScript; no build step, external fonts,
-analytics or runtime dependencies.
+A static Persian/English product site with Chrome and Firefox installation steps, key verification, message/file tutorials, pause controls and troubleshooting. Only Bale is active; other messenger support is explicitly a roadmap.
 
-From the repository root:
+Select فارسی / English in the header. Language is saved locally, direction changes between RTL/LTR, and fonts are bundled: Vazirmatn for Persian, Inter for English. Neither language needs a font CDN; OFL licenses are in `website/fonts/`.
 
-```sh
-python3 -m http.server 8080 --bind 127.0.0.1
-```
+## GitHub Pages
 
-Open `http://127.0.0.1:8080/`. All assets use relative paths, including when
-served below `/CipherGap/`. Serve the repository root, not the `website/` folder.
-Chrome downloads use the `main` branch; Firefox downloads use `firefox`.
-The site does not claim that the extension is available in browser stores.
+`.github/workflows/pages.yml` publishes on pushes to `website`, or through Run workflow. The repository Pages source must be **GitHub Actions**. The workflow assembles only public static assets, then uploads and deploys them with the official Pages actions.
 
-For GitHub Pages, choose **Settings → Pages → Deploy from a branch**, then
-`website` and `/ (root)`. This repository change does not enable hosting itself.
-Other static hosts can serve the root in the same way.
+Expected URL: https://alisharify7.github.io/CipherGap/
 
-Browser verification:
+https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages
 
-```sh
-python3 -m pip install playwright
-python3 -m playwright install chromium
-python3 website/verify.py
-```
+## Local preview and checks
 
-If a system Chrome installation is available, the verifier uses it. Set
-`CHROMIUM_BINARY` to choose another executable. The check starts a local server
-and verifies responsive layout, assets, browser tabs, keyboard controls, mobile
-navigation, clipboard feedback, FAQs and a GitHub Pages-style subpath.
+From the repository root: `python3 -m http.server 8787`
+
+Run `python3 website/verify.py` with Python Playwright installed and Chrome available. It checks both languages, persisted preference, local fonts, responsive widths 320–1440px, Pages subpath assets, mobile navigation, keyboard tabs, FAQ, clipboard success and denied permissions. Screenshots are saved in this directory.

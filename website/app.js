@@ -1,3 +1,38 @@
+const languageSelect = document.getElementById("language-select");
+const textOriginals = new WeakMap();
+const attributeOriginals = new WeakMap();
+function setLanguage(language) {
+    const english = language === "en";
+    document.documentElement.lang = english ? "en" : "fa";
+    document.documentElement.dir = english ? "ltr" : "rtl";
+    languageSelect.value = english ? "en" : "fa";
+    const walker = document.createTreeWalker(document.documentElement, NodeFilter.SHOW_TEXT);
+    let node;
+    while ((node = walker.nextNode())) {
+        if (node.parentElement.closest("script, style, option")) continue;
+        if (!textOriginals.has(node)) textOriginals.set(node, node.nodeValue);
+        const original = textOriginals.get(node);
+        const normalized = original.trim().replace(/\s+/g, " ");
+        const translated = window.CipherGapEnglish[normalized];
+        node.nodeValue = english && translated ? original.replace(original.trim(), translated) : original;
+    }
+    for (const element of document.querySelectorAll("[aria-label], [alt], meta[content]")) {
+        const saved = attributeOriginals.get(element) || {};
+        for (const attribute of ["aria-label", "alt", "content"]) {
+            if (!element.hasAttribute(attribute)) continue;
+            saved[attribute] ??= element.getAttribute(attribute);
+            const original = saved[attribute];
+            const translated = window.CipherGapEnglish[original];
+            element.setAttribute(attribute, english && translated ? translated : original);
+        }
+        attributeOriginals.set(element, saved);
+    }
+    try { localStorage.setItem("ciphergap-language", language); } catch { /* Storage may be blocked. */ }
+}
+languageSelect.addEventListener("change", event => setLanguage(event.target.value));
+let savedLanguage;
+try { savedLanguage = localStorage.getItem("ciphergap-language"); } catch { /* Use the page default. */ }
+setLanguage(savedLanguage === "en" ? "en" : "fa");
 const menu = document.querySelector(".menu-button");
 const navigation = document.getElementById("main-nav");
 function closeMenu() {
@@ -43,9 +78,9 @@ document.querySelectorAll("[data-copy]").forEach((button) => {
     button.addEventListener("click", async () => {
         try {
             await navigator.clipboard.writeText(button.dataset.copy);
-            status.textContent = "آدرس کپی شد؛ آن را در نوار آدرس مرورگر وارد کنید.";
+            status.textContent = document.documentElement.lang === "en" ? "Address copied. Paste it into your browser’s address bar." : "آدرس کپی شد؛ آن را در نوار آدرس مرورگر وارد کنید.";
         } catch {
-            status.textContent = "کپی خودکار در این مرورگر در دسترس نیست؛ آدرس کنار دکمه را انتخاب و کپی کنید.";
+            status.textContent = document.documentElement.lang === "en" ? "Automatic copying is unavailable. Select and copy the address beside the button." : "کپی خودکار در این مرورگر در دسترس نیست؛ آدرس کنار دکمه را انتخاب و کپی کنید.";
         }
         status.hidden = false;
         clearTimeout(statusTimer);

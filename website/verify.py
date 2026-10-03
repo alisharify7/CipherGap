@@ -53,6 +53,17 @@ try:
                 page.locator(".menu-button").click()
                 page.locator('#main-nav a[href="#guide"]').click()
                 assert page.locator(".menu-button").get_attribute("aria-expanded") == "false"
+            page.locator("#language-select").select_option("en")
+            assert page.locator("html").get_attribute("dir") == "ltr"
+            assert page.locator("#hero-title").inner_text() == "Same conversations.\nA private layer."
+            page.evaluate("document.fonts.ready")
+            assert page.evaluate("document.fonts.check('14px Inter')")
+            assert page.evaluate("document.documentElement.scrollWidth <= innerWidth"), (width, "English overflow")
+            page.reload()
+            assert page.locator("html").get_attribute("lang") == "en"
+            page.locator("#language-select").select_option("fa")
+            assert page.locator("html").get_attribute("dir") == "rtl"
+            assert page.evaluate("document.fonts.check('14px Vazirmatn')")
             assert not errors, errors
             page.evaluate("scrollTo(0, 0)")
             page.emulate_media(reduced_motion="reduce")
