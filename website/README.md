@@ -6,7 +6,7 @@ Select فارسی / English in the header. Language is saved locally, direction 
 
 ## GitHub Pages
 
-`.github/workflows/pages.yml` publishes on pushes to `website`, or through Run workflow. The repository Pages source must be **GitHub Actions**. The workflow assembles only public static assets, then uploads and deploys them with the official Pages actions.
+The site is currently hosted directly from `website` / root using GitHub Pages. The custom `.github/workflows/pages.yml` is prepared locally; the initial push is blocked because the configured GitHub token lacks workflow scope. After deploying that workflow, switch Pages source to **GitHub Actions**. It publishes on website pushes or Run workflow, assembling only public static assets before upload and deployment with the official Pages actions.
 
 Expected URL: https://alisharify7.github.io/CipherGap/
 
