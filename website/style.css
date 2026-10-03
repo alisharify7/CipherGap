@@ -19,9 +19,12 @@
 @font-face{font-family:Inter;src:url('fonts/inter-latin-wght-normal.woff2') format('woff2');font-weight:100 900;font-display:swap}
 .language-select{font:inherit;font-size:11px;color:var(--ink);background:transparent;border:1px solid var(--line);padding:6px;border-radius:9px;max-width:82px}
 html[lang=en] body{font-family:Inter,Vazirmatn,sans-serif;line-height:1.7}
-html[lang=en] h1,html[lang=en] h2{line-height:1.2;letter-spacing:-1.6px}
+html[lang=en] h1,html[lang=en] h2{line-height:1.2;letter-spacing:-.035em}
 html[lang=en] .hero h1{font-size:56px}
 html[lang=en] .hero-visual{direction:ltr}
 html[lang=en] .start-section .button,html[lang=en] .header-source{margin-right:0;margin-inline-start:auto}
 html[lang=en] .hero-description{line-height:1.9}
 @media(max-width:720px){.header-inner{gap:7px}.header-source{display:none}.language-select{margin-inline-start:auto}.hero h1{line-height:1.4}html[lang=en] .hero h1{font-size:40px}.brand-subtitle{letter-spacing:1px}}
+
+html[lang=en] .verification-stamp{left:auto;right:-8px}
+html[lang=en] .hero-actions .button [aria-hidden],html[lang=en] .start-section .button [aria-hidden]{transform:scaleX(-1)}
