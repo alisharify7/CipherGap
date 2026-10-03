@@ -1,5 +1,14 @@
 # Changelog
 
+## Website update — 2026-10-04
+
+- English is the default for first visits; Persian remains available and saved.
+- Refreshed conversational copy and English author credit: Ali Sharify.
+- Bundled official messenger marks: Bale is highlighted as available, with Eitaa, Rubika, Telegram and WhatsApp marked In development.
+- Updated the version and explained installation notices for recipients without CipherGap.
+- Verified both languages, persisted preferences, fonts, responsive layouts and local assets.
+
+
 ## Unreleased — website branch
 
 ### Added

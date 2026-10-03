@@ -32,7 +32,7 @@ function setLanguage(language) {
 languageSelect.addEventListener("change", event => setLanguage(event.target.value));
 let savedLanguage;
 try { savedLanguage = localStorage.getItem("ciphergap-language"); } catch { /* Use the page default. */ }
-setLanguage(savedLanguage === "en" ? "en" : "fa");
+setLanguage(savedLanguage === "fa" ? "fa" : "en");
 const menu = document.querySelector(".menu-button");
 const navigation = document.getElementById("main-nav");
 function closeMenu() {

@@ -34,6 +34,12 @@ try:
             page.on("pageerror", lambda error: errors.append(str(error)))
             page.on("response", lambda response: errors.append(response.url) if response.status >= 400 else None)
             page.goto(url + "/CipherGap/")
+            assert page.locator("html").get_attribute("lang") == "en"
+            assert page.locator("#language-select").input_value() == "en"
+            assert page.locator(".site-footer p").inner_text() == "Ali Sharify · Open source"
+            assert page.locator(".messengers .available strong").inner_text() == "Bale"
+            assert page.locator(".messengers li:not(.available) small").all_inner_texts() == ["In development"] * 4
+            assert page.locator(".messenger-logo").count() == 5
             page.locator("#guide").scroll_into_view_if_needed()
             page.wait_for_function("[...document.images].every(image => image.complete && image.naturalWidth > 0)")
             assert page.evaluate("document.documentElement.scrollWidth <= innerWidth"), (width, page.evaluate("({width:innerWidth,scroll:document.documentElement.scrollWidth,body:document.body.scrollWidth,items:[...document.querySelectorAll(\"body *\")].filter(e=>e.getBoundingClientRect().x<-1||e.getBoundingClientRect().right>innerWidth+1).map(e=>({tag:e.tagName,cls:e.className,x:e.getBoundingClientRect().x,right:e.getBoundingClientRect().right}))})"))
@@ -55,7 +61,7 @@ try:
                 assert page.locator(".menu-button").get_attribute("aria-expanded") == "false"
             page.locator("#language-select").select_option("en")
             assert page.locator("html").get_attribute("dir") == "ltr"
-            assert page.locator("#hero-title").inner_text() == "Same conversations.\nA private layer."
+            assert page.locator("#hero-title").inner_text() == "Same chat.\nMore privacy."
             page.evaluate("document.fonts.ready")
             assert page.evaluate("document.fonts.check('14px Inter')")
             assert page.evaluate("document.documentElement.scrollWidth <= innerWidth"), (width, "English overflow")
@@ -63,6 +69,11 @@ try:
             assert page.locator("html").get_attribute("lang") == "en"
             page.locator("#language-select").select_option("fa")
             assert page.locator("html").get_attribute("dir") == "rtl"
+            assert "Ali Sharify" in page.locator(".site-footer p").inner_text()
+            assert "علی شریفی" not in page.locator(".site-footer p").inner_text()
+            assert page.locator(".messengers li:not(.available) small").all_inner_texts() == ["در دست توسعه"] * 4
+            page.reload()
+            assert page.locator("html").get_attribute("lang") == "fa"
             assert page.evaluate("document.fonts.check('14px Vazirmatn')")
             assert not errors, errors
             page.evaluate("scrollTo(0, 0)")
@@ -75,6 +86,7 @@ try:
         page = browser.new_page()
         page.context.grant_permissions(["clipboard-read", "clipboard-write"])
         page.goto(url)
+        page.locator("#language-select").select_option("fa")
         page.locator('[data-copy="chrome://extensions"]').click()
         assert page.evaluate("navigator.clipboard.readText()") == "chrome://extensions"
         page.evaluate("Object.defineProperty(navigator, 'clipboard', {value: {writeText: async () => {throw new Error('denied')}}})")

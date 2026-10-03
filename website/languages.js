@@ -59,7 +59,7 @@ window.CipherGapEnglish = {
   "رمزگذاری می‌شود. باز شدن خودکار پیام‌ها برای هر گفتگو قابل تنظیم است.": "before sending. Set automatic message decryption separately for each chat.",
   "متن اصلی در مرورگر پردازش می‌شود": "Your original text is processed in your browser",
   "فایل بفرستید، با همان سادگی": "Send files, just as easily",
-  "انتخاب فایل، پیش‌نمایش رمز‌شده و ارسال. گیرنده می‌تواند فایل را از همان پیام رمزگشایی کند یا دریافت خودکار را روشن کند.": "Choose a file, preview the encrypted attachment, and send. Your partner can decrypt it from the message or enable automatic receiving.",
+  "انتخاب فایل، پیش‌نمایش رمز‌شده و ارسال. گیرنده می‌تواند فایل را از همان پیام رمزگشایی کند یا دریافت خودکار را روشن کند.": "Choose Encrypted file, pick your file, and send it from Bale’s preview. Your friend can decrypt it right from the chat, or turn on automatic receiving.",
   "نام اصلی فایل پس از رمزگشایی حفظ می‌شود": "Original filenames are restored after decryption",
   "یک کلید برای هر گفتگو": "One key for each chat",
   "تبادل کلید با": "Exchange a key using",
@@ -191,5 +191,17 @@ window.CipherGapEnglish = {
   "نمای بخش امنیت CipherGap پس از تأیید کلید مشترک": "CipherGap security screen after shared key verification",
   "صفحهٔ Files با انتخاب فایل امن و تنظیم دریافت خودکار": "Files screen with secure file selection and automatic receiving",
   "CipherGap؛ افزونهٔ متن‌باز برای رمزگذاری پیام و فایل در مرورگر. راهنمای نصب در کروم و فایرفاکس، تبادل کلید و استفاده در بله وب.": "CipherGap is an open-source extension for browser-side message and file encryption. Install in Chrome or Firefox, exchange a key, and use it on Bale Web.",
-  "پیام و فایل را پیش از ارسال رمزگذاری کنید. نصب، تبادل کلید و شروع یک گفتگوی رمز‌شده، قدم به قدم.": "Encrypt messages and files before sending. Installation, key exchange, and your first private conversation, step by step."
+  "پیام و فایل را پیش از ارسال رمزگذاری کنید. نصب، تبادل کلید و شروع یک گفتگوی رمز‌شده، قدم به قدم.": "Encrypt messages and files before sending. Installation, key exchange, and your first private conversation, step by step.",
+  "همان چت همیشگی.": "Same chat.",
+  "حرف‌های خصوصی‌تر.": "More privacy.",
+  "یک حرف شخصی یا فایلی که قرار است بین شما بماند. CipherGap آن را پیش از ارسال در مرورگر رمزنگاری می‌کند؛ دوستتان با افزونه و کلید مشترک آن را می‌خواند.": "A personal message. A file meant for one person. CipherGap encrypts it in your browser before you send it. Your friend opens it with the extension and your shared key.",
+  "امروز در بله گفتگو کنید؛ پیام‌رسان‌های دیگر در راه‌اند.": "Ready for Bale today. More messengers are on the way.",
+  "در دست توسعه": "In development",
+  "برای چیزهایی که": "For the things",
+  "ترجیح می‌دهید خصوصی بمانند.": "you’d rather keep private.",
+  "افزونه را نصب کنید، کلید را تأیید کنید و گفتگو را ادامه دهید.": "Install together, check your key, and get back to the conversation.",
+  "نسخهٔ ۱.۲.۱ · برای بله وب · کروم و فایرفاکس": "Version 1.2.1 · Bale Web · Chrome & Firefox",
+  "نسخهٔ فعلی فقط از بله وب پشتیبانی می‌کند. ایتا، روبیکا، تلگرام و واتساپ در دست توسعه هستند و هنوز فعال نیستند.": "Bale Web is ready to use. Eitaa, Rubika, Telegram and WhatsApp integrations are in development and aren’t available yet.",
+  "دوستم هنوز CipherGap را نصب نکرده؛ چه می‌بیند؟": "What if my friend hasn’t installed CipherGap yet?",
+  "زیر پیام رمز‌شده، راهنمای نصب و لینک GitHub را می‌بیند. بعد از نصب نسخهٔ ۱.۲.۱ یا جدیدتر و تنظیم کلید مشترک، پیام باز می‌شود و راهنما از نمایش گفتگو کنار می‌رود. با توقف افزونه، راهنما دوباره دیده می‌شود.": "They’ll see a short installation guide and a GitHub link beneath the encrypted text. With version 1.2.1 or later and your shared key, they can open the message. The guide is hidden while CipherGap is enabled and appears again when paused."
 };
