@@ -91,11 +91,16 @@ test("messenger adapters resolve an explicit reusable chat context", () => {
     );
 });
 
-test("CGP v1 writer and parser keep the existing wire format", () => {
+test("CGP v1 adds an installation notice while parsing the original payload", () => {
     const protocol = globalThis.CipherGapShared.protocol;
     const packet = protocol.build_ciphergap_packet("payload|with|pipes", 1700000000);
 
-    assert.equal(packet, "CGP|1|AESGCM|1700000000|payload|with|pipes");
+    const legacy = "CGP|1|AESGCM|1700000000|payload|with|pipes";
+    assert.equal(packet, legacy + "\n\n" + protocol.message_notice);
+    assert.equal(protocol.strip_ciphergap_notice(packet), legacy);
+    assert.deepEqual(protocol.parse_ciphergap_packet(legacy), protocol.parse_ciphergap_packet(packet));
+    assert.deepEqual(protocol.parse_ciphergap_packet(packet.replace(/\n/g, "")), protocol.parse_ciphergap_packet(legacy));
+    assert.equal(protocol.strip_ciphergap_notice(protocol.message_notice), protocol.message_notice);
     assert.deepEqual(protocol.parse_ciphergap_packet(packet), {
         version: "1",
         algorithm: "AESGCM",
@@ -115,6 +120,15 @@ test("CGP v1 writer and parser keep the existing wire format", () => {
         ),
         null
     );
+});
+
+test("notice-bearing messages still decrypt and reject altered ciphertext", async () => {
+    const { protocol, crypto } = globalThis.CipherGapShared;
+    const secret = "notice-round-trip-key";
+    const payload = await crypto.encrypt_message("سلام — private message", secret);
+    const packet = protocol.build_ciphergap_packet(payload);
+    assert.equal(await crypto.decrypt_message(protocol.parse_ciphergap_packet(packet).data, secret), "سلام — private message");
+    await assert.rejects(crypto.decrypt_message(protocol.parse_ciphergap_packet(packet).data, "wrong-key"));
 });
 
 test("exchange messages use one canonical codec", () => {

@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.2.1](docs/releases/v1.2.1.md) - 2026-10-04
+
+### Added
+
+- Encrypted messages include a Persian installation guide and the GitHub link for recipients without CipherGap.
+- Enabled readers hide the guide before or after decryption, including split paragraphs and linked URLs; pausing the extension restores it.
+- Regression coverage for notice-bearing encryption, legacy messages, browser rendering and pause/resume.
+
+### Compatibility
+
+- The AES-GCM payload, CGP v1 fields and saved keys are unchanged. Version 1.2.1 still reads older messages.
+- Both participants should update to 1.2.1 to read messages with the new installation guide; older readers do not understand the appended text.
+
 ## [1.2.0] - 2026-10-03
 
 ### Added

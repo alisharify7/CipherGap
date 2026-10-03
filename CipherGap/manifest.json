@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "CipherGap",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Client-side encrypted messages and files for Bale Web.",
   "icons": {
     "16": "assets/icon16.png",

@@ -34,6 +34,7 @@ function inject_ciphergap_content_styles() {
     const style = document.createElement("style");
     style.id = "ciphergap-content-styles";
     style.textContent = `
+        [data-ciphergap-message-notice][hidden] { display: none !important; }
         .ciphergap-action {
             appearance: none !important;
             box-sizing: border-box !important;
@@ -670,6 +671,8 @@ async function refresh_cg_chat_cache(force = false) {
         if (cg_cached_enabled && bale_observed_scroller) scan_bale_messages(bale_observed_scroller, bale_scan_generation).catch(() => {});
         if (!cg_cached_enabled) {
             bale_file_bridge_request?.cancel();
+            document.querySelectorAll('[data-ciphergap-message-notice]').forEach(node => { node.hidden = false; });
+            document.querySelectorAll(BALE_MESSAGE_ITEM).forEach(node => { delete node.dataset.ciphergapProcessed; });
             document.querySelectorAll(BALE_MESSAGE_ITEM).forEach(clear_stale_protocol_ui);
             document.querySelectorAll('[data-ciphergap-ui="file-action"], .ciphergap-decrypt-wrap').forEach(node => node.remove());
         }
@@ -980,6 +983,47 @@ function find_cgp_span(messageElement) {
     })?.element ?? null;
 }
 
+function hide_ciphergap_message_notice(messageElement) {
+    const existing = messageElement.querySelector('[data-ciphergap-message-notice]');
+    if (existing) {
+        if (!existing.hidden) existing.hidden = true;
+        return;
+    }
+    const payload = get_deepest_matching_payload(messageElement, text => {
+        if (!BALE_SHARED_PROTOCOL.is_ciphergap_packet(text)) return null;
+        const notice = BALE_SHARED_PROTOCOL.find_ciphergap_notice(text);
+        return notice ? { notice } : null;
+    });
+    if (!payload) return;
+
+    // A Range preserves Bale's link and paragraph elements even when the
+    // notice shares a text node with the ciphertext. No host class is needed.
+    const walker = document.createTreeWalker(payload.element, NodeFilter.SHOW_TEXT);
+    const range = document.createRange();
+    let offset = 0;
+    let startFound = false;
+    while (walker.nextNode()) {
+        const node = walker.currentNode;
+        const end = offset + node.length;
+        if (!startFound && payload.notice.index < end) {
+            range.setStart(node, payload.notice.index - offset);
+            startFound = true;
+        }
+        const noticeEnd = payload.notice.index + payload.notice.length;
+        if (startFound && noticeEnd <= end) {
+            range.setEnd(node, noticeEnd - offset);
+            const wrapper = document.createElement('span');
+            wrapper.dataset.ciphergapMessageNotice = 'true';
+            wrapper.dataset.ciphergapUi = 'message-notice';
+            wrapper.hidden = true;
+            wrapper.appendChild(range.extractContents());
+            range.insertNode(wrapper);
+            return;
+        }
+        offset = end;
+    }
+}
+
 function extract_cgp_packet_text(messageElement) {
     const span = find_cgp_span(messageElement);
     if (!span) {
@@ -992,7 +1036,8 @@ function extract_cgp_packet_text(messageElement) {
         text = text.split("---")[0].trim();
     }
 
-    return BALE_SHARED_PROTOCOL.is_ciphergap_packet(text) ? text : "";
+    return BALE_SHARED_PROTOCOL.is_ciphergap_packet(text)
+        ? BALE_SHARED_PROTOCOL.strip_ciphergap_notice(text) : "";
 }
 
 function replace_message_visual(messageElement, encryptedText, decryptedText) {
@@ -1001,6 +1046,8 @@ function replace_message_visual(messageElement, encryptedText, decryptedText) {
         return;
     }
 
+    const notices = [...span.querySelectorAll('[data-ciphergap-message-notice]')];
+    notices.forEach(node => node.remove());
     span.textContent = "";
 
     const plaintext = document.createElement("span");
@@ -1022,6 +1069,7 @@ function replace_message_visual(messageElement, encryptedText, decryptedText) {
     encryptedDetails.appendChild(ciphertext);
     span.appendChild(plaintext);
     span.appendChild(encryptedDetails);
+    notices.forEach(node => span.appendChild(node));
 }
 
 function create_decrypt_button() {
@@ -1821,6 +1869,8 @@ function process_bale_message(
     }
 
     clear_stale_protocol_ui(messageElement);
+
+    hide_ciphergap_message_notice(messageElement);
 
     const text = extract_bale_message_text(messageElement);
     if (!text) {

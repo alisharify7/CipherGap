@@ -2,6 +2,24 @@
 // Messenger adapters locate raw text in their DOM, then delegate all format
 // detection, validation, parsing, and canonical serialization to this file.
 
+const CIPHERGAP_MESSAGE_NOTICE = "این پیام با افزونه CipherGap رمزنگاری شده است. برای رمزگشایی، افزونه را از لینک زیر دانلود و نصب کنید:\nhttps://github.com/alisharify7/CipherGap";
+// Messengers may split lines into separate text nodes or remove line breaks.
+const CIPHERGAP_NOTICE_PATTERN = new RegExp(CIPHERGAP_MESSAGE_NOTICE
+    .split(/\s+/).map(word => word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+    .join("[\\s\\u200B-\\u200D\\uFEFF]*"));
+
+function find_ciphergap_notice(text) {
+    const match = CIPHERGAP_NOTICE_PATTERN.exec(text ?? "");
+    return match ? { index: match.index, length: match[0].length } : null;
+}
+
+function strip_ciphergap_notice(text) {
+    const notice = find_ciphergap_notice(text);
+    return notice && is_ciphergap_packet(text) &&
+        !text.slice(notice.index + notice.length).trim()
+        ? text.slice(0, notice.index).trimEnd() : text;
+}
+
 function get_format_codecs(formatName) {
     return Object.values(
         globalThis.CipherGapShared.formats[formatName].codecs
@@ -50,7 +68,7 @@ function build_ciphergap_packet(
         format.algorithm,
         createdAt,
         encryptedPayload
-    ].join(format.separator);
+    ].join(format.separator) + "\n\n" + CIPHERGAP_MESSAGE_NOTICE;
 }
 
 function parse_ciphergap_packet(packet) {
@@ -59,7 +77,7 @@ function parse_ciphergap_packet(packet) {
     }
 
     for (const format of get_format_codecs("message")) {
-        const parts = packet.trim().split(format.separator);
+        const parts = strip_ciphergap_notice(packet).trim().split(format.separator);
 
         // Preserve legacy behavior: a recognized marker with the established
         // field layout is parsed even when its version/algorithm is unknown.
@@ -371,6 +389,9 @@ function validate_strict_exchange_match(text, format, parsed) {
 }
 
 globalThis.CipherGapShared.protocol = Object.freeze({
+    message_notice: CIPHERGAP_MESSAGE_NOTICE,
+    find_ciphergap_notice,
+    strip_ciphergap_notice,
     build_ciphergap_packet,
     parse_ciphergap_packet,
     is_ciphergap_packet,
