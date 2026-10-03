@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#6b4bd1">
+  <meta name="description" content="CipherGap؛ افزونهٔ متن‌باز برای رمزگذاری پیام و فایل در مرورگر. راهنمای نصب در کروم و فایرفاکس، تبادل کلید و استفاده در بله وب.">
+  <meta property="og:title" content="CipherGap — یک لایهٔ خصوصی برای گفتگوهای شما">
+  <meta property="og:description" content="پیام و فایل را پیش از ارسال رمزگذاری کنید. نصب، تبادل کلید و شروع یک گفتگوی رمز‌شده، قدم به قدم.">
+  <meta property="og:type" content="website">
+  <title>CipherGap — یک لایهٔ خصوصی برای گفتگوهای شما</title>
+  <link rel="icon" type="image/svg+xml" href="CipherGap/assets/ciphergap.svg">
+  <link rel="stylesheet" href="website/style.css">
+  <script src="website/app.js" defer></script>
+</head>
+<body>
+<a class="skip-link" href="#main">رفتن به محتوای اصلی</a>
+<header class="site-header">
+  <div class="container header-inner">
+    <a class="brand" href="#" aria-label="CipherGap، ابتدای صفحه"><img src="CipherGap/assets/ciphergap.svg" width="38" height="38" alt=""><span dir="ltr">CipherGap<span class="brand-subtitle">PRIVATE CONVERSATIONS</span></span></a>
+    <button class="menu-button" type="button" aria-expanded="false" aria-controls="main-nav">منو <span aria-hidden="true">☰</span></button>
+    <nav id="main-nav" aria-label="منوی اصلی"><a href="#features">قابلیت‌ها</a><a href="#installation">نصب افزونه</a><a href="#guide">آموزش استفاده</a><a href="#faq">پرسش‌ها</a></nav>
+    <a class="header-source" href="https://github.com/alisharify7/CipherGap">متن‌باز <span aria-hidden="true">↗</span></a>
+  </div>
+</header>
+<main id="main">
+  <section class="hero container" aria-labelledby="hero-title">
+    <div class="hero-copy">
+      <a class="release-pill" href="https://github.com/alisharify7/CipherGap/blob/main/docs/releases/v1.1.0.md"><span class="dot"></span>نسخهٔ <bdi>1.1.0</bdi> · ظاهری تازه، فایل‌های خصوصی‌تر <span aria-hidden="true">↗</span></a>
+      <p class="eyebrow">حریم خصوصی، در مرورگر خودتان</p>
+      <h1 id="hero-title">همان گفتگوها.<br><span>یک لایهٔ خصوصی.</span></h1>
+      <p class="hero-description">CipherGap پیام و فایل شما را <strong>پیش از ارسال</strong> در مرورگر رمزگذاری می‌کند. طرف مقابل با کلید مشترک آن را باز می‌کند؛ ساده، روشن و تحت کنترل شما.</p>
+      <div class="hero-actions"><a class="button primary" href="#installation">نصب و شروع <span aria-hidden="true">←</span></a><a class="button text-button" href="#guide">ببینید چطور کار می‌کند <span aria-hidden="true">↙</span></a></div>
+      <p class="hero-note"><span class="check">✓</span> متن‌باز <span>·</span> رمزگذاری محلی <span>·</span> بدون سرور CipherGap</p>
+    </div>
+    <div class="hero-visual" aria-label="نمایش آموزشی یک پیام رمز‌شده و تأیید کلید">
+      <span class="visual-label">یک گفتگو، فقط بین شما دو نفر</span>
+      <div class="chat-window">
+        <div class="window-title"><span class="window-dots" aria-hidden="true">● ● ●</span><span dir="ltr">Your private conversation</span><span class="tiny-lock" aria-hidden="true">⌑</span></div>
+        <div class="chat-person"><span class="avatar">آ</span><div><strong>یک دوست</strong><small><span class="dot"></span> کلید مشترک تأیید شده</small></div><span class="chat-mark" dir="ltr">CG</span></div>
+        <div class="chat-messages"><div class="bubble incoming">فایل جلسه رو برات بفرستم؟<small>۱۴:۲۱</small></div><div class="bubble outgoing">حتماً، با CipherGap بفرست 🙂<small>۱۴:۲۲ <span>✓✓</span></small></div><div class="encrypted-bubble"><span class="encrypted-label">آنچه پیام‌رسان دریافت می‌کند</span><code dir="ltr">CGP|1|AESGCM|…<br>r4qYw8mK+7Vx3n…</code><span class="encrypted-footer">متن اصلی، پشت یک کلید مشترک</span></div></div>
+        <div class="chat-composer"><span>پیام بعدی شما…</span><span class="mock-encrypt" dir="ltr">Encrypt ↗</span></div>
+      </div>
+      <div class="verification-stamp"><span class="stamp-check">✓</span><div><strong>کلید تأیید شد</strong><small>مقایسهٔ کد، روی هر دو دستگاه</small></div></div>
+      <div class="file-stamp"><span class="file-icon" aria-hidden="true">↗</span><div><strong dir="ltr">project.pdf.cgpe</strong><small>رمزگذاری پیش از ارسال</small></div></div>
+      <p class="visual-caption">نمایش آموزشی؛ پیام واقعی ارسال نمی‌شود.</p>
+    </div>
+  </section>
+  <section class="messengers container" aria-labelledby="messengers-title"><div><h2 id="messengers-title">برای گفتگوهای روزمرهٔ شما</h2><p>شروع با بله؛ مسیر توسعه برای پیام‌رسان‌های بیشتر.</p></div><ul><li class="available"><span class="messenger-symbol">ب</span><strong>بله</strong><small>فعال</small></li><li><span class="messenger-symbol">ا</span><strong>ایتا</strong><small>در برنامهٔ توسعه</small></li><li><span class="messenger-symbol">ر</span><strong>روبیکا</strong><small>در برنامهٔ توسعه</small></li><li><span class="messenger-symbol">ت</span><strong>تلگرام</strong><small>در برنامهٔ توسعه</small></li><li><span class="messenger-symbol">و</span><strong>واتساپ</strong><small>در برنامهٔ توسعه</small></li></ul></section>
+  <section id="features" class="section container" aria-labelledby="features-title">
+    <div class="section-heading"><div><p class="eyebrow">کمتر پیچیدگی، بیشتر کنترل</p><h2 id="features-title">برای پیام‌ها. برای فایل‌ها.<br>برای خیال راحت‌تر.</h2></div><p>افزونه کنار ابزارهای آشنای پیام‌رسان قرار می‌گیرد.<br>شما تصمیم می‌گیرید چه چیزی را رمزگذاری کنید.</p></div>
+    <div class="feature-grid">
+      <article class="feature-card"><span class="feature-icon" aria-hidden="true">Aa</span><h3>پیامی که با کلید باز می‌شود</h3><p>با دکمهٔ <bdi>Encrypt</bdi>، متن پیش از ارسال با <bdi>AES-256-GCM</bdi> رمزگذاری می‌شود. باز شدن خودکار پیام‌ها برای هر گفتگو قابل تنظیم است.</p><span class="feature-detail">متن اصلی در مرورگر پردازش می‌شود</span></article>
+      <article class="feature-card"><span class="feature-icon" aria-hidden="true">↗</span><h3>فایل بفرستید، با همان سادگی</h3><p>انتخاب فایل، پیش‌نمایش رمز‌شده و ارسال. گیرنده می‌تواند فایل را از همان پیام رمزگشایی کند یا دریافت خودکار را روشن کند.</p><span class="feature-detail">نام اصلی فایل پس از رمزگشایی حفظ می‌شود</span></article>
+      <article class="feature-card"><span class="feature-icon" aria-hidden="true">⌘</span><h3>یک کلید برای هر گفتگو</h3><p>تبادل کلید با <bdi>ECDH</bdi> انجام می‌شود. کد شش‌رقمی را از یک راه مطمئن مقایسه کنید و روی هر دو دستگاه تأیید کنید.</p><span class="feature-detail">هشدار هنگام تغییر اثر انگشت طرف مقابل</span></article>
+    </div>
+  </section>
+  <section id="installation" class="install-section" aria-labelledby="install-title"><div class="container install-layout">
+    <div class="install-intro"><p class="eyebrow">اولین قدم، همین‌جاست</p><h2 id="install-title">چند دقیقه تا<br><span>اولین پیام رمز‌شده.</span></h2><p>افزونه را روی مرورگر دسکتاپ هر دو نفر نصب کنید. نسخهٔ فعلی به‌صورت دستی نصب می‌شود.</p><a class="inline-link" href="https://github.com/alisharify7/CipherGap">مشاهدهٔ کد در GitHub <span aria-hidden="true">↗</span></a><div class="install-note"><span aria-hidden="true">i</span><p>نصب فایرفاکس از طریق ابزار توسعه موقت است. برای نصب دائمی در نسخهٔ استاندارد، بستهٔ امضاشدهٔ موزیلا لازم است.</p></div></div>
+    <div class="install-card">
+      <div class="tab-list" role="tablist" aria-label="انتخاب مرورگر"><button id="tab-chrome" role="tab" type="button" aria-selected="true" aria-controls="install-chrome" tabindex="0">Chrome / Chromium</button><button id="tab-firefox" role="tab" type="button" aria-selected="false" aria-controls="install-firefox" tabindex="-1">Firefox</button></div>
+      <div id="install-chrome" role="tabpanel" aria-labelledby="tab-chrome"><p class="panel-kicker">نصب دستی در کروم</p><ol class="install-steps"><li><span>۱</span><div><h3>دانلود و استخراج</h3><p>سورس افزونه را دانلود کنید و فایل ZIP را از حالت فشرده خارج کنید.</p><a class="download-link" href="https://github.com/alisharify7/CipherGap/archive/refs/heads/main.zip">دانلود نسخهٔ کروم <span aria-hidden="true">↓</span></a></div></li><li><span>۲</span><div><h3>صفحهٔ افزونه‌ها را باز کنید</h3><p>آدرس زیر را در نوار آدرس مرورگر وارد کنید و <bdi>Developer mode</bdi> را روشن کنید.</p><div class="copy-row"><code dir="ltr">chrome://extensions</code><button type="button" data-copy="chrome://extensions" aria-label="کپی آدرس صفحهٔ افزونه‌های کروم">کپی</button></div></div></li><li><span>۳</span><div><h3>پوشهٔ افزونه را انتخاب کنید</h3><p>روی <bdi>Load unpacked</bdi> کلیک کنید و پوشهٔ داخلی <bdi>CipherGap</bdi> را که فایل <bdi>manifest.json</bdi> دارد انتخاب کنید.</p></div></li><li><span>۴</span><div><h3>بله وب را تازه‌سازی کنید</h3><p>وارد حساب شوید، گفتگو را باز کنید و لوگوی CipherGap را از نوار مرورگر انتخاب کنید.</p></div></li></ol></div>
+      <div id="install-firefox" role="tabpanel" aria-labelledby="tab-firefox" hidden><p class="panel-kicker">نصب آزمایشی در فایرفاکس ۱۴۰ یا جدیدتر</p><ol class="install-steps"><li><span>۱</span><div><h3>نسخهٔ فایرفاکس را دانلود کنید</h3><p>سورس شاخهٔ <bdi>firefox</bdi> را دانلود و استخراج کنید.</p><a class="download-link" href="https://github.com/alisharify7/CipherGap/archive/refs/heads/firefox.zip">دانلود نسخهٔ فایرفاکس <span aria-hidden="true">↓</span></a></div></li><li><span>۲</span><div><h3>ابزار توسعهٔ افزونه‌ها را باز کنید</h3><p>آدرس زیر را در نوار مرورگر وارد کنید.</p><div class="copy-row"><code dir="ltr">about:debugging#/runtime/this-firefox</code><button type="button" data-copy="about:debugging#/runtime/this-firefox" aria-label="کپی آدرس ابزار توسعهٔ فایرفاکس">کپی</button></div></div></li><li><span>۳</span><div><h3>افزونه را بارگذاری کنید</h3><p>روی <bdi>Load Temporary Add-on</bdi> بزنید و فایل <bdi>CipherGap/manifest.json</bdi> را انتخاب کنید. دسترسی به بله وب را در صورت درخواست مرورگر تأیید کنید.</p></div></li><li><span>۴</span><div><h3>گفتگو را باز کنید</h3><p>بله وب را تازه‌سازی کنید. نصب موقت با بستن و باز کردن فایرفاکس حذف می‌شود و باید دوباره بارگذاری شود.</p></div></li></ol></div>
+    </div>
+  </div></section>
+  <section id="guide" class="section container guide-section" aria-labelledby="guide-title">
+    <div class="section-heading"><div><p class="eyebrow">از نصب تا اولین گفتگو</p><h2 id="guide-title">با هم شروع کنید.</h2></div><p>سه قدم روشن برای شما و طرف مقابل.<br>نام دکمه‌ها مطابق رابط انگلیسی افزونه است.</p></div>
+    <div class="guide-layout"><div class="guide-copy"><ol class="guide-steps"><li><span>01</span><div><h3>یک درخواست، یک کلید مشترک</h3><p>هر دو نفر همان گفتگو را باز کنید. در بخش <bdi>Security</bdi> روی <bdi>Set up secure chat</bdi> بزنید. طرف مقابل با <bdi>Accept request</bdi> درخواست را می‌پذیرد.</p></div></li><li><span>02</span><div><h3>شش رقم را مقایسه کنید</h3><p>کد نمایش‌داده‌شده را در تماس مطمئن یا حضوری مقایسه کنید. اگر یکسان بود، هر دو نفر <bdi>Codes match — verify</bdi> را انتخاب کنید. اگر نبود، <bdi>Codes don’t match</bdi> را بزنید.</p><p class="security-tip">فرستادن کد فقط در همان چت، هویت طرف مقابل را تأیید نمی‌کند.</p></div></li><li><span>03</span><div><h3>بنویسید. رمزگذاری کنید. بفرستید.</h3><p>متن را در کادر بله بنویسید و از <bdi>Encrypt</bdi> استفاده کنید. طرف مقابل با کلید مشترک پیام را باز می‌کند؛ باز شدن خودکار از <bdi>Settings</bdi> قابل تنظیم است.</p><p class="security-tip">دکمهٔ معمولی ارسال بله، متن را بدون رمزگذاری CipherGap می‌فرستد.</p></div></li></ol></div><figure class="product-shot"><div class="shot-heading"><span class="dot"></span><span dir="ltr">CipherGap · Security</span><span class="shot-version" dir="ltr">v1.1.0</span></div><img src="docs/images/security.png" width="440" height="590" alt="نمای بخش امنیت CipherGap پس از تأیید کلید مشترک" loading="lazy"><figcaption>وضعیت <bdi>Protected</bdi> یعنی کلید و اثر انگشت تأیید شده‌اند.</figcaption></figure></div>
+    <div class="files-guide"><figure class="product-shot file-shot"><img src="docs/images/files.png" width="440" height="590" alt="صفحهٔ Files با انتخاب فایل امن و تنظیم دریافت خودکار" loading="lazy"></figure><div class="files-copy"><span class="feature-icon" aria-hidden="true">↗</span><p class="eyebrow">فراتر از چند کلمه</p><h2>فایل‌ها هم<br>بخشی از گفتگو هستند.</h2><ol><li><strong>انتخاب:</strong> از <bdi>Files → Choose secure files</bdi> یا دکمهٔ <bdi>Secure files</bdi> داخل گفتگو، فایل را انتخاب کنید.</li><li><strong>ارسال:</strong> پیش‌نمایش بله فایل با پسوند <bdi>.cgpe</bdi> را نشان می‌دهد. ارسال را تأیید کنید.</li><li><strong>دریافت:</strong> طرف مقابل <bdi>Decrypt &amp; download</bdi> را می‌زند؛ فایل با نام اصلی ذخیره می‌شود.</li></ol><div class="auto-receipt"><span class="mock-switch" aria-hidden="true"></span><p><strong>دریافت خودکار، به انتخاب شما</strong><br>گزینهٔ <bdi>Receive files automatically</bdi> را برای هر گفتگو جدا روشن کنید. فایل‌های جدید هنگام باز بودن آن گفتگو دریافت و رمزگشایی می‌شوند.</p></div><p class="file-limit">تا ۱۰۰ مگابایت در هر انتخاب و هر فایل دریافتی. برای دانلود مستقیم ناموفق، فایل <bdi>.cgpe</bdi> را از بله دانلود کنید و <bdi>Choose downloaded file instead</bdi> را انتخاب کنید.</p></div></div>
+  </section>
+  <section class="privacy-section" aria-labelledby="privacy-title"><div class="container privacy-layout"><div><p class="eyebrow">شفافیت، بخشی از اعتماد است</p><h2 id="privacy-title">کلید شما.<br>مرورگر شما.<br><span>انتخاب شما.</span></h2></div><div class="privacy-copy"><p>CipherGap سرور پردازش جداگانه‌ای ندارد. رمزگذاری و رمزگشایی در مرورگر انجام می‌شود؛ پیام‌رسان همچنان فایل و متن رمز‌شده را جابه‌جا می‌کند.</p><div class="privacy-facts"><div><strong dir="ltr">AES-256-GCM</strong><span>رمزگذاری پیام و فایل</span></div><div><strong dir="ltr">ECDH P-256</strong><span>ساخت کلید مشترک</span></div><div><strong>متن‌باز</strong><span>قابل بررسی در GitHub</span></div></div><p class="privacy-boundary">این لایه، فرادادهٔ گفتگو را پنهان نمی‌کند و جای امنیت دستگاه یا بررسی هویت طرف مقابل را نمی‌گیرد. کلید را فقط در یک مرورگر و دستگاه قابل اعتماد نگه دارید.</p><a class="inline-link" href="https://github.com/alisharify7/CipherGap/tree/main/CipherGap/share">کد رمزگذاری را ببینید <span aria-hidden="true">↗</span></a></div></div></section>
+  <section id="faq" class="section container faq-layout" aria-labelledby="faq-title"><div><p class="eyebrow">پیش از شروع</p><h2 id="faq-title">چند پاسخ<br>به سؤال‌های شما.</h2><p class="faq-intro">اگر چیزی درست کار نکرد، اینجا شروع خوبی است.</p></div><div class="faq-list">
+    <details><summary>الان روی کدام پیام‌رسان‌ها کار می‌کند؟</summary><p>نسخهٔ فعلی فقط از بله وب پشتیبانی می‌کند. ایتا، روبیکا، تلگرام و واتساپ در برنامهٔ توسعه هستند و هنوز فعال نیستند.</p></details>
+    <details><summary>طرف مقابل هم باید افزونه را نصب کند؟</summary><p>بله. هر دو نفر به افزونه و کلید مشترک همان گفتگو نیاز دارند. با تبادل کلید و مقایسهٔ کد شش‌رقمی شروع کنید.</p></details>
+    <details><summary>آیا همهٔ پیام‌ها خودکار رمزگذاری می‌شوند؟</summary><p>خیر. برای متن از دکمهٔ Encrypt استفاده کنید. ارسال عادی بله، عادی باقی می‌ماند. فایل‌ها هنگام وجود کلید گفتگو پیش از ارسال رمزگذاری می‌شوند.</p></details>
+    <details><summary>اگر اثر انگشت تغییر کرد یا کدها یکسان نبودند چه کنم؟</summary><p>تغییر اثر انگشت می‌تواند بعد از تبادل مجدد کلید یا تغییر دستگاه رخ دهد. قبل از ادامه، هویت طرف مقابل را از یک راه مطمئن بررسی کنید. در صورت تفاوت کد، گزینهٔ Codes don’t match را انتخاب کنید و دوباره تبادل کلید انجام دهید.</p></details>
+    <details><summary>چرا یک پیام قدیمی باز نمی‌شود؟</summary><p>برای باز کردن آن، کلید زمان ارسال لازم است. تعویض یا حذف کلید ممکن است باعث شود پیام‌ها و فایل‌های قبلی با کلید فعلی باز نشوند. قبل از حذف کلید، این موضوع را در نظر بگیرید.</p></details>
+    <details><summary>چرا دریافت خودکار فایل کار نمی‌کند؟</summary><p>کلید گفتگو و گزینهٔ Receive files automatically را بررسی کنید. این قابلیت فقط برای فایل‌های جدیدِ دریافتی هنگام باز بودن گفتگو است. فایل‌های قدیمی را با Decrypt &amp; download باز کنید؛ برای دریافت مستقیم ناموفق، از انتخاب فایل دانلودشده استفاده کنید.</p></details>
+    <details><summary>افزونه یا دکمه‌های آن را نمی‌بینم؛ چه کنم؟</summary><p>بله وب را تازه‌سازی کنید، گفتگو را باز کنید، فعال بودن افزونه و مجوز دسترسی به بله وب را بررسی کنید و فقط یک نسخهٔ CipherGap را فعال نگه دارید. نصب موقت فایرفاکس پس از راه‌اندازی دوبارهٔ مرورگر نیاز به بارگذاری مجدد دارد.</p></details>
+  </div></section>
+  <section class="start-section container"><img src="CipherGap/assets/ciphergap.svg" width="64" height="64" alt=""><div><p class="eyebrow">گفتگوی بعدی، با یک انتخاب تازه</p><h2>از همان مرورگر شروع کنید.</h2><p>نسخهٔ ۱.۱.۰ · برای بله وب · کروم و فایرفاکس</p></div><a class="button primary" href="#installation">راهنمای نصب <span aria-hidden="true">←</span></a></section>
+</main>
+<footer class="container site-footer"><a class="brand" href="#"><img src="CipherGap/assets/ciphergap.svg" width="30" height="30" alt=""><span dir="ltr">CipherGap</span></a><p>ساخته‌شده برای گفتگوهای خصوصی‌تر. توسعه توسط <a href="https://ali-sharify.ir">علی شریفی</a>.</p><div><a href="https://github.com/alisharify7/CipherGap">GitHub</a><a href="https://github.com/alisharify7/CipherGap/blob/main/CHANGELOG.md">تغییرات نسخه‌ها</a><a href="https://github.com/alisharify7/CipherGap/issues">گزارش مشکل</a></div></footer>
+<p class="copy-status" id="copy-status" role="status" aria-live="polite" hidden></p>
+</body>
+</html>

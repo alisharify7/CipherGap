@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased — website branch
+
+### Added
+
+- A responsive Persian RTL website with product introduction, installation
+  guides for Chrome and Firefox, SAS/key-exchange and attachment tutorials,
+  explicit active/planned messenger status, and troubleshooting FAQs.
+- Keyboard-accessible browser tabs, mobile navigation and clipboard feedback.
+- Static hosting instructions, browser verification and desktop/mobile previews.
+
 ## [1.1.0](docs/releases/v1.1.0.md) — 2026-10-03
 
 ### Added

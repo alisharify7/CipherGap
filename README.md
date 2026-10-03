@@ -1,5 +1,9 @@
 # CipherGap 🔒
 
+The Persian product website lives on this branch. Open `index.html` through a
+static server; see [website setup and checks](website/README.md). Desktop and
+mobile previews: [desktop](website/preview-1440.png), [mobile](website/preview-390.png).
+
 <img src="CipherGap/assets/ciphergap.svg" width="80" height="80" alt="CipherGap logo"/>
 
 **CipherGap** is an open-source Chrome and Firefox extension for private messaging. **Bale Web** is currently supported; Eitaa, Rubika, Telegram and WhatsApp integrations are planned but are not active yet.
