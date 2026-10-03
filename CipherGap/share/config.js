@@ -134,7 +134,10 @@
             return `peer_fp_${chatStorageKey}`;
         },
         handled_nonces: "cg_handled_nonces",
-        ui_theme: "ciphergap_ui_theme"
+        ui_theme: "ciphergap_ui_theme",
+        ui_language: "ciphergap_ui_language",
+        enabled: "ciphergap_enabled",
+        chat_enabled(chatStorageKey) { return `${chatStorageKey}__enabled`; }
     });
 
     shared.formats = formats;

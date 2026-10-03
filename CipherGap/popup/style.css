@@ -158,3 +158,14 @@ a { color: var(--primary); }
 #page-files .page-heading h2 { font-size: 22px; margin: 3px 0 5px; }
 #page-files .page-heading p { font-size: 11px; line-height: 1.5; }
 #page-files { gap: 10px; }
+
+@font-face { font-family: Vazirmatn; src: url('../assets/fonts/vazirmatn-arabic-wght-normal.woff2') format('woff2'); font-weight: 100 900; font-display: swap; }
+@font-face { font-family: Inter; src: url('../assets/fonts/inter-latin-wght-normal.woff2') format('woff2'); font-weight: 100 900; font-display: swap; }
+body, button, input, select { font-family: Inter, Vazirmatn, sans-serif; }
+html[lang="fa"] body, html[lang="fa"] button, html[lang="fa"] input, html[lang="fa"] select { font-family: Vazirmatn, Inter, sans-serif; }
+#languageSelect { border: 1px solid var(--border, #ddd); border-radius: 9px; background: transparent; color: inherit; padding: 6px; font-size: 11px; max-width: 80px; }
+html[dir="rtl"] .brand-subtitle, html[dir="rtl"] .eyebrow { letter-spacing: normal; }
+html[dir="rtl"] .toggle-switch, html[dir="rtl"] code { direction: ltr; }
+html[dir="rtl"] .app { text-align: right; }
+
+.pause-notice { flex-shrink: 0; margin: 0; padding: 8px 12px; border-radius: 9px; color: var(--warning); background: var(--warning-soft); font-size: 11px; }

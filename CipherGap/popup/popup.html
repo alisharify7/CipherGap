@@ -8,6 +8,8 @@
 <link href="style.css" rel="stylesheet"/>
 <script src="../share/namespace.js"></script>
 <script src="../share/config.js"></script>
+<script src="../share/translations.js"></script>
+<script src="../share/i18n.js"></script>
 <script src="../share/protocol.js"></script>
 <script src="./popup.js" type="module"></script>
 </head>
@@ -23,6 +25,7 @@
 <p class="brand-subtitle">PRIVATE CONVERSATIONS</p>
 </div>
 </div>
+<select id="languageSelect" aria-label="Language"><option value="fa">فارسی</option><option value="en">English</option></select>
 <button aria-label="Switch to dark theme" class="theme-toggle" id="themeToggle" title="Switch to dark theme" type="button">
 <svg aria-hidden="true" class="theme-icon theme-icon-moon" viewbox="0 0 24 24">
 <path d="M20.2 15.4A8.5 8.5 0 0 1 8.6 3.8 8.5 8.5 0 1 0 20.2 15.4Z"></path>
@@ -55,6 +58,7 @@
 <button aria-controls="page-settings" aria-selected="false" data-page="settings" id="nav-settings" role="tab" tabindex="-1" type="button"><span aria-hidden="true">⚙</span>Settings</button>
 <button aria-controls="page-help" aria-selected="false" data-page="help" id="nav-help" role="tab" tabindex="-1" type="button"><span aria-hidden="true">?</span>Guide</button>
 </nav>
+<p id="pauseNotice" role="status" hidden class="pause-notice">CipherGap is paused. Enable it in Settings to continue.</p>
 <section aria-labelledby="nav-security" class="page" id="page-security" role="tabpanel"><section aria-labelledby="securityHeading" class="glass-card security-card" data-view="loading" id="securityCard">
 <div class="security-card-header">
 <h2 id="securityHeading" tabindex="-1">
@@ -156,7 +160,8 @@
 </div><div class="quick-guide"><span class="eyebrow">YOUR NEXT MESSAGE</span><h2>Write. Encrypt. Send.</h2><p>Use <strong>Encrypt</strong> beside Bale’s send button. Only that button encrypts your text.</p><button class="text-link" data-go-page="files" type="button">Send a secure attachment <span aria-hidden="true">↗</span></button></div></section><section aria-labelledby="nav-files" class="page" hidden="" id="page-files" role="tabpanel"><div class="page-heading"><span class="eyebrow">BEYOND WORDS</span><h2>Share files privately.</h2><p>Documents, photos and voice files. Encrypted in your browser before Bale receives them.</p></div>
 <section class="file-hero"><div aria-hidden="true" class="file-symbol">↗</div><h3>Choose. Encrypt. Share.</h3><p>Choose files and confirm in Bale’s encrypted preview.</p><button class="primary-btn" disabled="" id="chooseFilesBtn" type="button">Choose secure files</button><span class="supporting-text" id="fileKeyHint">Set up a chat key first.</span></section>
 <section class="glass-card"><label class="auto-decrypt-row" for="autoFilesToggle"><span class="auto-decrypt-info"><span class="auto-decrypt-title" id="autoFilesTitle">Receive files automatically</span><span class="auto-decrypt-sub" id="autoFilesDescription">Download and decrypt newly received attachments in this chat. Up to 100 MB per file.</span></span><span class="toggle-switch"><input aria-describedby="autoFilesDescription" aria-labelledby="autoFilesTitle" class="toggle-input" disabled="" id="autoFilesToggle" type="checkbox"/><span aria-hidden="true" class="toggle-slider"></span></span></label></section>
-<p class="footnote">Your partner needs the same chat key. Downloads keep the original filename. If Bale cannot provide a file directly, choose a downloaded .cgpe file instead.</p></section><section aria-labelledby="nav-settings" class="page" hidden="" id="page-settings" role="tabpanel"><div class="page-heading"><span class="eyebrow">MAKE IT YOURS</span><h2>Chat settings</h2><p>These controls apply to the current conversation.</p></div><section class="glass-card auto-decrypt-card" hidden="" id="autoDecryptCard">
+<p class="footnote">Your partner needs the same chat key. Downloads keep the original filename. If Bale cannot provide a file directly, choose a downloaded .cgpe file instead.</p></section><section aria-labelledby="nav-settings" class="page" hidden="" id="page-settings" role="tabpanel"><div class="page-heading"><span class="eyebrow">MAKE IT YOURS</span><h2>Chat settings</h2><p>These controls apply to the current conversation.</p></div><section class="glass-card"><label class="auto-decrypt-row" for="enabledToggle"><span class="auto-decrypt-info"><span class="auto-decrypt-title">CipherGap enabled</span><span class="auto-decrypt-sub">Pause encryption and decryption everywhere without deleting keys.</span></span><span class="toggle-switch"><input id="enabledToggle" class="toggle-input" type="checkbox" checked><span class="toggle-slider" aria-hidden="true"></span></span></label></section>
+<section class="glass-card"><label class="auto-decrypt-row" for="chatEnabledToggle"><span class="auto-decrypt-info"><span class="auto-decrypt-title">Enabled in this chat</span><span class="auto-decrypt-sub">Pause only this conversation. Your saved key is kept.</span></span><span class="toggle-switch"><input id="chatEnabledToggle" class="toggle-input" type="checkbox" checked disabled><span class="toggle-slider" aria-hidden="true"></span></span></label></section><section class="glass-card auto-decrypt-card" hidden="" id="autoDecryptCard">
 <label class="auto-decrypt-row" for="autoDecryptToggle">
 <span class="auto-decrypt-info">
 <span class="auto-decrypt-title" id="autoDecryptTitle">Automatic message decryption</span>

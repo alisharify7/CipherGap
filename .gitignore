@@ -3,3 +3,6 @@
 .agent
 CLAUDE.md
 nul
+
+/dist/
+__pycache__/

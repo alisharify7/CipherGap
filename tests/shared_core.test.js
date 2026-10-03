@@ -365,6 +365,8 @@ test("manifest loads shared utilities before runtime and adapter code", () => {
     const expectedSharedOrder = [
         "share/namespace.js",
         "share/config.js",
+        "share/translations.js",
+        "share/i18n.js",
         "share/encoding.js",
         "share/crypto.js",
         "share/file_crypto.js",
@@ -387,27 +389,17 @@ test("manifest loads shared utilities before runtime and adapter code", () => {
     });
 });
 
-test("manifest supplies the supported Chrome and Firefox background contexts", () => {
-    const manifest = JSON.parse(
-        fs.readFileSync(path.join(extensionRoot, "manifest.json"), "utf8")
-    );
-
+test("manifest uses the correct browser background context", () => {
+    const manifest = JSON.parse(fs.readFileSync(path.join(extensionRoot, "manifest.json"), "utf8"));
     assert.equal(manifest.manifest_version, 3);
-    assert.equal(manifest.background.service_worker, "background.js");
-    assert.deepEqual(manifest.background.scripts, ["background.js"]);
-    assert.equal(
-        fs.existsSync(path.join(extensionRoot, manifest.background.service_worker)),
-        true
-    );
-    assert.equal(
-        fs.existsSync(path.join(extensionRoot, manifest.background.scripts[0])),
-        true
-    );
-
-    const gecko = manifest.browser_specific_settings?.gecko;
-    assert.match(gecko?.id || "", /^\{[0-9a-f-]{36}\}$/i);
-    assert.equal(gecko?.strict_min_version, "128.0");
-    assert.deepEqual(gecko?.data_collection_permissions, { required: ["none"] });
+    if (manifest.background.scripts) {
+        assert.deepEqual(manifest.background.scripts, ["background.js"]);
+        assert.equal(manifest.background.service_worker, undefined);
+        assert.equal(manifest.browser_specific_settings.gecko.strict_min_version, "140.0");
+    } else {
+        assert.equal(manifest.background.service_worker, "background.js");
+        assert.equal(manifest.browser_specific_settings, undefined);
+    }
 });
 
 test("popup loads shared configuration and protocol before its module", () => {
@@ -424,4 +416,22 @@ test("popup loads shared configuration and protocol before its module", () => {
     assert.ok(namespaceIndex < configIndex);
     assert.ok(configIndex < protocolIndex);
     assert.ok(protocolIndex < popupIndex);
+});
+
+test("Base64 encoding does not access an Xray-protected TypedArray constructor", () => {
+    const bytes = Uint8Array.from({ length: 40000 }, (_, index) => index % 256);
+    const expected = Buffer.from(bytes).toString("base64");
+    Object.defineProperty(bytes, "constructor", {
+        get() { throw new Error("Permission denied to access property constructor"); }
+    });
+    assert.equal(globalThis.CipherGapShared.encoding.bytes_to_base64(bytes), expected);
+});
+
+
+test("ArrayBuffer validation accepts other realms and rejects forged tags", () => {
+    const other = vm.runInNewContext("new ArrayBuffer(16)");
+    assert.equal(globalThis.CipherGapShared.encoding.is_array_buffer(other), true);
+    assert.equal(globalThis.CipherGapShared.encoding.is_array_buffer({
+        byteLength: 16, [Symbol.toStringTag]: "ArrayBuffer"
+    }), false);
 });

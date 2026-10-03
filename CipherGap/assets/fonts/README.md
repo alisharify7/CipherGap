@@ -1,0 +1,1 @@
+Bundled Vazirmatn Arabic/Persian and Inter Latin variable WOFF2, weights 100–900, Fontsource 5.3.0. SIL OFL licenses are included alongside each font. https://fontsource.org/fonts/vazirmatn and https://fontsource.org/fonts/inter

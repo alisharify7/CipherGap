@@ -1,3 +1,10 @@
+async function require_ciphergap_enabled(storageKey) {
+    const keys = globalThis.CipherGapShared.storage_keys;
+    const flag = keys.chat_enabled(storageKey);
+    const state = await chrome.storage.local.get([keys.enabled, flag]);
+    if (state[keys.enabled] === false || state[flag] === false) throw new Error("CipherGap is paused. Enable it in Settings to continue.");
+}
+
 // key_exchange.js — Diffie-Hellman key exchange protocol (messenger-agnostic)
 // Enhanced with SAS verification, TOFU fingerprints, and stale exchange cleanup.
 
@@ -215,6 +222,7 @@ async function finalize_exchange(
         };
     }
 
+    await require_ciphergap_enabled(storageKey);
     await chrome.storage.local.set(storageUpdates);
 
     // Send the SAS code as a chat message so both users can see and verify it
@@ -417,6 +425,7 @@ async function handle_incoming_ack(parsed, storageKey, exchangeCodecId) {
 }
 
 async function handle_incoming_exchange_message(text) {
+    await require_ciphergap_enabled(get_storage_key());
     const match = EXCHANGE_SHARED_PROTOCOL.parse_strict_exchange_message(text);
     if (!match) {
         return;
@@ -618,6 +627,7 @@ async function mark_current_exchange_verified(expectedNonce) {
         };
     }
 
+    await require_ciphergap_enabled(storageKey);
     await chrome.storage.local.set(updates);
     return { storageKey, nonce: expectedNonce, trust: verifiedTrust };
 }
@@ -677,7 +687,7 @@ async function send_verification_confirmation() {
 // =========================
 
 function init_key_exchange_listener() {
-    chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+    const dispatch = (message, _sender, sendResponse) => {
         if (message.expectedStorageKey && message.expectedStorageKey !== get_storage_key()) {
             sendResponse({ ok: false, error: "The active chat changed. Reopen CipherGap in the matching conversation." });
             return false;
@@ -849,5 +859,20 @@ function init_key_exchange_listener() {
                 .catch((err) => sendResponse({ ok: false, error: err.message }));
             return true;
         }
+    };
+    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+        const activeActions = ["choose_secure_files", "start_key_exchange", "respond_key_exchange", "mark_key_verified", "send_confirmation", "auto_decrypt_sweep"];
+        if (!activeActions.includes(message.action)) return dispatch(message, sender, sendResponse);
+        (async () => {
+            const keys = globalThis.CipherGapShared.storage_keys;
+            const chatKey = keys.chat_enabled(get_storage_key());
+            const state = await chrome.storage.local.get([keys.enabled, chatKey]);
+            if (state[keys.enabled] === false || state[chatKey] === false) {
+                sendResponse({ ok: false, error: "CipherGap is paused. Enable it in Settings to continue." });
+                return;
+            }
+            dispatch(message, sender, sendResponse);
+        })().catch(error => sendResponse({ ok: false, error: error.message }));
+        return true;
     });
 }

@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.2.0] - 2026-10-03
+
+### Added
+
+- Persian/English language selection with saved preference, RTL/LTR and local Vazirmatn/Inter fonts.
+- Global and per-chat pause controls that preserve saved keys.
+- A bilingual website on `website` with installation, verification and file tutorials.
+- One shared Chrome/Firefox source with reproducible target-specific packages.
+- Regression checks for plaintext/encrypted file choice, pause during selection, package identity and real isolated browser workflows.
+
+### Changed
+
+- Ordinary Bale attachments stay ordinary. Encrypted file selection is explicit and fails closed if the chat, key or enabled state changes.
+- Composer controls use a compact, subdued teal style and include per-chat pause.
+- Firefox desktop minimum is 140; TypedArray species and cross-realm ArrayBuffer handling work with Firefox content-script Xrays.
+- CGP/CGPE v1 and existing saved keys remain compatible.
+
+
 ## [1.1.0](docs/releases/v1.1.0.md) — 2026-10-03
 
 ### Added
