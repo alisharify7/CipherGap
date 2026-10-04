@@ -2,11 +2,12 @@
 // Messenger adapters locate raw text in their DOM, then delegate all format
 // detection, validation, parsing, and canonical serialization to this file.
 
-const CIPHERGAP_MESSAGE_NOTICE = "این پیام با افزونه CipherGap رمزنگاری شده است. برای رمزگشایی، افزونه را از لینک زیر دانلود و نصب کنید:\nhttps://github.com/alisharify7/CipherGap";
+const CIPHERGAP_LEGACY_NOTICE = "این پیام با افزونه CipherGap رمزنگاری شده است. برای رمزگشایی، افزونه را از لینک زیر دانلود و نصب کنید:\nhttps://github.com/alisharify7/CipherGap";
+const CIPHERGAP_MESSAGE_NOTICE = CIPHERGAP_LEGACY_NOTICE + "\nhttps://alisharify7.github.io/CipherGap/";
 // Messengers may split lines into separate text nodes or remove line breaks.
-const CIPHERGAP_NOTICE_PATTERN = new RegExp(CIPHERGAP_MESSAGE_NOTICE
-    .split(/\s+/).map(word => word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
-    .join("[\\s\\u200B-\\u200D\\uFEFF]*"));
+const CIPHERGAP_NOTICE_PATTERN = new RegExp([CIPHERGAP_MESSAGE_NOTICE, CIPHERGAP_LEGACY_NOTICE]
+    .map(notice => notice.split(/\s+/).map(word => word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+        .join("[\\s\\u200B-\\u200D\\uFEFF]*")).join("|"));
 
 function find_ciphergap_notice(text) {
     const match = CIPHERGAP_NOTICE_PATTERN.exec(text ?? "");
@@ -156,40 +157,58 @@ function get_exchange_body(normalized, prefix) {
     return normalized.slice(prefix.length).trimStart();
 }
 
+function get_exchange_expires_at(entry, sentAt = null) {
+    const duration = globalThis.CipherGapShared.timeouts.pending_exchange_ms;
+    const timestamp = Number(sentAt ?? entry?.at);
+    const sentDeadline = Number.isFinite(timestamp) && timestamp > 0 ? timestamp + duration : Infinity;
+    const explicit = entry?.expiresAt;
+    return Number.isSafeInteger(explicit) && explicit > 0
+        ? explicit : Number.isFinite(sentDeadline) ? sentDeadline : 0;
+}
+
+function exchange_expiry_suffix(expiresAt, separator) {
+    if (expiresAt === null) return "";
+    if (!Number.isSafeInteger(expiresAt) || expiresAt <= 0) throw new Error("Invalid key exchange expiry.");
+    return separator + expiresAt;
+}
+
 function build_start_exchange_message(
     nonce,
     publicKeyB64,
-    codecOrId = null
+    codecOrId = null,
+    expiresAt = null
 ) {
     const format = get_exchange_codec(codecOrId);
     if (!format) {
         throw new Error("Unsupported key-exchange codec.");
     }
-    return `${format.start_prefix} ${nonce}${format.separator}${publicKeyB64}`;
+    return `${format.start_prefix} ${nonce}${format.separator}${publicKeyB64}` + exchange_expiry_suffix(expiresAt, format.separator);
 }
 
 function build_ack_exchange_message(
     nonce,
     publicKeyB64,
-    codecOrId = null
+    codecOrId = null,
+    expiresAt = null
 ) {
     const format = get_exchange_codec(codecOrId);
     if (!format) {
         throw new Error("Unsupported key-exchange codec.");
     }
-    return `${format.ack_prefix} ${nonce}${format.separator}${publicKeyB64}`;
+    return `${format.ack_prefix} ${nonce}${format.separator}${publicKeyB64}` + exchange_expiry_suffix(expiresAt, format.separator);
 }
 
 function build_sas_message(
     sas,
     fingerprint,
-    codecOrId = null
+    codecOrId = null,
+    expiresAt = null
 ) {
     const format = get_exchange_codec(codecOrId);
     if (!format) {
         throw new Error("Unsupported key-exchange codec.");
     }
-    return [format.sas_prefix, sas, fingerprint].join(format.separator);
+    return [format.sas_prefix, sas, fingerprint].join(format.separator) + exchange_expiry_suffix(expiresAt, format.separator);
 }
 
 function parse_exchange_candidate(normalized, format) {
@@ -207,12 +226,15 @@ function parse_exchange_candidate(normalized, format) {
             continue;
         }
 
+        const fields = body.split(format.separator);
+        if (![2, 3].includes(fields.length) || (fields.length === 3 && !/^\d{13}$/.test(fields[2]))) return null;
         return {
             format,
             parsed: {
                 type,
                 nonce: body.slice(0, separatorIndex).replace(/\s+/g, ""),
-                publicKeyB64: body.slice(separatorIndex + 1).replace(/\s+/g, "")
+                publicKeyB64: fields[1].replace(/\s+/g, ""),
+                ...(fields.length === 3 ? { expiresAt: Number(fields[2]) } : {})
             }
         };
     }
@@ -224,7 +246,8 @@ function parse_exchange_candidate(normalized, format) {
             parsed: {
                 type: "sas",
                 sas: parts[1] ?? "",
-                fingerprint: parts[2]?.toUpperCase() ?? ""
+                fingerprint: parts[2]?.toUpperCase() ?? "",
+                ...(parts.length === 4 && /^\d{13}$/.test(parts[3]) ? { expiresAt: Number(parts[3]) } : {})
             }
         };
     }
@@ -355,8 +378,8 @@ function validate_strict_exchange_match(text, format, parsed) {
         }
 
         const protocolText = parsed.type === "start"
-            ? build_start_exchange_message(parsed.nonce, parsed.publicKeyB64, format)
-            : build_ack_exchange_message(parsed.nonce, parsed.publicKeyB64, format);
+            ? build_start_exchange_message(parsed.nonce, parsed.publicKeyB64, format, parsed.expiresAt ?? null)
+            : build_ack_exchange_message(parsed.nonce, parsed.publicKeyB64, format, parsed.expiresAt ?? null);
 
         return {
             codecId: format.id,
@@ -366,7 +389,7 @@ function validate_strict_exchange_match(text, format, parsed) {
         };
     }
 
-    const expectedFieldCount = 3;
+    const expectedFieldCount = parsed.expiresAt ? 4 : 3;
     const actualFieldCount = normalize_exchange_text(text)
         .split(format.separator)
         .length;
@@ -382,14 +405,15 @@ function validate_strict_exchange_match(text, format, parsed) {
     const fingerprint = parsed.fingerprint.toUpperCase();
     return {
         codecId: format.id,
-        parsed: { type: "sas", sas: parsed.sas, fingerprint },
-        protocolText: build_sas_message(parsed.sas, fingerprint, format),
+        parsed: { ...parsed, type: "sas", sas: parsed.sas, fingerprint },
+        protocolText: build_sas_message(parsed.sas, fingerprint, format, parsed.expiresAt ?? null),
         signature: `sas:${parsed.sas}:${fingerprint}`
     };
 }
 
 globalThis.CipherGapShared.protocol = Object.freeze({
     message_notice: CIPHERGAP_MESSAGE_NOTICE,
+    get_exchange_expires_at,
     find_ciphergap_notice,
     strip_ciphergap_notice,
     build_ciphergap_packet,

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "CipherGap",
-  "version": "1.2.1",
+  "version": "1.3.0",
   "description": "Client-side encrypted messages and files for Bale Web.",
   "icons": {
     "16": "assets/icon16.png",
@@ -34,6 +34,11 @@
       "matches": [
         "https://web.bale.ai/*"
       ],
+      "css": [
+        "share/theme.css",
+        "share/file_viewer.css",
+        "share/exchange_ui.css"
+      ],
       "js": [
         "share/namespace.js",
         "share/config.js",
@@ -42,8 +47,10 @@
         "share/encoding.js",
         "share/crypto.js",
         "share/file_crypto.js",
+        "share/file_viewer.js",
         "share/dh_crypto.js",
         "share/protocol.js",
+        "share/exchange_ui.js",
         "share/messenger_adapter.js",
         "content/utils.js",
         "content/storage.js",

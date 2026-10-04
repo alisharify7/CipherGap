@@ -36,7 +36,7 @@
         const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
         let node;
         while ((node = walker.nextNode())) {
-            if (node.parentElement.closest('script, style, code, textarea, option')) continue;
+            if (node.parentElement.closest('script, style, code, textarea, option, [translate="no"]')) continue;
             const previous = originals.get(node);
             const original = previous && node.nodeValue === previous.translated ? previous.original : node.nodeValue;
             const translated = translate(original);

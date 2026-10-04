@@ -22,6 +22,11 @@ are migrated incrementally.
 - `file_crypto.js` owns the CGPE container and file encryption/decryption.
 - `dh_crypto.js` owns P-256 ECDH, shared-secret derivation, SAS, and fingerprints.
 - `messenger_adapter.js` owns adapter registration and chat-context resolution.
+- `file_viewer.js` / `.css` own a native accessible dialog, raster image previews,
+  audio/video controls, safe MIME normalization, original downloads and Blob URL cleanup.
+- `exchange_ui.js` / `.css` own exchange/SAS cards, inline consent and countdowns.
+- `theme.css` supplies shared Radix Indigo/Slate color tokens to the popup, chat UI and website.
+- `i18n.js` / `translations.js` localize only CipherGap UI, preserving filenames marked `translate="no"`.
 
 ## Adapter boundary
 
@@ -85,3 +90,25 @@ legacy request receives a legacy ACK, SAS, and confirmation. Update
 
 Messenger host permissions and content-script matches remain explicit Chrome
 manifest entries. Add them only when that messenger has a tested adapter.
+
+## Reusing presentation
+
+After an adapter obtains a CGPE container, call the shared `file_crypto.decrypt_file`
+with the active chat key, then `file_viewer.open({name, type, data})`. The viewer
+handles preview, native playback and Download. For opt-in automatic saving use
+`file_viewer.download` instead. Close the viewer on pause, chat changes or key
+changes. No adapter should duplicate MIME routing, object URL cleanup or decryption.
+HTML/SVG and unknown formats are downloads only. Full authentication precedes
+playback; CGPE v1 does not stream ciphertext over the network into a player.
+
+Use `exchange_ui.create_request(parsed, signature, options)` or `create_code`
+and mount the result inside a native message. Set `ciphergapStorageKey`,
+`ciphergapNonce` and `ciphergapExpiresAt` on its dataset; attach a timer with
+class `ciphergap-chat-card__timer`. The adapter supplies `readState`, `onRespond`,
+`onError` and `onUpdate` callbacks. Call `exchange_ui.update(cards, state)` once
+per second with `{storageKey, enabled, status}`. The shared controller separately
+checks expiry before ACK, key storage and SAS verification, so UI timers cannot
+extend a deadline. Start, ACK and SAS carry the same Unix millisecond deadline;
+legacy requests require the original messenger sending timestamp. Both peers
+must update to 1.3.0 for timed exchange messages. CGP/CGPE encryption and old
+message/file readers are unchanged.

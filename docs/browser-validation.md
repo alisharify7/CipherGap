@@ -1,5 +1,41 @@
 # Bale browser validation
 
+## 1.3.0 — 2026-10-04
+
+Tested in the user's logged-in Chrome **ahmad** profile at
+`https://web.bale.ai/chat?uid=1195997823` and Firefox ESR **153.4.0** at
+`https://web.bale.ai/chat?uid=49589703`. Chrome loaded the unpacked checkout;
+Firefox loaded a temporary generated Firefox package. Both remained logged in.
+
+- A fresh Chrome request was accepted in Firefox's chat card. Existing-key
+  replacement showed the inline confirmation before acceptance. Both sides
+  displayed matching six-digit SAS and were verified.
+- Firefox sent encrypted Persian text; Chrome displayed its plaintext and hid
+  both installation links. Encrypted verification confirmations were decrypted.
+- Each browser sent PNG, WAV and WebM through the explicit encrypted picker.
+  Bale's upload confirmation contained three `.cgpe` files on both browsers.
+- Firefox manually opened all three Chrome attachments: image preview, audio
+  playback and video playback. Its Download results matched the originals.
+- Chrome automatically saved the incoming Firefox attachments, then manually
+  previewed the image and played audio/video. Downloaded bytes matched originals.
+  Chrome requested its native permission for multiple automatic downloads.
+- The live test exposed Firefox/Linux's `audio/vnd.wave` type, which is now
+  normalized to WAV. It also exposed a SAS card losing its absolute deadline;
+  strict parsing now retains that field, with a regression check.
+- The actual Firefox popup was visually checked after fixing its width; it uses
+  the same 440 × 590 layout as Chrome. Test attachments remain in the conversation.
+
+Automated checks additionally cover an expired chat card (`00:00`, gray state,
+accept hidden), late/altered ACKs, expiry before verification, persisted request
+age, real media decoding, native downloads, HTML fallback without execution,
+Blob revocation and pause closing a preview. All 30 Node regressions, the package
+identity check, Chrome/Firefox browser flows and bilingual website checks passed.
+The browser test profiles use synthetic Bale DOM fixtures and do not send live
+messages; the account tests above were separate GUI runs.
+
+## Earlier Chrome validation (1.1.0)
+
+
 Validated on 2026-10-03 in the user's existing, logged-in Chrome profiles.
 Both profiles loaded the unpacked extension from this checkout; the older
 Downloads copy was disabled so two content scripts could not compete.
@@ -44,7 +80,7 @@ All extension JavaScript passed `node --check`.
   per selection. The 100 MB boundary and slow-network transfers were not tested live.
 - If Bale changes its semantic markup or download flow, the downloaded-file
   picker remains available. The bridge times out after 45 seconds.
-- Firefox 128+ is declared for MAIN-world support; Firefox was not tested live.
+- Firefox desktop 140+ is required; live Firefox 153.4.0 results appear above. Firefox Android remains untested.
 - Ordinary Bale text sending remains ordinary text; use CipherGap's Encrypt
   control when encryption is intended.
 - SAS testing verifies the workflow. Real users must compare codes through a

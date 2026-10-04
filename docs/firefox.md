@@ -50,7 +50,7 @@ python3 tests/browser_firefox.py
 Browser checks need optional Python Playwright/Marionette tools. Install them in
 an isolated environment with `pip install playwright marionette_driver`, and
 install Chromium with `playwright install chromium`. The Firefox check defaults
-to Debian's real ESR binary; set FIREFOX_BINARY on other systems. Both checks
+to Debian's real ESR binary; set FIREFOX_BINARY on other systems. Media fixtures additionally require ffmpeg. Both checks
 use new, isolated profiles and synthetic Bale DOM fixtures. They do not log into
 user accounts or send messages over the network.
 
@@ -60,3 +60,11 @@ verified trust, Persian/English encrypted messages, automatic decryption, native
 Blob download capture, exact decrypted file bytes and the bound popup settings.
 TypedArray species and ArrayBuffer realm checks are compatible with Firefox's
 Xray wrappers. CGP/CGPE formats are unchanged.
+
+Version 1.3.0 was also checked on actual Firefox ESR 153.4.0 with image previews,
+WAV/WebM playback, exact downloads and in-chat exchange acceptance in isolated
+fixtures. Separate live account tests exchanged keys, messages and three media
+types between the logged-in Firefox and Chrome ahmad profiles; see
+[browser-validation.md](browser-validation.md). Firefox popup width is explicitly
+bounded to match Chrome's layout. Media and exchange UI are shared; only the
+manifest is generated differently.

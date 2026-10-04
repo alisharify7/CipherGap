@@ -1,5 +1,27 @@
 # Changelog
 
+## [1.3.0](docs/releases/v1.3.0.md) - 2026-10-04
+
+### Added
+
+- Shared image viewer and native audio/video players with original-file downloads.
+- In-chat exchange acceptance/decline, explicit key replacement confirmation and a countdown.
+- A 15-minute absolute request/SAS deadline, enforced before ACK, key storage and verification.
+- GitHub Pages alongside GitHub in the hidden installation footer.
+- Shared Radix Indigo/Slate theme and browser-first bilingual installation guide.
+
+### Fixed
+
+- Firefox/Linux WAV MIME aliases now open in Chrome’s audio player.
+- Firefox popup sizing, passive toast click interception and SAS countdown deadline retention.
+- Closing or pausing previews releases Blob URLs and stops playback.
+
+### Compatibility
+
+- Update both participants to 1.3.0 for timed exchanges and the two-link footer.
+- Existing AES-GCM messages, CGPE files and saved keys remain readable.
+- Preview authenticates the complete file before playback; CGPE v1 retains its 100 MB limit.
+
 ## [1.2.1](docs/releases/v1.2.1.md) - 2026-10-04
 
 ### Added

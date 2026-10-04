@@ -78,9 +78,9 @@
     });
 
     const timeouts = Object.freeze({
-        pending_exchange_ms: 5 * 60 * 1000,
-        exchange_status_ms: 10 * 60 * 1000,
-        popup_exchange_wait_ms: 60 * 1000,
+        pending_exchange_ms: 15 * 60 * 1000,
+        exchange_status_ms: 15 * 60 * 1000,
+        popup_exchange_wait_ms: 15 * 60 * 1000,
         handled_nonce_ms: 24 * 60 * 60 * 1000
     });
 

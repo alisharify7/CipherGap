@@ -1,0 +1,115 @@
+        .ciphergap-chat-card[data-ciphergap-ui="protocol"] { position: relative !important; inline-size: min(320px, 100%) !important; padding: 12px !important; border-radius: 14px !important; }
+        .ciphergap-chat-card__heading { padding-inline-end: 65px !important; }
+        .ciphergap-chat-card__timer { position: absolute !important; inset-inline-end: 10px !important; top: 12px !important; padding: 3px 6px !important; border-radius: 6px !important; background: var(--cg-soft) !important; color: #3a5bc7 !important; font: 600 11px/1.3 ui-monospace, monospace !important; font-variant-numeric: tabular-nums !important; }
+        .ciphergap-chat-card__actions { display: flex !important; gap: 8px !important; flex-wrap: wrap !important; margin-block-start: 8px !important; }
+        .ciphergap-chat-card__actions[hidden] { display: none !important; }
+        .ciphergap-chat-card__actions button { min-block-size: 34px !important; font-size: 11px !important; }
+        .ciphergap-chat-card__actions [data-ciphergap-exchange-action="decline"] { background: #f0f0f3 !important; color: #60646c !important; border-color: #d9d9e0 !important; }
+        .ciphergap-chat-card.ciphergap-chat-card--expired { border-color: #d9d9e0 !important; background: #f0f0f3 !important; color: #60646c !important; }
+        .ciphergap-chat-card--expired .ciphergap-chat-card__meta { color: #ce2c31 !important; }
+        .ciphergap-chat-card--expired .ciphergap-chat-card__code { color: #80838d !important; }
+        .ciphergap-chat-card--expired .ciphergap-chat-card__timer { color: #ce2c31 !important; background: #ffebeb !important; }
+        .ciphergap-chat-card[dir="rtl"] { direction: rtl !important; }
+        .ciphergap-chat-card {
+            box-sizing: border-box !important;
+            position: static !important;
+            display: grid !important;
+            float: none !important;
+            clear: both !important;
+            inline-size: min(238px, 100%) !important;
+            min-inline-size: 0 !important;
+            max-inline-size: 100% !important;
+            margin: 2px 0 !important;
+            padding: 8px 10px !important;
+            gap: 4px !important;
+            border: 1px solid rgba(15, 23, 42, .15) !important;
+            border-color: color-mix(in srgb, currentColor 18%, transparent) !important;
+            border-inline-start-width: 3px !important;
+            border-radius: 10px !important;
+            background: rgba(255, 255, 255, .38) !important;
+            background: color-mix(in srgb, currentColor 7%, transparent) !important;
+            color: inherit !important;
+            direction: ltr !important;
+            text-align: start !important;
+            white-space: normal !important;
+            overflow: hidden !important;
+            font: 500 12px/1.4 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+        }
+        .ciphergap-chat-card--exchange {
+            --ciphergap-card-accent: #3e63dd;
+            border-inline-start-color: var(--ciphergap-card-accent) !important;
+        }
+        .ciphergap-chat-card--sas {
+            --ciphergap-card-accent: #8a5b00;
+            border-inline-start-color: var(--ciphergap-card-accent) !important;
+        }
+        @supports (color: color-mix(in srgb, red, blue)) {
+            .ciphergap-chat-card--exchange {
+                --ciphergap-card-accent: color-mix(in srgb, #3e63dd 78%, currentColor);
+            }
+            .ciphergap-chat-card--sas {
+                --ciphergap-card-accent: color-mix(in srgb, #b7791f 76%, currentColor);
+            }
+        }
+        .ciphergap-chat-card__heading {
+            display: flex !important;
+            align-items: center !important;
+            gap: 7px !important;
+            min-inline-size: 0 !important;
+            font: 700 12px/1.3 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+        }
+        .ciphergap-chat-card__mark {
+            box-sizing: border-box !important;
+            display: inline-grid !important;
+            place-items: center !important;
+            flex: 0 0 22px !important;
+            inline-size: 22px !important;
+            block-size: 22px !important;
+            border-radius: 7px !important;
+            background: rgba(15, 118, 110, .13) !important;
+            background: color-mix(in srgb, var(--ciphergap-card-accent) 15%, transparent) !important;
+            color: var(--ciphergap-card-accent) !important;
+            font: 800 9px/1 system-ui, sans-serif !important;
+            letter-spacing: 0 !important;
+        }
+        .ciphergap-chat-card--exchange .ciphergap-chat-card__mark {
+            color: var(--ciphergap-card-accent) !important;
+        }
+        .ciphergap-chat-card--sas .ciphergap-chat-card__mark {
+            color: var(--ciphergap-card-accent) !important;
+        }
+        .ciphergap-chat-card__code {
+            display: block !important;
+            max-inline-size: 100% !important;
+            margin-block: 1px !important;
+            overflow: hidden !important;
+            color: inherit !important;
+            font: 750 20px/1.25 ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace !important;
+            font-variant-numeric: tabular-nums !important;
+            letter-spacing: .15em !important;
+            white-space: nowrap !important;
+            unicode-bidi: isolate !important;
+        }
+        .ciphergap-chat-card__meta {
+            display: block !important;
+            min-inline-size: 0 !important;
+            max-inline-size: 100% !important;
+            color: inherit !important;
+            overflow-wrap: anywhere !important;
+            font: 450 11px/1.38 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+        }
+        @media (prefers-color-scheme: dark) {
+            .ciphergap-chat-card {
+                border-color: rgba(255, 255, 255, .2) !important;
+                border-color: color-mix(in srgb, currentColor 18%, transparent) !important;
+                background: rgba(255, 255, 255, .06) !important;
+                background: color-mix(in srgb, currentColor 7%, transparent) !important;
+            }
+        }
+
+.ciphergap-chat-card .ciphergap-action { appearance: none !important; padding: 8px 10px !important; border: 1px solid var(--cg-primary) !important; border-radius: 8px !important; background: var(--cg-primary) !important; color: var(--cg-on-primary) !important; cursor: pointer !important; font: 600 11px/1.4 system-ui, sans-serif !important; }
+.ciphergap-chat-card .ciphergap-action:focus-visible { outline: 2px solid var(--cg-primary) !important; outline-offset: 2px !important; }
+.ciphergap-chat-card .ciphergap-action:disabled { opacity: .6 !important; cursor: wait !important; }
+@media (forced-colors: active) { .ciphergap-chat-card { border: 1px solid CanvasText !important; background: Canvas !important; color: CanvasText !important; } .ciphergap-chat-card .ciphergap-action { border-color: ButtonText !important; background: ButtonFace !important; color: ButtonText !important; } }
+
+.ciphergap-chat-card .ciphergap-action[data-ciphergap-exchange-action="decline"] { background: var(--cg-muted-surface) !important; color: var(--cg-muted) !important; border-color: var(--cg-border) !important; }

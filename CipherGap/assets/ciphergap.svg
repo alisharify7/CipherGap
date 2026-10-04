@@ -2,8 +2,8 @@
   <title id="title">CipherGap — private conversations</title>
   <defs>
     <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1">
-      <stop stop-color="#8366e8"/>
-      <stop offset="1" stop-color="#5035a9"/>
+      <stop stop-color="#8da4ef"/>
+      <stop offset="1" stop-color="#3358d4"/>
     </linearGradient>
   </defs>
   <rect width="128" height="128" rx="29" fill="url(#tile)"/>
@@ -11,6 +11,6 @@
   <path d="m36 85-9 20 25-11" fill="#fff" stroke="#fff" stroke-width="3" stroke-linejoin="round"/>
   <path d="M56 58v-8a8 8 0 0 1 16 0v8" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"/>
   <rect x="50" y="56" width="28" height="25" rx="7" fill="#fff"/>
-  <path d="M64 65v7" stroke="#6143bc" stroke-width="5" stroke-linecap="round"/>
-  <rect x="96" y="58" width="10" height="12" rx="4" fill="#d9cbff"/>
+  <path d="M64 65v7" stroke="#3e63dd" stroke-width="5" stroke-linecap="round"/>
+  <rect x="96" y="58" width="10" height="12" rx="4" fill="#e1e9ff"/>
 </svg>
