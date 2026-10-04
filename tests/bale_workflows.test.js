@@ -23,7 +23,7 @@ function harness() {
         get_storage_key: () => context.chatKey,
         wait_for_main_thread: async () => {}, chatKey: "chat-A"
     });
-    for (const file of ["namespace", "config", "encoding", "crypto", "file_crypto", "protocol", "messenger_adapter"]) {
+    for (const file of ["namespace", "config", "encoding", "crypto", "file_crypto", "protocol", "messenger_adapter", "chat_ui"]) {
         vm.runInContext(source(`share/${file}.js`), context);
     }
     vm.runInContext(source("content/bale.js"), context);
@@ -35,7 +35,7 @@ function harness() {
 }
 
 function composer(h) {
-    const input = { textContent: "unsent draft", isConnected: true, dispatchEvent() {} };
+    const input = { textContent: "unsent draft", isConnected: true, dispatchEvent() {}, querySelector() { return null; } };
     const sent = [];
     const button = { click: () => { sent.push(input.textContent); input.textContent = ""; } };
     h.context.document.querySelector = (selector) => selector === "#editable-message-text" ? input : button;

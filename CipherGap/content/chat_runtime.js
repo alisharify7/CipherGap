@@ -13,13 +13,14 @@ const CHAT_SHARED_PROTOCOL = globalThis.CipherGapShared.protocol;
 const CHAT_SHARED_CRYPTO = globalThis.CipherGapShared.crypto;
 const CHAT_SHARED_FILE_CRYPTO = globalThis.CipherGapShared.file_crypto;
 const CHAT_SHARED_ADAPTERS = globalThis.CipherGapShared.messenger_adapters;
+const CHAT_UI = globalThis.CipherGapShared.chat_ui;
 const IS_CHAT_HOST = CHAT_DOM.hostnames.includes(window.location.hostname) && CHAT_DOM.supports_url(new URL(window.location.href));
 function chat_composer() {
     const composer = CHAT_DOM.composer();
     if (composer) composer.dataset.ciphergapComposer = "true";
     return composer;
 }
-function chat_read_input(input) { return CHAT_DOM.read_input?.(input) ?? input.textContent; }
+function chat_read_input(input) { return CHAT_UI.read_editor(input); }
 function chat_write_input(input, text) {
     if (CHAT_DOM.write_input) return CHAT_DOM.write_input(input, text);
     input.textContent = text;
@@ -40,233 +41,40 @@ const CHAT_LIFECYCLE_SELECTOR = [
 // sanitizer from eating exchange text while chat_send_message is using it.
 let cg_sending = false;
 let cg_notice_timeout = null;
+let chat_toolbar_composer = null;
+let chat_toolbar_cleanup = null;
+let chat_scroll_container = null;
+let chat_scroll_geometry = null;
 
-function inject_ciphergap_content_styles() {
-    if (document.getElementById("ciphergap-content-styles")) {
-        return;
-    }
-
-    const style = document.createElement("style");
-    style.id = "ciphergap-content-styles";
-    style.textContent = `
-        [data-ciphergap-composer="true"] { margin-block-start: var(--cg-toolbar-space, 0px); }
-        [data-ciphergap-link-preview][hidden], [data-ciphergap-message-notice][hidden] { display: none !important; }
-        .ciphergap-action {
-            appearance: none !important;
-            box-sizing: border-box !important;
-            min-block-size: 40px !important;
-            margin: 0 !important;
-            padding: 8px 12px !important;
-            border: 1px solid var(--cg-primary-hover) !important;
-            border-radius: 9px !important;
-            background: var(--cg-primary) !important;
-            box-shadow: none !important;
-            color: #fff !important;
-            cursor: pointer !important;
-            font: 700 12px/1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
-            letter-spacing: normal !important;
-            text-decoration: none !important;
-            text-transform: none !important;
-            transition: background-color .16s ease, border-color .16s ease, opacity .16s ease !important;
-            white-space: nowrap !important;
-        }
-        #chat_footer .ciphergap-action {
-            background: var(--cg-primary) !important; border-color: var(--cg-primary) !important;
-            min-block-size: 34px !important; block-size: 34px !important;
-            font-weight: 600 !important; border-radius: 8px !important;
-        }
-        .ciphergap-action:hover:not(:disabled) {
-            border-color: #1f2d5c !important;
-            background: var(--cg-primary-hover) !important;
-        }
-        .ciphergap-action:focus-visible {
-            outline: 2px solid #8da4ef !important;
-            outline-offset: 2px !important;
-            box-shadow: 0 0 0 2px rgba(15, 23, 42, .5) !important;
-        }
-        .ciphergap-action:disabled {
-            cursor: wait !important;
-            opacity: .62 !important;
-        }
-        #chat_footer .ciphergap-send-controls {
-            display: inline-flex;
-            align-items: center;
-        }
-        #ciphergap-toolbar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 8px;
-            padding: 7px 10px;
-            margin: 6px 10px;
-            border-radius: 10px;
-            background: rgba(248, 251, 250, .96);
-            border-block-end: 1px solid rgba(128,128,128,.16);
-            font: 600 11px/1.4 system-ui, sans-serif;
-            color: var(--cg-muted);
-            direction: inherit;
-            flex-wrap: wrap;
-            justify-content: flex-start;
-        }
-        #ciphergap-toolbar[data-ciphergap-floating="true"] {
-            position: absolute; inset-block-end: calc(100% + 6px);
-            inset-inline: 0; margin: 0; width: auto; z-index: 5;
-            box-sizing: border-box; flex-wrap: wrap;
-        }
-        #ciphergap-toolbar button {
-            appearance: none;
-            padding: 5px 8px;
-            border: 1px solid rgba(128,128,128,.3);
-            border-radius: 7px;
-            background: transparent;
-            color: inherit;
-            cursor: pointer;
-            font: inherit;
-        }
-        #ciphergap-security-status { margin-inline-end: auto; border-color: transparent !important; }
-        #ciphergap-toolbar[data-enabled="false"] { opacity: .75; }
-        #ciphergap-secure-files { color: var(--cg-primary) !important; }
-        #ciphergap-toolbar button:hover:not(:disabled) { background: rgba(96,113,111,.09); }
-        #ciphergap-toolbar button:disabled { opacity: .5; cursor: not-allowed; }
-        #ciphergap-btn {
-            flex: 0 0 auto !important;
-            min-inline-size: 68px !important;
-            block-size: 40px !important;
-            margin-inline: 6px 2px !important;
-            padding-inline: 12px !important;
-            border-radius: 10px !important;
-        }
-        [data-ciphergap-protocol-raw="true"] {
-            display: none !important;
-        }
-        .ciphergap-plaintext {
-            display: block !important;
-            white-space: pre-wrap !important;
-        }
-        .ciphergap-encrypted-details {
-            margin-block-start: 6px !important;
-            color: inherit !important;
-            font: 500 11px/1.4 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
-        }
-        .ciphergap-encrypted-details > summary {
-            cursor: pointer !important;
-        }
-        .ciphergap-encrypted-details > code {
-            display: block !important;
-            margin-block-start: 4px !important;
-            max-block-size: 140px !important;
-            overflow: auto !important;
-            overscroll-behavior: contain !important;
-            overflow-wrap: anywhere !important;
-            white-space: pre-wrap !important;
-        }
-        .ciphergap-decrypt-wrap {
-            box-sizing: border-box !important;
-            position: static !important;
-            display: inline-flex !important;
-            float: none !important;
-            clear: none !important;
-            margin-block-start: 6px !important;
-            padding: 0 !important;
-            border: 0 !important;
-            background: transparent !important;
-            pointer-events: auto !important;
-        }
-        .ciphergap-file-decrypt-wrap {
-            box-sizing: border-box !important;
-            display: grid !important;
-            position: static !important;
-            gap: 7px !important;
-            inline-size: min(260px, 100%) !important;
-            max-inline-size: 100% !important;
-            margin-block-start: 7px !important;
-            padding: 8px 10px !important;
-            border: 1px solid rgba(15, 23, 42, .12) !important;
-            border-color: color-mix(in srgb, currentColor 16%, transparent) !important;
-            border-radius: 10px !important;
-            background: rgba(255, 255, 255, .36) !important;
-            background: color-mix(in srgb, currentColor 6%, transparent) !important;
-            color: inherit !important;
-            pointer-events: auto !important;
-        }
-        .ciphergap-file-decrypt-hint {
-            display: block !important;
-            color: inherit !important;
-            font: 450 11px/1.4 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
-        }
-        .ciphergap-decrypt-button,
-        .ciphergap-file-decrypt-button {
-            min-block-size: 40px !important;
-            position: relative !important;
-            z-index: 10 !important;
-            display: inline-flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            pointer-events: auto !important;
-        }
-        .ciphergap-file-decrypt-button[data-state="success"] {
-            border-color: #1c633e !important;
-            background: #237a4b !important;
-        }
-        .ciphergap-file-decrypt-button[data-state="error"] {
-            border-color: #8f312c !important;
-            background: #a93d36 !important;
-        }
-        #ciphergap-live-notice {
-            pointer-events: none;
-            position: fixed;
-            inset-inline-end: 16px;
-            bottom: 82px;
-            z-index: 2147483647;
-            max-width: min(340px, calc(100vw - 32px));
-            padding: 10px 14px;
-            border: 1px solid rgba(255, 255, 255, .16);
-            border-radius: 10px;
-            background: #23312b;
-            box-shadow: 0 10px 28px rgba(15, 23, 42, .28);
-            color: #f8fafc;
-            font: 600 13px/1.45 system-ui, sans-serif;
-        }
-        #ciphergap-live-notice[data-kind="success"] { background: #245f43; }
-        #ciphergap-live-notice[data-kind="warning"] { background: #77500e; }
-        #ciphergap-live-notice[data-kind="error"] { background: #8f342e; }
-        @media (prefers-reduced-motion: reduce) {
-            .ciphergap-action {
-                transition-duration: .01ms !important;
-            }
-        }
-        @media (forced-colors: active) {
-            .ciphergap-file-decrypt-wrap {
-                border: 1px solid CanvasText !important;
-                border-inline-start-width: 3px !important;
-                background: Canvas !important;
-                color: CanvasText !important;
-            }
-            .ciphergap-action,
-            .ciphergap-action:hover:not(:disabled),
-            .ciphergap-file-decrypt-button[data-state="success"],
-            .ciphergap-file-decrypt-button[data-state="error"] {
-                forced-color-adjust: auto !important;
-                border-color: ButtonText !important;
-                background: ButtonFace !important;
-                color: ButtonText !important;
-            }
-            .ciphergap-action:focus-visible {
-                outline-color: Highlight !important;
-                box-shadow: none !important;
-            }
-            #ciphergap-live-notice {
-                border-color: CanvasText !important;
-                background: Canvas !important;
-                color: CanvasText !important;
-            }
-        }
-    `;
-    document.head?.appendChild(style);
+function reserve_chat_scroll_space(row = document.querySelector(CHAT_MESSAGE_ITEM), force = false) {
+    const scroll = CHAT_UI.scroll_container(row), toolbar = document.getElementById("ciphergap-toolbar");
+    if (!scroll || !toolbar || !CHAT_DOM.toolbar_encrypt || (!force && scroll === chat_scroll_container)) return;
+    const geometry = `${scroll.getBoundingClientRect().bottom}:${toolbar.getBoundingClientRect().top}:${scroll.clientWidth}:${toolbar.hidden}`;
+    if (scroll === chat_scroll_container && geometry === chat_scroll_geometry) return;
+    chat_scroll_geometry = geometry;
+    const previousInset = parseFloat(scroll.style.getPropertyValue("--cg-scroll-extra")) || 0;
+    const pinned = scroll.scrollHeight - scroll.scrollTop - scroll.clientHeight < 48 + previousInset;
+    if (chat_scroll_container && chat_scroll_container !== scroll) delete chat_scroll_container.dataset.ciphergapScroll;
+    chat_scroll_container = scroll;
+    // Read the messenger's current padding without our additive rule. It can
+    // change when the native draft grows; never freeze its own composer inset.
+    delete scroll.dataset.ciphergapScroll;
+    const nativePadding = parseFloat(getComputedStyle(scroll).paddingBottom) || 0;
+    const extra = toolbar.hidden ? 0 : Math.max(0, scroll.getBoundingClientRect().bottom - toolbar.getBoundingClientRect().top - nativePadding);
+    scroll.style.setProperty("--cg-native-scroll-padding", `${nativePadding}px`);
+    scroll.style.setProperty("--cg-scroll-extra", `${extra}px`);scroll.dataset.ciphergapScroll = "true";
+    // Native resize/scroll anchoring settles on the next frame as well.
+    if (pinned) requestAnimationFrame(() => requestAnimationFrame(() => {if (scroll.isConnected) scroll.scrollTop = scroll.scrollHeight;}));
+    // Eitaa applies its own bottom anchor after responsive layout settles.
+    // Reconcile only the near-bottom inset, never a reader's older position.
+    setTimeout(() => {
+        if (scroll !== chat_scroll_container || geometry !== chat_scroll_geometry || !scroll.isConnected) return;
+        const gap = scroll.scrollHeight - scroll.scrollTop - scroll.clientHeight;
+        if (gap > 0 && gap < 48 + extra) scroll.scrollTop = scroll.scrollHeight;
+    }, 150);
 }
 
 function show_ciphergap_notice(message, kind = "info", durationMs = 5000) {
-    inject_ciphergap_content_styles();
 
     let notice = document.getElementById("ciphergap-live-notice");
     if (!notice) {
@@ -290,14 +98,20 @@ function show_ciphergap_notice(message, kind = "info", durationMs = 5000) {
 
 function inject_chat_security_toolbar() {
     const footer = chat_composer();
-    if (!footer || document.getElementById("ciphergap-toolbar")) return;
+    const existing = document.getElementById("ciphergap-toolbar");
+    if (existing && footer === chat_toolbar_composer && footer?.isConnected) return;
+    chat_toolbar_cleanup?.();existing?.remove();chat_toolbar_composer = footer;
+    if (!footer) return;
     const toolbar = document.createElement("div");
     toolbar.id = "ciphergap-toolbar";
     toolbar.dataset.ciphergapUi = "toolbar";
     const status = document.createElement("button");
     status.id = "ciphergap-security-status";
     status.type = "button";
-    status.textContent = "CipherGap · Checking…";
+    const copy = document.createElement("span");copy.className = "ciphergap-status-copy";
+    const brand = document.createElement("strong");brand.textContent = "CipherGap";
+    const label = document.createElement("small");label.dataset.cgStatusLabel = "true";label.textContent = "Checking…";
+    copy.append(brand, label);status.append(CHAT_UI.icon("lock"), copy);
     status.addEventListener("click", () => {
         chrome.runtime.sendMessage({ action: "open_ciphergap" }).catch(() => {
             show_ciphergap_notice("Open CipherGap from the browser toolbar.", "info");
@@ -306,7 +120,7 @@ function inject_chat_security_toolbar() {
     const files = document.createElement("button");
     files.id = "ciphergap-secure-files";
     files.type = "button";
-    files.textContent = "Encrypted file";
+    CHAT_UI.button(files, "file", "Encrypted file");
     files.disabled = true;
     files.addEventListener("click", () => choose_chat_secure_files().catch((error) => {
         show_ciphergap_notice(error.message, "error");
@@ -319,16 +133,36 @@ function inject_chat_security_toolbar() {
         const saved = await chrome.storage.local.get(key);
         await chrome.storage.local.set({ [key]: saved[key] === false });
     });
-    toolbar.append(status, files, toggle);
+    const media = document.createElement("button");media.type = "button";media.id = "ciphergap-media";
+    CHAT_UI.button(media, "smile", "Emoji & stickers");media.disabled = true;
+    media.addEventListener("click", open_chat_media_picker);
+    toolbar.append(status, files, media, toggle);
     if (CHAT_DOM.toolbar_encrypt) toolbar.dataset.ciphergapFloating = "true";
-    footer.prepend(toolbar);
+    // Teact updates native children by position. Keep our floating toolbar
+    // outside its subtree so opening a file preview cannot corrupt the composer.
+    (CHAT_DOM.toolbar_encrypt ? document.body : footer).append(toolbar);
     if (CHAT_DOM.toolbar_encrypt) {
-        const resize = new ResizeObserver(() => requestAnimationFrame(() => {
-            if (!toolbar.isConnected) { resize.disconnect(); return; }
+        let frame = null;
+        const position = () => {frame = null;
+            if (!toolbar.isConnected || !footer.isConnected) {chat_toolbar_cleanup?.();toolbar.remove();return;}
+            const rect = footer.getBoundingClientRect();
+            const theme = CHAT_UI.theme(document.querySelector(CHAT_CHAT_INPUT));
+            if (toolbar.dataset.ciphergapTheme !== theme) toolbar.dataset.ciphergapTheme = theme;
+            toolbar.hidden = !get_current_chat_id() || !rect.width || !rect.height;
+            toolbar.style.left = `${rect.left}px`;toolbar.style.width = `${rect.width}px`;
+            toolbar.style.top = `${rect.top - toolbar.offsetHeight - 7}px`;
             const space = `${toolbar.offsetHeight + 6}px`;
             if (footer.style.getPropertyValue("--cg-toolbar-space") !== space) footer.style.setProperty("--cg-toolbar-space", space);
-        }));
-        resize.observe(toolbar);
+            toolbar.dataset.compact = String(toolbar.clientWidth < 510);
+            reserve_chat_scroll_space(undefined, true);
+        };
+        const schedule = () => {if (!frame) frame = requestAnimationFrame(position);};
+        const resize = new ResizeObserver(schedule);resize.observe(toolbar);resize.observe(footer);
+        const appearance = new MutationObserver(schedule);
+        for (const root of [document.documentElement, document.body]) appearance.observe(root, {attributes:true,attributeFilter:["class", "style", "data-theme"]});
+        window.addEventListener("resize", schedule);window.addEventListener("scroll", schedule, true);
+        chat_toolbar_cleanup = () => {resize.disconnect();appearance.disconnect();cancelAnimationFrame(frame);window.removeEventListener("resize", schedule);window.removeEventListener("scroll", schedule, true);footer.style.removeProperty("--cg-toolbar-space");if(chat_scroll_container){delete chat_scroll_container.dataset.ciphergapScroll;chat_scroll_container=null;}};
+        schedule();
     }
     // The footer can arrive after the key cache has already resolved.
     refresh_cg_chat_cache(true).catch(() => {});
@@ -343,19 +177,53 @@ function update_chat_security_toolbar(trust, exchange) {
             : trust?.state === "verified" ? "Verified"
             : trust?.state === "changed" ? "Identity changed · Review"
             : "Verify your key";
-        status.textContent = `CipherGap · ${label}`;
+        status.querySelector('[data-cg-status-label]').textContent = label;
+        status.dataset.state = trust?.state ?? "unverified";
         status.title = "Open chat security settings";
+        status.setAttribute("aria-label", `CipherGap · ${label}`);
     }
     const files = document.getElementById("ciphergap-secure-files");
     if (files) files.disabled = !cg_cached_key || !cg_cached_enabled;
+    const media = document.getElementById("ciphergap-media");
+    if (media) media.disabled = !cg_cached_key || !cg_cached_enabled;
     const toggle = document.getElementById("ciphergap-chat-toggle");
     if (toggle) {
-        toggle.textContent = cg_cached_chat_enabled ? "Pause chat" : "Enable chat";
+        CHAT_UI.button(toggle, cg_cached_chat_enabled ? "pause" : "play", cg_cached_chat_enabled ? "Pause chat" : "Enable chat", true);
         toggle.setAttribute("aria-pressed", String(cg_cached_chat_enabled));
     }
     const encrypt = document.getElementById("ciphergap-btn");
     if (encrypt) encrypt.hidden = !cg_cached_enabled;
     document.getElementById("ciphergap-toolbar")?.setAttribute("data-enabled", String(cg_cached_enabled));
+    const toolbar = document.getElementById("ciphergap-toolbar");
+    if (toolbar) {toolbar.dataset.ciphergapTheme = CHAT_UI.theme(document.querySelector(CHAT_CHAT_INPUT));toolbar.hidden = !get_current_chat_id();}
+}
+
+function open_chat_media_picker() {
+    const storageKey = get_storage_key(), secretKey = cg_cached_key;
+    const input = document.querySelector(CHAT_CHAT_INPUT);
+    if (!input || !cg_cached_enabled || !secretKey) return;
+    const selection = window.getSelection();
+    const range = selection.rangeCount && input.contains(selection.getRangeAt(0).commonAncestorContainer) ? selection.getRangeAt(0).cloneRange() : null;
+    const valid = () => storageKey === get_storage_key() && cg_cached_enabled && secretKey === cg_cached_key && input.isConnected;
+    globalThis.CipherGapShared.stickers.open_picker({theme:CHAT_UI.theme(input),
+        insertEmoji(emoji) {
+            if (!valid()) return;
+            input.focus();const caret = range ?? document.createRange();
+            if (!range) {caret.selectNodeContents(input);caret.collapse(false);}
+            caret.deleteContents();const text = document.createTextNode(emoji);caret.insertNode(text);caret.setStartAfter(text);caret.collapse(true);
+            selection.removeAllRanges();selection.addRange(caret);
+            input.dispatchEvent(new InputEvent("input", {bubbles:true,inputType:"insertText",data:emoji}));
+            return input;
+        },
+        async sendSticker(file) {
+            const packed = await globalThis.CipherGapShared.stickers.pack(file);
+            if (!valid()) throw new Error("The chat or key changed while preparing the sticker.");
+            const native = await choose_native_chat_file_input(storageKey);
+            if (!valid() || !native) throw new Error("The chat or key changed while preparing the sticker.");
+            intercept_file_selection(native);
+            await new Promise((resolve,reject)=>{secure_file_selections.set(native,{storageKey,resolve,reject});redispatch_file_selection(native,[packed],false)});
+        }
+    });
 }
 
 // Native pickers can be detached (Telegram). The MAIN bridge briefly mounts
@@ -467,7 +335,8 @@ function intercept_file_selection(fileInput) {
             return;
         }
 
-        const intendedStorageKey = secure_file_selections.get(fileInput);
+        const selection = secure_file_selections.get(fileInput);
+        const intendedStorageKey = typeof selection === "string" ? selection : selection?.storageKey;
         secure_file_selections.delete(fileInput);
         if (!intendedStorageKey) return; // Native Messenger attachments stay ordinary.
 
@@ -540,12 +409,14 @@ function intercept_file_selection(fileInput) {
             // Put encrypted files back and re-dispatch a change event so
             // the messenger's React handler picks them up.
             redispatch_file_selection(fileInput, encryptedFiles);
+            selection?.resolve?.();
 
             show_ciphergap_notice(
                 `${encryptedFiles.length} attachment${encryptedFiles.length === 1 ? "" : "s"} encrypted and ready to send.`,
                 "success"
             );
         } catch (error) {
+            selection?.reject?.(error);
             console.error("[CipherGap] File encryption failed:", error);
             show_ciphergap_notice(
                 `Attachment not sent: ${error.message}`,
@@ -572,7 +443,7 @@ let cg_cache_refresh_promise = null;
 let cg_cache_refresh_storage_key = null;
 
 function invalidate_cg_chat_cache(storageKey = get_storage_key()) {
-    if (cg_cached_storage_key !== storageKey) globalThis.CipherGapShared.file_viewer?.close();
+    if (cg_cached_storage_key !== storageKey) reset_chat_message_views();
     cg_cache_refresh_token += 1;
     // A caller returning to the same chat must not reuse an invalidated read.
     // Its token is already stale, so let it finish without publishing state.
@@ -640,7 +511,7 @@ async function refresh_cg_chat_cache(force = false) {
         update_chat_security_toolbar(result[trustKey], result[exchangeKey]);
         if (cg_cached_enabled && chat_observed_scroller) scan_chat_messages(chat_observed_scroller, chat_scan_generation).catch(() => {});
         if (!cg_cached_enabled) {
-            globalThis.CipherGapShared.file_viewer?.close();
+            reset_chat_message_views();
             chat_file_bridge_request?.cancel();
             document.querySelectorAll('[data-ciphergap-message-notice], [data-ciphergap-link-preview]').forEach(node => { node.hidden = false; });
             document.querySelectorAll(CHAT_MESSAGE_ITEM).forEach(node => { delete node.dataset.ciphergapProcessed; });
@@ -683,7 +554,7 @@ if (IS_CHAT_HOST) {
                 });
             }
             const chatKeyChanged = Boolean(changes[storageKey]);
-            if (chatKeyChanged) globalThis.CipherGapShared.file_viewer?.close();
+            if (chatKeyChanged) reset_chat_message_views();
             invalidate_cg_chat_cache(storageKey);
             refresh_cg_chat_cache(true)
                 .then(() => {
@@ -723,7 +594,8 @@ function is_ciphergap_ui_element(element) {
 function get_deepest_matching_payload(messageElement, parseCandidate) {
     CHAT_DOM.prepare_message?.(messageElement);
     const matches = [];
-    const candidates = messageElement.querySelectorAll("span, p, div, a, [dir]");
+    const root = CHAT_DOM.payload_root?.(messageElement) ?? messageElement;
+    const candidates = [root, ...root.querySelectorAll("span, p, div, a, [dir]")];
 
     for (const element of candidates) {
         if (
@@ -755,9 +627,9 @@ function get_deepest_matching_payload(messageElement, parseCandidate) {
 
     // Messengers can split a payload across nested nodes. Prefer the deepest strict
     // match so only the real payload is hidden, never its bubble or timestamp.
-    const result = matches.find(({ element }) =>
+    const result = matches.filter(({ element }) =>
         !matches.some(({ element: other }) => other !== element && element.contains(other))
-    ) ?? matches[matches.length - 1];
+    ).at(-1) ?? matches[matches.length - 1];
     const metadata = [...result.element.querySelectorAll('[data-ciphergap-metadata], [data-ignore-on-paste="true"]')];
     if (metadata.length && metadata.every(node => node.parentElement === result.element)) {
         const carrier = document.createElement("span");
@@ -900,7 +772,7 @@ function inject_encrypt_button_chat() {
     button.id = "ciphergap-btn";
     button.className = "ciphergap-action";
     button.type = "button";
-    button.innerText = "Encrypt";
+    CHAT_UI.button(button, "send", "Encrypt");
     button.setAttribute("aria-label", "Encrypt and send with CipherGap");
     button.title = "Encrypt and send with CipherGap";
 
@@ -909,7 +781,7 @@ function inject_encrypt_button_chat() {
             button.disabled = true;
             button.setAttribute("aria-busy", "true");
             button.setAttribute("aria-label", "Encrypting and sending with CipherGap");
-            button.innerText = "Sending…";
+            CHAT_UI.set_label(button, "Sending…");
 
             const input = document.querySelector(CHAT_CHAT_INPUT);
             if (!input) {
@@ -956,7 +828,7 @@ function inject_encrypt_button_chat() {
             button.disabled = false;
             button.removeAttribute("aria-busy");
             button.setAttribute("aria-label", "Encrypt and send with CipherGap");
-            button.innerText = "Encrypt";
+            CHAT_UI.set_label(button, "Encrypt");
         }
     });
     if (CHAT_DOM.toolbar_encrypt) buttonContainer.append(button);
@@ -1036,25 +908,23 @@ function extract_cgp_packet_text(messageElement) {
 }
 
 function replace_message_visual(messageElement, encryptedText, decryptedText) {
-    const span = find_cgp_span(messageElement);
-    if (!span) {
-        return;
-    }
-
-    const notices = [...span.querySelectorAll('[data-ciphergap-message-notice]')];
-    notices.forEach(node => node.remove());
-    span.textContent = "";
+    const view = message_visual_container(messageElement);
+    if (!view) return;
+    view.className = "ciphergap-message";view.dataset.mode = "decrypted";
+    view.replaceChildren();
 
     const plaintext = document.createElement("span");
     plaintext.className = "ciphergap-plaintext";
     plaintext.dir = "auto";
     plaintext.textContent = decryptedText;
+    plaintext.setAttribute("translate", "no");
+    plaintext.dataset.emojiOnly = String(/^(?:\p{Extended_Pictographic}|\p{Emoji_Presentation}|\p{Emoji_Modifier}|\uFE0F|\u200D|\s)+$/u.test(decryptedText));
 
     const encryptedDetails = document.createElement("details");
     encryptedDetails.className = "ciphergap-encrypted-details";
 
     const summary = document.createElement("summary");
-    summary.textContent = "Encrypted message";
+    summary.append(CHAT_UI.icon("lock"), document.createTextNode("Encrypted message"));
 
     const ciphertext = document.createElement("code");
     ciphertext.dir = "ltr";
@@ -1062,28 +932,64 @@ function replace_message_visual(messageElement, encryptedText, decryptedText) {
 
     encryptedDetails.appendChild(summary);
     encryptedDetails.appendChild(ciphertext);
-    span.appendChild(plaintext);
-    span.appendChild(encryptedDetails);
-    notices.forEach(node => span.appendChild(node));
+    view.append(plaintext, encryptedDetails);
+}
+
+function message_visual_container(row) {
+    const raw = find_cgp_span(row);
+    if (!raw) return null;
+    CHAT_UI.layout(row, raw);
+    raw.dataset.ciphergapMessageRaw = "true";raw.hidden = true;
+    let view = row.querySelector('[data-ciphergap-ui="message"]');
+    if (!view) {view = document.createElement("div");view.dataset.ciphergapUi = "message";raw.insertAdjacentElement("afterend", view);}
+    return view;
+}
+
+function reset_chat_message_views() {
+    globalThis.CipherGapShared.file_viewer?.close();
+    globalThis.CipherGapShared.stickers?.close();
+    document.querySelectorAll('[data-ciphergap-ui="message"], [data-ciphergap-ui="file-action"], [data-ciphergap-ui="quote"]').forEach(node => node.remove());
+    document.querySelectorAll('[data-ciphergap-message-raw], [data-ciphergap-native-file], [data-ciphergap-quote-raw]').forEach(node => {node.hidden = false;});
+    document.querySelectorAll('[data-ciphergap-layout]').forEach(node => {delete node.dataset.ciphergapLayout;});
+    document.querySelectorAll(CHAT_MESSAGE_ITEM).forEach(row => {delete row.dataset.ciphergapDecrypted;delete row.dataset.ciphergapProcessed;});
+}
+
+function render_chat_quote_previews(row) {
+    CHAT_DOM.prepare_message?.(row);
+    const body = CHAT_DOM.payload_root?.(row);
+    if (!body || body === row) return;
+    for (const raw of row.querySelectorAll('div[dir="auto"]')) {
+        if (body.contains(raw) || raw.contains(body) || is_ciphergap_ui_element(raw)) continue;
+        const encrypted = CHAT_SHARED_PROTOCOL.is_ciphergap_packet(raw.textContent.trim());
+        if (!encrypted) {
+            if (raw.dataset.ciphergapQuoteRaw) {raw.hidden = false;delete raw.dataset.ciphergapQuoteRaw;if(raw.nextElementSibling?.dataset.ciphergapUi === "quote") raw.nextElementSibling.remove();}
+            continue;
+        }
+        raw.dataset.ciphergapQuoteRaw = "true";raw.hidden = true;
+        if (raw.nextElementSibling?.dataset.ciphergapUi === "quote") continue;
+        const label = document.createElement("span");label.dataset.ciphergapUi = "quote";label.className = "ciphergap-quote-label";
+        label.append(CHAT_UI.icon("lock"),document.createTextNode("Encrypted message"));raw.insertAdjacentElement("afterend",label);
+    }
 }
 
 function create_decrypt_button() {
     const button = document.createElement("button");
     button.className = "ciphergap-action ciphergap-decrypt-button";
     button.type = "button";
-    button.innerText = "Decrypt";
+    CHAT_UI.button(button, "lock", "Decrypt");
     button.setAttribute("aria-label", "Decrypt this CipherGap message");
     return button;
 }
 
 function attach_decrypt_button(messageElement, decryptButton) {
-    const cgpSpan = find_cgp_span(messageElement);
-    const container = cgpSpan?.parentElement ?? messageElement;
-
-    const wrapper = document.createElement("div");
-    wrapper.className = "ciphergap-decrypt-wrap";
-    wrapper.appendChild(decryptButton);
-    container.appendChild(wrapper);
+    const wrapper = message_visual_container(messageElement);
+    if (!wrapper) return;
+    wrapper.className = "ciphergap-message ciphergap-decrypt-wrap";
+    const lock = document.createElement("span");lock.className = "ciphergap-message-lock";lock.append(CHAT_UI.icon("lock"));
+    const copy = document.createElement("span");copy.className = "ciphergap-message-copy";
+    const title = document.createElement("strong");title.textContent = "Encrypted message";
+    const hint = document.createElement("small");hint.textContent = "Decrypt locally with your chat key";copy.append(title,hint);
+    wrapper.append(lock, copy, decryptButton);
 }
 
 async function handle_decrypt_click(event, messageElement, decryptButton) {
@@ -1104,7 +1010,7 @@ async function handle_decrypt_click(event, messageElement, decryptButton) {
         decryptButton.remove();
     } catch (error) {
         console.error("[CipherGap] Decrypt failed:", error);
-        decryptButton.innerText = "Try again";
+        CHAT_UI.set_label(decryptButton, "Try again");
         show_ciphergap_notice(
             "Could not decrypt this message. Check the chat key and try again.",
             "error",
@@ -1123,6 +1029,7 @@ async function decrypt_message_element(
     providedSecretKey = null,
     cachedCryptoKey = null
 ) {
+    const storageKey = get_storage_key();
     const currentText = extract_cgp_packet_text(messageElement);
     if (!CHAT_SHARED_PROTOCOL.is_ciphergap_packet(currentText)) {
         throw new Error("Could not read encrypted message from this bubble.");
@@ -1156,6 +1063,7 @@ async function decrypt_message_element(
         canReuseCachedKey ? cachedCryptoKey : null,
         packetCryptoProfile
     );
+    if (!cg_cached_enabled || get_storage_key() !== storageKey || cg_cached_key !== secretKey || !messageElement.isConnected) throw new Error("The chat or key changed during decryption.");
     replace_message_visual(messageElement, currentText, decryptedText);
     messageElement.dataset.ciphergapDecrypted = "true";
     return true;
@@ -1257,7 +1165,7 @@ function process_encrypted_chat_message(messageElement) {
     // read and one key import per bubble during the initial scan.
     refresh_cg_chat_cache().then(() => {
         if (
-            !messageElement.isConnected ||
+            !cg_cached_enabled || !messageElement.isConnected ||
             messageStorageKey !== get_storage_key()
         ) {
             delete messageElement.dataset.ciphergapProcessed;
@@ -1280,6 +1188,7 @@ function process_encrypted_chat_message(messageElement) {
 // Creates and attaches a manual Decrypt button to a message element.
 function attach_decrypt_button_to(messageElement) {
     if (
+        !cg_cached_enabled ||
         messageElement.dataset.ciphergapDecrypted === "true" ||
         messageElement.querySelector(".ciphergap-decrypt-wrap")
     ) {
@@ -1371,7 +1280,7 @@ function create_file_decrypt_button() {
     const button = document.createElement("button");
     button.className = "ciphergap-action ciphergap-file-decrypt-button";
     button.type = "button";
-    button.innerText = "Decrypt & view";
+    CHAT_UI.button(button, "lock", "Open");
     button.setAttribute("aria-label", "Decrypt and preview this CipherGap attachment");
     return button;
 }
@@ -1391,13 +1300,26 @@ async function decrypt_and_present_file(
         fileCryptoKey
     );
     await refresh_cg_chat_cache();
-    if (storageKey !== get_storage_key() || !cg_cached_enabled || cg_cached_key !== secretKey) {
+    if (storageKey !== get_storage_key() || !cg_cached_enabled || cg_cached_key !== secretKey || statusButton?.isConnected === false) {
         throw new Error("The chat, key or enabled state changed during file decryption.");
     }
-    if (automatic) globalThis.CipherGapShared.file_viewer.download(decrypted);
+    const sticker = globalThis.CipherGapShared.stickers.unpack(decrypted);
+    const row = statusButton?.closest(CHAT_MESSAGE_ITEM);
+    if (sticker && row) {
+        const wrapper = statusButton.closest('[data-ciphergap-ui="file-action"]');
+        const scroll = CHAT_UI.scroll_container(wrapper);
+        const pinned = scroll && scroll.scrollHeight - scroll.scrollTop - scroll.clientHeight < 48;
+        const preview = globalThis.CipherGapShared.file_viewer.inline(sticker, wrapper);
+        requestAnimationFrame(() => {
+            if (!preview.isConnected) return;
+            if (pinned && scroll.isConnected) scroll.scrollTop = scroll.scrollHeight;
+            else if (!automatic) preview.scrollIntoView({block:"nearest"});
+        });
+        if (automatic) globalThis.CipherGapShared.file_viewer.download(sticker);
+    } else if (automatic) globalThis.CipherGapShared.file_viewer.download(decrypted);
     else globalThis.CipherGapShared.file_viewer.open(decrypted);
     if (statusButton) {
-        statusButton.innerText = automatic ? "Downloaded" : "Open again";
+        CHAT_UI.set_label(statusButton, automatic ? "Downloaded" : "Open again");
         statusButton.setAttribute("aria-label", "CipherGap file decrypted");
         statusButton.dataset.state = "success";
     }
@@ -1427,7 +1349,7 @@ function choose_downloaded_cgpe_file(event, messageElement, decryptButton) {
         const storageKey = get_storage_key();
         try {
             decryptButton.disabled = true;
-            decryptButton.innerText = "Decrypting…";
+            CHAT_UI.set_label(decryptButton, "Decrypting…");
             delete decryptButton.dataset.state;
             decryptButton.setAttribute("aria-busy", "true");
             decryptButton.setAttribute("aria-label", "Decrypting CipherGap file");
@@ -1456,7 +1378,7 @@ function choose_downloaded_cgpe_file(event, messageElement, decryptButton) {
             );
         } catch (error) {
             console.error("[CipherGap] File decrypt failed:", error);
-            decryptButton.innerText = "Try again";
+            CHAT_UI.set_label(decryptButton, "Try again");
             decryptButton.setAttribute("aria-label", "CipherGap file decryption failed");
             decryptButton.dataset.state = "error";
             show_ciphergap_notice(
@@ -1544,7 +1466,7 @@ function request_native_chat_file(messageElement, filename, storageKey) {
 function download_chat_encrypted_file(messageElement, button, automatic = false) {
     const storageKey = get_storage_key();
     button.disabled = true;
-    button.textContent = "Downloading…";
+    CHAT_UI.set_label(button, "Downloading…");
     button.setAttribute("aria-busy", "true");
     const job = chat_file_download_chain.catch(() => {}).then(async () => {
         if (storageKey !== get_storage_key() || !messageElement.isConnected) throw new Error("The active chat changed before downloading.");
@@ -1555,7 +1477,7 @@ function download_chat_encrypted_file(messageElement, button, automatic = false)
         if (!payload) throw new Error("This attachment is no longer available.");
         const encrypted = await request_chat_encrypted_file(messageElement, payload.normalized, storageKey);
         if (storageKey !== get_storage_key() || secretKey !== cg_cached_key) throw new Error("The chat or key changed during download.");
-        button.textContent = "Decrypting…";
+        CHAT_UI.set_label(button, "Decrypting…");
         await decrypt_and_present_file(encrypted, secretKey, button, cg_cached_message_key, automatic, storageKey);
         if (automatic) {
             const key = globalThis.CipherGapShared.storage_keys.downloaded_files(storageKey);
@@ -1563,7 +1485,7 @@ function download_chat_encrypted_file(messageElement, button, automatic = false)
             await chrome.storage.local.set({ [key]: [...(result[key] || []), CHAT_DOM.message_id(messageElement)].slice(-100) });
         }
     }).catch((error) => {
-        button.textContent = "Try again";
+        CHAT_UI.set_label(button, "Try again");
         button.dataset.state = "error";
         show_ciphergap_notice(error.message, "error", 7000);
     }).finally(() => {
@@ -1632,8 +1554,8 @@ function attach_file_decrypt_button(messageElement, filePayload) {
     // Add a small instruction text above the button
     const hint = document.createElement("span");
     hint.className = "ciphergap-file-decrypt-hint";
-    hint.innerText =
-        "Encrypted attachment · decrypt in this chat.";
+    const stickerHint = /\.cgst\.cgpe$/i.test(filePayload.normalized);
+    hint.append(CHAT_UI.icon(stickerHint ? "smile" : "lock"),document.createTextNode(stickerHint ? "Encrypted sticker" : "Encrypted file"));
     hint.dir = "auto";
 
     const wrapper = document.createElement("span");
@@ -1644,9 +1566,9 @@ function attach_file_decrypt_button(messageElement, filePayload) {
     const localButton = document.createElement("button");
     localButton.type = "button";
     localButton.textContent = "Choose downloaded file instead";
-    localButton.style.cssText = "border:0;background:transparent;color:inherit;font:inherit;font-size:11px;text-decoration:underline;cursor:pointer;padding:4px";
     localButton.addEventListener("click", (event) => choose_downloaded_cgpe_file(event, messageElement, decryptButton));
-    wrapper.appendChild(localButton);
+    const fallback = document.createElement("details"), summary = document.createElement("summary");
+    summary.textContent = "Having trouble opening it?";fallback.append(summary, localButton);wrapper.append(fallback);
 
     // The filename carrier gives us a semantic in-bubble anchor and avoids
     // the messenger's generated class names and fragile parent-count traversal.
@@ -1658,6 +1580,8 @@ function attach_file_decrypt_button(messageElement, filePayload) {
     while (scrollParent && !/^(auto|scroll)$/.test(getComputedStyle(scrollParent).overflowY)) scrollParent = scrollParent.parentElement;
     const pinnedToEnd = scrollParent && scrollParent.scrollHeight - scrollParent.scrollTop - scrollParent.clientHeight < 48;
     mountAnchor.insertAdjacentElement("afterend", wrapper);
+    CHAT_UI.layout(messageElement, mountAnchor);
+    if (stickerHint) {mountAnchor.dataset.ciphergapNativeFile = "true";mountAnchor.hidden = true;}
     // Keep the newly expanded file card visible only when the user was already
     // at the end; reading older messages must never move the conversation.
     if (pinnedToEnd) requestAnimationFrame(() => { if (scrollParent.isConnected) scrollParent.scrollTop = scrollParent.scrollHeight; });
@@ -1723,6 +1647,7 @@ function hide_exchange_protocol_message(messageElement, payload) {
     rawPayload.hidden = true;
     rawPayload.setAttribute("aria-hidden", "true");
     rawPayload.dataset.ciphergapProtocolRaw = "true";
+    CHAT_UI.layout(messageElement, rawPayload);
 
     // Remove components created by the previous outer-row renderer if the
     // page is upgraded without a full navigation.
@@ -1798,6 +1723,8 @@ function process_chat_message(
         chat_seen_rows.set(messageElement, historical ? 1 : Date.now());
         if (CHAT_DOM.name === "telegram" && Number.isFinite(id)) chat_auto_file_floor = Math.max(chat_auto_file_floor, id);
     }
+    render_chat_quote_previews(messageElement);
+    reserve_chat_scroll_space(messageElement);
     // Check for encrypted file attachments (.cgpe)
     process_cgpe_file_message(messageElement);
 
@@ -2131,7 +2058,6 @@ function start_chat_lifecycle() {
         return;
     }
     chat_lifecycle_started = true;
-    inject_ciphergap_content_styles();
 
     document.querySelectorAll('input[type="file"]').forEach(intercept_file_selection);
 

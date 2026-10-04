@@ -1,5 +1,40 @@
 # Browser validation
 
+## 1.5.0 — 2026-10-04
+
+Live checks used the same logged-in **Your Chrome / Default** profile and
+Saved Messages URLs below. Existing test keys were retained.
+
+- Sent and decrypted `CipherGap 1.5 · سلام 👨‍👩‍👧‍👦` followed by `👍🏽 ❤️` on
+  both platforms. Telegram text kept a natural width (about 170 CSS px) and two
+  lines, including after closing DevTools/resizing and final delivery.
+- The initial live check exposed a pending Telegram bubble acquiring
+  `contain: inline-size` after delivery; owned message ancestors now prevent that
+  collapse throughout the transition.
+- A built-in PNG emoji sticker was encrypted, confirmed in the native preview,
+  sent, authenticated and shown inline on both services (256-pixel original,
+  220 CSS px preview). Telegram's native document icon/size are hidden for this
+  view; native timestamps remain visible. Test messages/stickers remain there.
+- Moving the floating toolbar outside Teact's composer restored its native file
+  preview. The toolbar was visually checked in the actual dark interfaces.
+- Eitaa's selected reply target revealed that quoted older ciphertext could be
+  chosen ahead of the actual body. Native timestamp anchoring now decrypts the
+  correct message; quote previews use a compact encrypted-message label.
+
+Isolated **Chrome and Firefox ESR 153.4.0** integration tests on both messenger
+origins cover two-party ECDH/SAS, native image-backed Unicode emoji and joined
+sequences, ciphertext-only sticker upload, inline PNG and WebM playback, larger
+image viewing, exact PNG downloads, pause cleanup, native timestamps and reply
+selection. Chrome also checks compact controls at 390 px, dynamic containment,
+request expiry, abandoned secure picks and native composer-overlap/scroll-anchor recovery. Existing Bale flows pass in both
+browsers. All 34 Node checks pass, including authenticated sticker metadata,
+tamper/wrong-key rejection, passive MIME/size validation and legacy vectors.
+
+Live sticker checks were self-chat PNG tests in Chrome. Firefox Eitaa/Telegram
+and animated WebM checks used isolated profiles and sanitized DOM fixtures;
+no second live Eitaa/Telegram account was used. Native sticker packs, TGS/Lottie,
+Android and slow near-limit live transfers remain outside this validation.
+
 ## 1.4.0 — 2026-10-04
 
 The unpacked extension was installed and tested in the user's logged-in Chrome
