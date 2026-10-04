@@ -31,7 +31,7 @@ window.addMessage=(text,incoming=true)=>{
 window.addAttachment=(bytes,name,incoming=true)=>{
  const id=addMessage('',incoming),row=platform==='telegram'?document.getElementById('message-'+id):document.querySelector('[data-mid="'+id+'"]');
  const body=row.firstElementChild.firstElementChild;body.replaceChildren();
- const doc=document.createElement('div');if(platform==='eitaa')doc.dataset.docId=id;
+ const doc=document.createElement('div');if(platform==='eitaa'){doc.dataset.docId=id;doc.style.height='72px';doc.style.overflow='hidden';}
  const icon=document.createElement('div'),info=document.createElement('div'),title=document.createElement('div');title.dir='auto';title.textContent=name+'.cgpe';info.append(title);doc.append(icon,info);body.append(doc);
  icon.onclick=e=>{e.stopPropagation();const blob=new Blob([(typeof bytes==='string'?Uint8Array.from(atob(bytes),c=>c.charCodeAt(0)):new Uint8Array(bytes))]);const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name+'.cgpe';a.click();};
  if(platform==='eitaa')doc.onclick=()=>icon.click();

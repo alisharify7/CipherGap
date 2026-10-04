@@ -30,10 +30,11 @@ const CIPHERGAP_INTERNAL_FILE_INPUT = "ciphergapInternalFileInput";
 const CHAT_LIFECYCLE_SELECTOR = [
     CHAT_MESSAGE_SCROLLER,
     CHAT_CHAT_INPUT,
+    CHAT_DOM.lifecycle_selector,
     '[data-ciphergap-composer="true"]',
     "#ciphergap-btn",
     "#ciphergap-toolbar"
-].join(",");
+].filter(Boolean).join(",");
 
 // Flag: when true, sanitize_chat_input will skip stripping — prevents the
 // sanitizer from eating exchange text while chat_send_message is using it.
@@ -1649,11 +1650,17 @@ function attach_file_decrypt_button(messageElement, filePayload) {
 
     // The filename carrier gives us a semantic in-bubble anchor and avoids
     // the messenger's generated class names and fragile parent-count traversal.
-    const interactiveAttachment = filePayload.element.closest("a, button");
+    const interactiveAttachment = CHAT_DOM.file_action_anchor?.(filePayload.element) ?? filePayload.element.closest("a, button");
     const mountAnchor = interactiveAttachment && messageElement.contains(interactiveAttachment)
         ? interactiveAttachment
         : filePayload.element;
+    let scrollParent = messageElement.parentElement;
+    while (scrollParent && !/^(auto|scroll)$/.test(getComputedStyle(scrollParent).overflowY)) scrollParent = scrollParent.parentElement;
+    const pinnedToEnd = scrollParent && scrollParent.scrollHeight - scrollParent.scrollTop - scrollParent.clientHeight < 48;
     mountAnchor.insertAdjacentElement("afterend", wrapper);
+    // Keep the newly expanded file card visible only when the user was already
+    // at the end; reading older messages must never move the conversation.
+    if (pinnedToEnd) requestAnimationFrame(() => { if (scrollParent.isConnected) scrollParent.scrollTop = scrollParent.scrollHeight; });
     auto_receive_chat_file(messageElement, decryptButton).catch(() => {});
 }
 
