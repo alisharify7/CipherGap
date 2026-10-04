@@ -36,6 +36,8 @@ try:
             page.goto(url + "/CipherGap/")
             assert page.locator("html").get_attribute("lang") == "en"
             assert page.locator("#language-select").input_value() == "en"
+            remaining=page.evaluate("""(()=>{const w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT),out=[];let n;while(n=w.nextNode()){if(!n.parentElement.closest('script,style,option,noscript') && /[\u0600-\u06ff]/.test(n.nodeValue))out.push(n.nodeValue.trim());}return out;})()""")
+            assert not remaining, remaining
             assert page.locator(".site-footer p").inner_text() == "Ali Sharify · Open source"
             assert page.locator(".messengers .available strong").inner_text() == "Bale"
             assert page.locator(".messengers li:not(.available) small").all_inner_texts() == ["In development"] * 4

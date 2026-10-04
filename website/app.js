@@ -61,6 +61,7 @@ function selectTab(tab, focus = false) {
         item.tabIndex = selected ? 0 : -1;
         document.getElementById(item.getAttribute("aria-controls")).hidden = !selected;
     }
+    try { localStorage.setItem("ciphergap-browser", tab.id === "tab-firefox" ? "firefox" : "chrome"); } catch {}
     if (focus) tab.focus();
 }
 tabs.forEach((tab, index) => {
@@ -72,6 +73,9 @@ tabs.forEach((tab, index) => {
         selectTab(tabs[(index + offset + tabs.length) % tabs.length], true);
     });
 });
+let savedBrowser;
+try { savedBrowser = localStorage.getItem("ciphergap-browser"); } catch {}
+selectTab(document.getElementById(savedBrowser === "firefox" || (!savedBrowser && navigator.userAgent.includes("Firefox/")) ? "tab-firefox" : "tab-chrome"));
 const status = document.getElementById("copy-status");
 let statusTimer;
 document.querySelectorAll("[data-copy]").forEach((button) => {

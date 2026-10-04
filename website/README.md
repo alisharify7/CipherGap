@@ -17,3 +17,12 @@ https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-
 From the repository root: `python3 -m http.server 8787`
 
 Run `python3 website/verify.py` with Python Playwright installed and Chrome available. It checks both languages, persisted preference, local fonts, responsive widths 320–1440px, Pages subpath assets, mobile navigation, keyboard tabs, FAQ, clipboard success and denied permissions. Screenshots are saved in this directory.
+
+Version 1.3.0 uses shared Indigo/Slate tokens from `CipherGap/share/theme.css`,
+browser-first install tabs with saved preference, and guides for inline exchange
+consent, absolute 15-minute expiry and media preview/download. English remains
+the default; Persian and browser choice persist locally. The Pages workflow
+must package `website/messengers`, `website/fonts`, shared theme CSS and product
+screenshots as well as the page. The workflow is prepared locally; pushing it
+still requires credentials with workflow permission. Branch-based Pages hosting
+continues to publish the website in the meantime.

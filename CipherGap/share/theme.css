@@ -1,0 +1,15 @@
+/* Radix Colors 3: Indigo accents, Slate surfaces, semantic status colors.
+   https://www.radix-ui.com/colors/docs/palette-composition/understanding-the-scale */
+:root {
+    --cg-canvas: #fcfcfd; --cg-surface: #fff; --cg-muted-surface: #f0f0f3;
+    --cg-text: #1c2024; --cg-muted: #60646c; --cg-border: #d9d9e0;
+    --cg-primary: #3e63dd; --cg-primary-hover: #3358d4; --cg-soft: #edf2fe;
+    --cg-on-primary: #fff; --cg-success: #18794e; --cg-danger: #ce2c31;
+    --cg-dark-surface: #11131f;
+}
+:root[data-theme="dark"] {
+    --cg-canvas: #111113; --cg-surface: #18191b; --cg-muted-surface: #212225;
+    --cg-text: #edeef0; --cg-muted: #b0b4ba; --cg-border: #363a3f;
+    --cg-primary: #9eb1ff; --cg-primary-hover: #b7c6ff; --cg-soft: #1f2d5c;
+    --cg-on-primary: #11131f; --cg-success: #65ba74; --cg-danger: #ff9592;
+}

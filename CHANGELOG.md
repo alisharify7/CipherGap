@@ -1,23 +1,57 @@
 # Changelog
 
-## Website update — 2026-10-04
-
-- English is the default for first visits; Persian remains available and saved.
-- Refreshed conversational copy and English author credit: Ali Sharify.
-- Bundled official messenger marks: Bale is highlighted as available, with Eitaa, Rubika, Telegram and WhatsApp marked In development.
-- Updated the version and explained installation notices for recipients without CipherGap.
-- Verified both languages, persisted preferences, fonts, responsive layouts and local assets.
-
-
-## Unreleased — website branch
+## [1.3.0](docs/releases/v1.3.0.md) - 2026-10-04
 
 ### Added
 
-- A responsive Persian RTL website with product introduction, installation
-  guides for Chrome and Firefox, SAS/key-exchange and attachment tutorials,
-  explicit active/planned messenger status, and troubleshooting FAQs.
-- Keyboard-accessible browser tabs, mobile navigation and clipboard feedback.
-- Static hosting instructions, browser verification and desktop/mobile previews.
+- Shared image viewer and native audio/video players with original-file downloads.
+- In-chat exchange acceptance/decline, explicit key replacement confirmation and a countdown.
+- A 15-minute absolute request/SAS deadline, enforced before ACK, key storage and verification.
+- GitHub Pages alongside GitHub in the hidden installation footer.
+- Shared Radix Indigo/Slate theme and browser-first bilingual installation guide.
+
+### Fixed
+
+- Firefox/Linux WAV MIME aliases now open in Chrome’s audio player.
+- Firefox popup sizing, passive toast click interception and SAS countdown deadline retention.
+- Closing or pausing previews releases Blob URLs and stops playback.
+
+### Compatibility
+
+- Update both participants to 1.3.0 for timed exchanges and the two-link footer.
+- Existing AES-GCM messages, CGPE files and saved keys remain readable.
+- Preview authenticates the complete file before playback; CGPE v1 retains its 100 MB limit.
+
+## [1.2.1](docs/releases/v1.2.1.md) - 2026-10-04
+
+### Added
+
+- Encrypted messages include a Persian installation guide and the GitHub link for recipients without CipherGap.
+- Enabled readers hide the guide before or after decryption, including split paragraphs and linked URLs; pausing the extension restores it.
+- Regression coverage for notice-bearing encryption, legacy messages, browser rendering and pause/resume.
+
+### Compatibility
+
+- The AES-GCM payload, CGP v1 fields and saved keys are unchanged. Version 1.2.1 still reads older messages.
+- Both participants should update to 1.2.1 to read messages with the new installation guide; older readers do not understand the appended text.
+
+## [1.2.0] - 2026-10-03
+
+### Added
+
+- Persian/English language selection with saved preference, RTL/LTR and local Vazirmatn/Inter fonts.
+- Global and per-chat pause controls that preserve saved keys.
+- A bilingual website on `website` with installation, verification and file tutorials.
+- One shared Chrome/Firefox source with reproducible target-specific packages.
+- Regression checks for plaintext/encrypted file choice, pause during selection, package identity and real isolated browser workflows.
+
+### Changed
+
+- Ordinary Bale attachments stay ordinary. Encrypted file selection is explicit and fails closed if the chat, key or enabled state changes.
+- Composer controls use a compact, subdued teal style and include per-chat pause.
+- Firefox desktop minimum is 140; TypedArray species and cross-realm ArrayBuffer handling work with Firefox content-script Xrays.
+- CGP/CGPE v1 and existing saved keys remain compatible.
+
 
 ## [1.1.0](docs/releases/v1.1.0.md) — 2026-10-03
 
