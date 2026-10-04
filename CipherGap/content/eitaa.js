@@ -8,7 +8,9 @@
     function native_row() {
         let node = input();
         while (node && node.id !== "column-center") {
-            if (node.querySelector('input[type="file"]')) return node;
+            // The file input is mounted asynchronously after the composer.
+            // Locate the stable attachment icon so first-load UI also works.
+            if (node.querySelector('[data-icon="attach"]')) return node;
             node = node.parentElement;
         }
         return null;
@@ -40,8 +42,7 @@
             }
         },
         async trigger_file_picker() {
-            const file = native_row()?.querySelector('input[type="file"]');
-            const menu = file?.previousElementSibling?.previousElementSibling;
+            const menu = native_row()?.querySelector('[data-icon="attach"]')?.parentElement;
             if (!menu) throw new Error("The file attachment menu is unavailable. Reopen the chat.");
             menu.click();
             // The menu is lazily rendered after its permissions query resolves.

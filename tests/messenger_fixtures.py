@@ -14,8 +14,8 @@ if(platform==='telegram'){
  const send=document.getElementById('native-send');send.onclick=nativeSend;
  editor.addEventListener('input',()=>send.setAttribute('aria-label',editor.innerText.trim()?'Send Message':'Record voice message'));
 }else{
- const slot=document.getElementById('file-slot');slot.replaceWith(nativeFile);
- const attach=nativeFile.previousElementSibling.previousElementSibling;
+ const slot=document.getElementById('file-slot');setTimeout(()=>slot.replaceWith(nativeFile),200);
+ const attach=document.querySelector('[data-icon=attach]').parentElement;
  attach.onclick=()=>{if(!attach.querySelector('[data-icon=document]'))setTimeout(()=>{const item=document.createElement('div'),icon=document.createElement('span');icon.dataset.icon='document';item.append(icon);item.addEventListener('click',e=>{e.stopPropagation();nativeFile.click()});attach.append(item)},50)};
  document.querySelector('[data-icon=send]').parentElement.onclick=nativeSend;
 }
