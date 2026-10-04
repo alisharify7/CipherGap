@@ -146,8 +146,7 @@ async function get_peer_fingerprint(storageKey) {
 // Stale exchange cleanup
 // =========================
 
-const EXCHANGE_STATUS_EXPIRY_MS = globalThis.CipherGapShared.timeouts
-    .exchange_status_ms;
+
 
 // Remove expired exchange_status_* entries from storage so they don't
 // linger as phantom "waiting" states when the user returns to a chat later.
@@ -174,7 +173,7 @@ async function cleanup_stale_exchange_status(storageKey) {
     }
 
     // Already complete — keep it, but only for a limited time
-    if (entry.status === "complete" && Date.now() - entry.at > EXCHANGE_STATUS_EXPIRY_MS) {
+    if (entry.status === "complete" && Date.now() >= globalThis.CipherGapShared.protocol.get_exchange_expires_at(entry)) {
         await chrome.storage.local.remove(statusKey);
         return;
     }
@@ -182,7 +181,7 @@ async function cleanup_stale_exchange_status(storageKey) {
     // Pending outgoing and incoming requests share the same expiry policy.
     if (
         (entry.status === "waiting" || entry.status === "incoming") &&
-        Date.now() - entry.at > EXCHANGE_STATUS_EXPIRY_MS
+        Date.now() >= globalThis.CipherGapShared.protocol.get_exchange_expires_at(entry)
     ) {
         await chrome.storage.local.remove(statusKey);
     }

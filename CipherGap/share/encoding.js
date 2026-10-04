@@ -16,7 +16,9 @@ function bytes_to_base64(value) {
     let binary = "";
 
     for (let offset = 0; offset < bytes.length; offset += chunkSize) {
-        const chunk = bytes.subarray(offset, offset + chunkSize);
+        // Firefox content-script Xrays block TypedArray species/constructor
+        // access. Generic Array slicing avoids that cross-realm lookup.
+        const chunk = Array.prototype.slice.call(bytes, offset, offset + chunkSize);
         binary += String.fromCharCode(...chunk);
     }
 
@@ -55,7 +57,17 @@ function bytes_to_hex(value) {
     ).join("");
 }
 
+function is_array_buffer(value) {
+    try {
+        // Native brand check works across Firefox MAIN/isolated realms and
+        // cannot be spoofed with Symbol.toStringTag.
+        Object.getOwnPropertyDescriptor(ArrayBuffer.prototype, "byteLength").get.call(value);
+        return true;
+    } catch { return false; }
+}
+
 globalThis.CipherGapShared.encoding = Object.freeze({
+    is_array_buffer,
     encode_utf8,
     decode_utf8,
     bytes_to_base64,

@@ -1,3 +1,10 @@
+async function require_ciphergap_enabled(storageKey) {
+    const keys = globalThis.CipherGapShared.storage_keys;
+    const flag = keys.chat_enabled(storageKey);
+    const state = await chrome.storage.local.get([keys.enabled, flag]);
+    if (state[keys.enabled] === false || state[flag] === false) throw new Error("CipherGap is paused. Enable it in Settings to continue.");
+}
+
 // key_exchange.js — Diffie-Hellman key exchange protocol (messenger-agnostic)
 // Enhanced with SAS verification, TOFU fingerprints, and stale exchange cleanup.
 
@@ -27,7 +34,8 @@ function get_pending_key(storageKey, nonce) {
 
 function set_pending_exchange(storageKey, nonce, data) {
     const key = `${storageKey}:${nonce}`;
-    pending_exchanges.set(key, { ...data, storageKey, nonce, createdAt: Date.now() });
+    const expiresAt = data.expiresAt ?? Date.now() + EXCHANGE_TIMEOUT_MS;
+    pending_exchanges.set(key, { ...data, storageKey, nonce, expiresAt, createdAt: Date.now() });
 
     setTimeout(async () => {
         const entry = pending_exchanges.get(key);
@@ -47,7 +55,20 @@ function set_pending_exchange(storageKey, nonce, data) {
                 // will remove the entry later if this attempt fails.
             }
         }
-    }, EXCHANGE_TIMEOUT_MS);
+    }, Math.max(0, expiresAt - Date.now()));
+}
+
+async function require_active_exchange(storageKey, nonce, expiresAt) {
+    if (!Number.isFinite(expiresAt) || expiresAt <= Date.now()) {
+        throw new Error("This key exchange expired. Request a new exchange.");
+    }
+    await require_ciphergap_enabled(storageKey);
+    const key = globalThis.CipherGapShared.storage_keys.exchange_status(storageKey);
+    const stored = await chrome.storage.local.get(key);
+    if (stored[key]?.nonce !== nonce || EXCHANGE_SHARED_PROTOCOL.get_exchange_expires_at(stored[key]) !== expiresAt) {
+        throw new Error("This key exchange request is no longer current.");
+    }
+    if (expiresAt <= Date.now()) throw new Error("This key exchange expired. Request a new exchange.");
 }
 
 function clear_pending_exchanges(storageKey) {
@@ -138,8 +159,10 @@ async function finalize_exchange(
     nonce,
     privateKey,
     peerPublicKeyB64,
-    exchangeCodecId
+    exchangeCodecId,
+    expiresAt
 ) {
+    await require_active_exchange(storageKey, nonce, expiresAt);
     const exchangeId = `${storageKey}:${nonce}`;
     const exchangeCodec = EXCHANGE_SHARED_PROTOCOL.get_exchange_codec(
         exchangeCodecId
@@ -193,6 +216,7 @@ async function finalize_exchange(
             oldFingerprint: fpCheck.oldFingerprint ?? null,
             trustState,
             codecId: exchangeCodec.id,
+            expiresAt,
             at: completedAt
         },
         [globalThis.CipherGapShared.storage_keys.key_trust(storageKey)]: {
@@ -215,6 +239,7 @@ async function finalize_exchange(
         };
     }
 
+    await require_active_exchange(storageKey, nonce, expiresAt);
     await chrome.storage.local.set(storageUpdates);
 
     // Send the SAS code as a chat message so both users can see and verify it
@@ -223,7 +248,8 @@ async function finalize_exchange(
         const sasMessage = EXCHANGE_SHARED_PROTOCOL.build_sas_message(
             sas,
             fpCheck.fingerprint,
-            exchangeCodec.id
+            exchangeCodec.id,
+            expiresAt
         );
         await adapter.send_message(sasMessage, { storageKey }).catch((err) => {
             console.warn("[CipherGap] Could not send SAS message:", err);
@@ -244,7 +270,10 @@ async function finalize_exchange(
 // Incoming message handlers
 // =========================
 
-async function handle_incoming_start(parsed, storageKey, exchangeCodecId) {
+async function handle_incoming_start(parsed, storageKey, exchangeCodecId, sentAt = null) {
+    const expiresAt = EXCHANGE_SHARED_PROTOCOL.get_exchange_expires_at(parsed, sentAt);
+    if (expiresAt <= Date.now() || expiresAt > Date.now() + EXCHANGE_TIMEOUT_MS + 30000) return;
+    if (Number(sentAt) > 0 && Number(sentAt) + EXCHANGE_TIMEOUT_MS <= Date.now()) return;
     // Clear an expired request before checking the persistent scan-dedupe set.
     await cleanup_stale_exchange_status(storageKey);
 
@@ -279,6 +308,7 @@ async function handle_incoming_start(parsed, storageKey, exchangeCodecId) {
     const fingerprint = await EXCHANGE_SHARED_ECDH
         .compute_key_fingerprint(parsed.publicKeyB64, exchangeCodecId);
     const now = Date.now();
+    if (expiresAt <= now) return;
 
     await chrome.storage.local.set({
         [statusKey]: {
@@ -287,6 +317,7 @@ async function handle_incoming_start(parsed, storageKey, exchangeCodecId) {
             publicKeyB64: parsed.publicKeyB64,
             fingerprint,
             codecId: exchangeCodecId,
+            expiresAt,
             at: now
         }
     });
@@ -296,7 +327,16 @@ async function handle_incoming_start(parsed, storageKey, exchangeCodecId) {
     await mark_exchange_handled(storageKey, parsed.nonce, "seen");
 }
 
+const exchange_responses_in_flight = new Set();
 async function respond_to_incoming_exchange(accept, expectedNonce) {
+    const id = `${get_storage_key()}:${expectedNonce}`;
+    if (exchange_responses_in_flight.has(id)) throw new Error("This request is already being processed.");
+    exchange_responses_in_flight.add(id);
+    try { return await respond_to_incoming_exchange_once(accept, expectedNonce); }
+    finally { exchange_responses_in_flight.delete(id); }
+}
+
+async function respond_to_incoming_exchange_once(accept, expectedNonce) {
     const storageKey = get_storage_key();
     await cleanup_stale_exchange_status(storageKey);
 
@@ -314,6 +354,8 @@ async function respond_to_incoming_exchange(accept, expectedNonce) {
     }
 
     const { nonce, publicKeyB64 } = incoming;
+    const expiresAt = EXCHANGE_SHARED_PROTOCOL.get_exchange_expires_at(incoming);
+    await require_active_exchange(storageKey, nonce, expiresAt);
     const exchangeCodec = EXCHANGE_SHARED_PROTOCOL.get_exchange_codec(
         incoming.codecId ||
         globalThis.CipherGapShared.formats.exchange.legacy_codec
@@ -354,17 +396,19 @@ async function respond_to_incoming_exchange(accept, expectedNonce) {
             publicKeyB64: session.publicKeyB64,
             role: "responder",
             peerPublicKeyB64: publicKeyB64,
+            expiresAt,
             codecId: exchangeCodec.id
         });
         pending = get_pending_key(storageKey, nonce);
     }
 
-    await mark_exchange_handled(storageKey, nonce, "start");
+    await require_active_exchange(storageKey, nonce, expiresAt);
 
     const ackMessage = EXCHANGE_SHARED_PROTOCOL.build_ack_exchange_message(
         nonce,
         pending.publicKeyB64,
-        exchangeCodec.id
+        exchangeCodec.id,
+        expiresAt
     );
     await adapter.send_message(ackMessage, { storageKey });
 
@@ -373,8 +417,10 @@ async function respond_to_incoming_exchange(accept, expectedNonce) {
         nonce,
         pending.privateKey,
         publicKeyB64,
-        exchangeCodec.id
+        exchangeCodec.id,
+        expiresAt
     );
+    await mark_exchange_handled(storageKey, nonce, "start");
     pending_exchanges.delete(`${storageKey}:${nonce}`);
 
     return { accepted: true, nonce, storageKey, ...result };
@@ -399,6 +445,8 @@ async function handle_incoming_ack(parsed, storageKey, exchangeCodecId) {
         return;
     }
 
+    if (pending.expiresAt <= Date.now() || (parsed.expiresAt && parsed.expiresAt !== pending.expiresAt)) return;
+
     await mark_exchange_handled(storageKey, parsed.nonce, "ack");
 
     if (cancelled_exchanges.has(exchangeId)) {
@@ -411,12 +459,14 @@ async function handle_incoming_ack(parsed, storageKey, exchangeCodecId) {
         parsed.nonce,
         pending.privateKey,
         parsed.publicKeyB64,
-        exchangeCodecId
+        exchangeCodecId,
+        pending.expiresAt
     );
     pending_exchanges.delete(exchangeId);
 }
 
-async function handle_incoming_exchange_message(text) {
+async function handle_incoming_exchange_message(text, sentAt = null) {
+    await require_ciphergap_enabled(get_storage_key());
     const match = EXCHANGE_SHARED_PROTOCOL.parse_strict_exchange_message(text);
     if (!match) {
         return;
@@ -431,7 +481,7 @@ async function handle_incoming_exchange_message(text) {
     const storageKey = get_storage_key();
 
     if (parsed.type === "start") {
-        await handle_incoming_start(parsed, storageKey, codecId);
+        await handle_incoming_start(parsed, storageKey, codecId, sentAt);
     } else if (parsed.type === "ack") {
         await handle_incoming_ack(parsed, storageKey, codecId);
     }
@@ -452,6 +502,7 @@ async function start_key_exchange() {
     }
 
     const storageKey = get_storage_key();
+    await require_ciphergap_enabled(storageKey);
 
     // Clean up any previous stale exchange status
     await cleanup_stale_exchange_status(storageKey);
@@ -464,10 +515,14 @@ async function start_key_exchange() {
     }
 
     const session = await EXCHANGE_SHARED_ECDH.create_dh_session();
+    await require_ciphergap_enabled(storageKey);
+    if (get_storage_key() !== storageKey) throw new Error("The active chat changed. Start the exchange again.");
+    const expiresAt = Date.now() + EXCHANGE_TIMEOUT_MS;
 
     set_pending_exchange(storageKey, session.nonce, {
         privateKey: session.privateKey,
         role: "initiator",
+        expiresAt,
         codecId: session.codecId
     });
     // Keep only a public nonce across reloads, never the private ECDH key.
@@ -479,6 +534,7 @@ async function start_key_exchange() {
             status: "waiting",
             nonce: session.nonce,
             codecId: session.codecId,
+            expiresAt,
             at: Date.now()
         }
     });
@@ -486,7 +542,8 @@ async function start_key_exchange() {
     const startMessage = EXCHANGE_SHARED_PROTOCOL.build_start_exchange_message(
         session.nonce,
         session.publicKeyB64,
-        session.codecId
+        session.codecId,
+        expiresAt
     );
     await adapter.send_message(startMessage, { storageKey });
 
@@ -577,6 +634,9 @@ async function mark_current_exchange_verified(expectedNonce) {
         throw new Error("This key exchange is no longer current.");
     }
 
+    const expiresAt = EXCHANGE_SHARED_PROTOCOL.get_exchange_expires_at(status);
+    await require_active_exchange(storageKey, expectedNonce, expiresAt);
+
     if (
         !trust ||
         trust.source !== "exchange" ||
@@ -618,6 +678,7 @@ async function mark_current_exchange_verified(expectedNonce) {
         };
     }
 
+    await require_active_exchange(storageKey, expectedNonce, expiresAt);
     await chrome.storage.local.set(updates);
     return { storageKey, nonce: expectedNonce, trust: verifiedTrust };
 }
@@ -677,13 +738,17 @@ async function send_verification_confirmation() {
 // =========================
 
 function init_key_exchange_listener() {
-    chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+    const dispatch = (message, _sender, sendResponse) => {
         if (message.expectedStorageKey && message.expectedStorageKey !== get_storage_key()) {
             sendResponse({ ok: false, error: "The active chat changed. Reopen CipherGap in the matching conversation." });
             return false;
         }
         if (message.action === "choose_secure_files") {
-            choose_bale_secure_files()
+            Promise.resolve().then(() => {
+                const adapter = globalThis.CipherGapShared.messenger_adapters.get_active();
+                if (!adapter?.choose_secure_files) throw new Error("Secure files are unavailable in this chat.");
+                return adapter.choose_secure_files();
+            })
                 .then(() => sendResponse({ ok: true }))
                 .catch((error) => sendResponse({ ok: false, error: error.message }));
             return true;
@@ -849,5 +914,20 @@ function init_key_exchange_listener() {
                 .catch((err) => sendResponse({ ok: false, error: err.message }));
             return true;
         }
+    };
+    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+        const activeActions = ["choose_secure_files", "start_key_exchange", "respond_key_exchange", "mark_key_verified", "send_confirmation", "auto_decrypt_sweep"];
+        if (!activeActions.includes(message.action)) return dispatch(message, sender, sendResponse);
+        (async () => {
+            const keys = globalThis.CipherGapShared.storage_keys;
+            const chatKey = keys.chat_enabled(get_storage_key());
+            const state = await chrome.storage.local.get([keys.enabled, chatKey]);
+            if (state[keys.enabled] === false || state[chatKey] === false) {
+                sendResponse({ ok: false, error: "CipherGap is paused. Enable it in Settings to continue." });
+                return;
+            }
+            dispatch(message, sender, sendResponse);
+        })().catch(error => sendResponse({ ok: false, error: error.message }));
+        return true;
     });
 }

@@ -1,0 +1,20 @@
+.ciphergap-file-viewer {
+    box-sizing: border-box; width: min(900px, calc(100vw - 32px)); max-height: calc(100vh - 32px);
+    padding: 0; border: 1px solid var(--cg-border); border-radius: 18px;
+    color: var(--cg-text); background: var(--cg-surface); box-shadow: 0 24px 80px #11131f40;
+    font: 14px/1.6 system-ui, sans-serif; overflow: auto; overscroll-behavior: contain;
+}
+.ciphergap-file-viewer::backdrop { background: #11131fb3; }
+.ciphergap-file-viewer header,.ciphergap-file-viewer footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 20px; }
+.ciphergap-file-viewer header { border-bottom: 1px solid var(--cg-border); }
+.ciphergap-file-viewer h2 { margin: 0; font-size: 14px; overflow-wrap: anywhere; min-width: 0; }
+.ciphergap-file-viewer button { appearance: none; font: inherit; cursor: pointer; border: 1px solid var(--cg-border); border-radius: 9px; color: var(--cg-text); background: var(--cg-muted-surface); padding: 7px 14px; }
+.ciphergap-file-viewer button:focus-visible { outline: 3px solid var(--cg-primary); outline-offset: 3px; }
+.ciphergap-file-viewer__body { display: grid; place-items: center; min-height: 160px; padding: 20px; background: var(--cg-canvas); }
+.ciphergap-file-viewer__body img,.ciphergap-file-viewer__body video { display: block; max-width: 100%; max-height: 65vh; object-fit: contain; border-radius: 8px; }
+.ciphergap-file-viewer__body video { width: min(640px, 100%); background: #11131f; }
+.ciphergap-file-viewer__body audio { width: min(100%, 500px); }
+.ciphergap-file-viewer__body p { max-width: 50ch; text-align: center; }
+.ciphergap-file-viewer footer { border-top: 1px solid var(--cg-border); color: var(--cg-muted); font-size: 12px; }
+.ciphergap-file-viewer .ciphergap-file-viewer__download { background: var(--cg-primary); color: var(--cg-on-primary); border-color: var(--cg-primary); }
+@media(max-width:480px) { .ciphergap-file-viewer header,.ciphergap-file-viewer footer { padding: 12px; gap: 8px; } .ciphergap-file-viewer footer { flex-wrap: wrap; } }

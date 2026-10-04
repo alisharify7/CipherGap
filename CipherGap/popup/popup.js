@@ -1,7 +1,6 @@
 // popup.js
 
-const EXCHANGE_STATUS_EXPIRY_MS = globalThis.CipherGapShared.timeouts
-    .exchange_status_ms;
+
 const EXCHANGE_WAIT_TIMEOUT_MS = globalThis.CipherGapShared.timeouts
     .popup_exchange_wait_ms;
 const MASKED_KEY = "••••••••••••••••";
@@ -643,7 +642,7 @@ function render_security_actions(state) {
 }
 
 function render_action_availability() {
-    const ready = can_manage_chat();
+    const ready = can_manage_chat() && document.getElementById("enabledToggle").checked && document.getElementById("chatEnabledToggle").checked;
     const exchangeActive = ["waiting", "incoming"].includes(currentExchangeStatus?.status);
     const acceptOrDeclineBusy = is_button_busy(acceptExchangeBtn) ||
         is_button_busy(declineExchangeBtn);
@@ -672,7 +671,7 @@ function render_action_availability() {
     autoFilesToggle.disabled = !ready || !currentSecretKey || is_button_busy(autoFilesToggle);
     chooseFilesBtn.disabled = !ready || !currentSecretKey;
     document.getElementById("fileKeyHint").textContent = currentSecretKey
-        ? "Up to 100 MB combined · Bale previews encrypted files only"
+        ? "Up to 100 MB combined · Only encrypted files reach the messenger"
         : "Set up a key in Security before sending files.";
     revealKeyBtn.disabled = !ready || !currentSecretKey;
     copyKeyBtn.disabled = !ready || !currentSecretKey;
@@ -683,7 +682,7 @@ function render_action_availability() {
 }
 
 function render_disclosures() {
-    const ready = can_manage_chat();
+    const ready = can_manage_chat() && document.getElementById("enabledToggle").checked && document.getElementById("chatEnabledToggle").checked;
     const showManageKey = ready && Boolean(currentSecretKey);
 
     autoDecryptCard.hidden = !ready;
@@ -773,7 +772,7 @@ function is_exchange_expired(entry) {
     if (!entry || !Number.isFinite(entry.at)) {
         return false;
     }
-    return Date.now() - entry.at > EXCHANGE_STATUS_EXPIRY_MS;
+    return Date.now() >= globalThis.CipherGapShared.protocol.get_exchange_expires_at(entry);
 }
 
 async function refresh_popup_state({ announceStale = false } = {}) {
@@ -1733,7 +1732,19 @@ async function handle_auto_decrypt_change() {
     }
 }
 
+async function load_enabled_state() {
+    const keys = globalThis.CipherGapShared.storage_keys;
+    const chatFlag = storageKey ? keys.chat_enabled(storageKey) : null;
+    const state = await chrome.storage.local.get([keys.enabled, ...(chatFlag ? [chatFlag] : [])]);
+    document.getElementById("enabledToggle").checked = state[keys.enabled] !== false;
+    document.getElementById("chatEnabledToggle").checked = !chatFlag || state[chatFlag] !== false;
+    document.getElementById("chatEnabledToggle").disabled = !chatFlag;
+    document.getElementById("pauseNotice").hidden = state[keys.enabled] !== false && (!chatFlag || state[chatFlag] !== false);
+    render_action_availability();
+}
+
 async function init() {
+    await load_enabled_state();
     render_manifest_version();
     clear_status();
     render_popup();
@@ -1793,6 +1804,7 @@ async function init() {
         }
         popupContextState = "ready";
         register_storage_listener();
+        await load_enabled_state();
         await refresh_popup_state({ announceStale: true });
         await load_auto_decrypt();
         render_popup();
@@ -1867,3 +1879,20 @@ themeToggle.addEventListener("click", handle_theme_toggle);
 
 initialize_theme();
 init();
+
+document.getElementById("languageSelect").addEventListener("change", event => {
+    globalThis.CipherGapShared.i18n.setLanguage(event.target.value).catch(error => set_status(error.message, "error"));
+});
+for (const [id, global] of [["enabledToggle", true], ["chatEnabledToggle", false]]) {
+    document.getElementById(id).addEventListener("change", async event => {
+        const keys = globalThis.CipherGapShared.storage_keys;
+        const key = global ? keys.enabled : keys.chat_enabled(storageKey);
+        try { await chrome.storage.local.set({ [key]: event.target.checked }); }
+        catch(error) { event.target.checked = !event.target.checked; set_status(error.message, "error"); }
+        render_action_availability();
+    });
+}
+chrome.storage.onChanged.addListener((changes, area) => {
+    const keys = globalThis.CipherGapShared.storage_keys;
+    if (area === "local" && (changes[keys.enabled] || (storageKey && changes[keys.chat_enabled(storageKey)]))) load_enabled_state().catch(error => set_status(error.message, "error"));
+});

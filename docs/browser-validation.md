@@ -1,4 +1,78 @@
-# Bale browser validation
+# Browser validation
+
+## 1.4.0 — 2026-10-04
+
+The unpacked extension was installed and tested in the user's logged-in Chrome
+**Your Chrome / Default** profile at `https://web.eitaa.com/#70024058` and
+`https://web.telegram.org/a/#5793551013`. Both URLs opened **Saved Messages** in
+these accounts. Live checks therefore used self chats, not a second person.
+
+- Encrypted English/Persian messages were sent through each native composer,
+  persisted in the messenger, and decrypted to the exact original text.
+- A PNG was encrypted through the dedicated picker on each platform. The native
+  upload confirmation contained only a `.cgpe` container; the file was sent.
+- Each received attachment opened in CipherGap's image viewer. Downloads matched
+  the original PNG byte for byte. Eitaa also passed a cold-cache download after
+  clearing only that test document's ciphertext cache entry and reloading.
+- Telegram's installation-link preview and footer are hidden while enabled.
+  The toolbar reserves space above the native composer rather than covering the
+  last message. These changes were checked in the actual chat DOM and visually.
+- Test keys were created only for these previously empty self-chat slots and are
+  explicitly **unverified**. Test messages/files remain readable there.
+
+Separate isolated Chrome and Firefox ESR **153.4.0** profiles run the actual
+extension against sanitized native DOM contracts for two distinct chat IDs on
+both platforms. They check two-party ECDH, matching keys/SAS, inline acceptance,
+verified trust, encrypted text, native upload handoff (including Telegram's
+otherwise detached input), image preview, WAV/WebM playback, safe HTML fallback,
+exact manual/automatic original downloads, history/outgoing exclusion and pause.
+Chrome also checks request expiry and abandoning a secure picker during chat
+navigation. These
+fixtures do not log into accounts or send messages to the live services.
+The existing Bale browser checks still pass in both browsers. All 31 Node
+regressions, the package identity check, Firefox lint (zero warnings/errors),
+JavaScript syntax checks and the responsive bilingual website checks pass.
+
+Protocol regressions cover Persian/Arabic digit localization without changing
+original plaintext. The shared crypto formats and legacy vectors are unchanged.
+Telegram Web K, username-only URLs, Android, host interface languages other than
+English/Persian, and slow near-100-MB live transfers were not validated.
+
+## 1.3.0 — 2026-10-04
+
+Tested in the user's logged-in Chrome **ahmad** profile at
+`https://web.bale.ai/chat?uid=1195997823` and Firefox ESR **153.4.0** at
+`https://web.bale.ai/chat?uid=49589703`. Chrome loaded the unpacked checkout;
+Firefox loaded a temporary generated Firefox package. Both remained logged in.
+
+- A fresh Chrome request was accepted in Firefox's chat card. Existing-key
+  replacement showed the inline confirmation before acceptance. Both sides
+  displayed matching six-digit SAS and were verified.
+- Firefox sent encrypted Persian text; Chrome displayed its plaintext and hid
+  both installation links. Encrypted verification confirmations were decrypted.
+- Each browser sent PNG, WAV and WebM through the explicit encrypted picker.
+  Bale's upload confirmation contained three `.cgpe` files on both browsers.
+- Firefox manually opened all three Chrome attachments: image preview, audio
+  playback and video playback. Its Download results matched the originals.
+- Chrome automatically saved the incoming Firefox attachments, then manually
+  previewed the image and played audio/video. Downloaded bytes matched originals.
+  Chrome requested its native permission for multiple automatic downloads.
+- The live test exposed Firefox/Linux's `audio/vnd.wave` type, which is now
+  normalized to WAV. It also exposed a SAS card losing its absolute deadline;
+  strict parsing now retains that field, with a regression check.
+- The actual Firefox popup was visually checked after fixing its width; it uses
+  the same 440 × 590 layout as Chrome. Test attachments remain in the conversation.
+
+Automated checks additionally cover an expired chat card (`00:00`, gray state,
+accept hidden), late/altered ACKs, expiry before verification, persisted request
+age, real media decoding, native downloads, HTML fallback without execution,
+Blob revocation and pause closing a preview. All 30 Node regressions, the package
+identity check, Chrome/Firefox browser flows and bilingual website checks passed.
+The browser test profiles use synthetic Bale DOM fixtures and do not send live
+messages; the account tests above were separate GUI runs.
+
+## Earlier Chrome validation (1.1.0)
+
 
 Validated on 2026-10-03 in the user's existing, logged-in Chrome profiles.
 Both profiles loaded the unpacked extension from this checkout; the older
@@ -44,7 +118,7 @@ All extension JavaScript passed `node --check`.
   per selection. The 100 MB boundary and slow-network transfers were not tested live.
 - If Bale changes its semantic markup or download flow, the downloaded-file
   picker remains available. The bridge times out after 45 seconds.
-- Firefox 128+ is declared for MAIN-world support; Firefox was not tested live.
+- Firefox desktop 140+ is required; live Firefox 153.4.0 results appear above. Firefox Android remains untested.
 - Ordinary Bale text sending remains ordinary text; use CipherGap's Encrypt
   control when encryption is intended.
 - SAS testing verifies the workflow. Real users must compare codes through a

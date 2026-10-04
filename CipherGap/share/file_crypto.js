@@ -237,7 +237,9 @@ async function decrypt_cgpe(arrayBuffer, password, existingAesKey = null) {
     }
 
     // Read original filename
-    const nameBytes = data.slice(offset, offset + nameLen);
+    // Buffer views work across Firefox content-script Xrays without consulting
+    // the page's TypedArray constructor or changing the wire format.
+    const nameBytes = new Uint8Array(data.buffer, data.byteOffset + offset, nameLen);
     const decodedName = globalThis.CipherGapShared.encoding.decode_utf8(nameBytes);
     const originalName = sanitize_cgpe_filename(decodedName);
     offset += nameLen;
@@ -254,17 +256,17 @@ async function decrypt_cgpe(arrayBuffer, password, existingAesKey = null) {
     }
 
     // Read original MIME type
-    const mimeBytes = data.slice(offset, offset + mimeLen);
+    const mimeBytes = new Uint8Array(data.buffer, data.byteOffset + offset, mimeLen);
     const originalMime = globalThis.CipherGapShared.encoding
         .decode_utf8(mimeBytes) || "application/octet-stream";
     offset += mimeLen;
 
     // Read the configured AES-GCM IV.
-    const iv = data.slice(offset, offset + cryptoProfile.iv_bytes);
+    const iv = new Uint8Array(data.buffer, data.byteOffset + offset, cryptoProfile.iv_bytes);
     offset += cryptoProfile.iv_bytes;
 
     // Remaining bytes are ciphertext
-    const ciphertext = data.slice(offset);
+    const ciphertext = new Uint8Array(data.buffer, data.byteOffset + offset, data.byteLength - offset);
 
     // Decrypt
     const canReuseExistingKey =

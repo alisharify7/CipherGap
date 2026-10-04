@@ -75,8 +75,9 @@ async function decrypt_message(
     );
     const combined = globalThis.CipherGapShared.encoding
         .base64_to_bytes(encryptedMessage);
-    const iv = combined.slice(0, config.iv_bytes);
-    const encryptedData = combined.slice(config.iv_bytes);
+    // Buffer views avoid TypedArray species lookups across Firefox's Xrays.
+    const iv = new Uint8Array(combined.buffer, combined.byteOffset, config.iv_bytes);
+    const encryptedData = new Uint8Array(combined.buffer, combined.byteOffset + config.iv_bytes, combined.byteLength - config.iv_bytes);
 
     const decryptedBuffer = await crypto.subtle.decrypt(
         { name: config.aes_algorithm, iv },

@@ -91,11 +91,17 @@ test("messenger adapters resolve an explicit reusable chat context", () => {
     );
 });
 
-test("CGP v1 writer and parser keep the existing wire format", () => {
+test("CGP v1 adds an installation notice while parsing the original payload", () => {
     const protocol = globalThis.CipherGapShared.protocol;
     const packet = protocol.build_ciphergap_packet("payload|with|pipes", 1700000000);
 
-    assert.equal(packet, "CGP|1|AESGCM|1700000000|payload|with|pipes");
+    const legacy = "CGP|1|AESGCM|1700000000|payload|with|pipes";
+    assert.equal(packet, legacy + "\n\n" + protocol.message_notice);
+    assert.equal(protocol.strip_ciphergap_notice(packet), legacy);
+    assert.equal(protocol.strip_ciphergap_notice(packet.replace('\nhttps://alisharify7.github.io/CipherGap/', '')), legacy);
+    assert.deepEqual(protocol.parse_ciphergap_packet(legacy), protocol.parse_ciphergap_packet(packet));
+    assert.deepEqual(protocol.parse_ciphergap_packet(packet.replace(/\n/g, "")), protocol.parse_ciphergap_packet(legacy));
+    assert.equal(protocol.strip_ciphergap_notice(protocol.message_notice), protocol.message_notice);
     assert.deepEqual(protocol.parse_ciphergap_packet(packet), {
         version: "1",
         algorithm: "AESGCM",
@@ -115,6 +121,15 @@ test("CGP v1 writer and parser keep the existing wire format", () => {
         ),
         null
     );
+});
+
+test("notice-bearing messages still decrypt and reject altered ciphertext", async () => {
+    const { protocol, crypto } = globalThis.CipherGapShared;
+    const secret = "notice-round-trip-key";
+    const payload = await crypto.encrypt_message("سلام — private message", secret);
+    const packet = protocol.build_ciphergap_packet(payload);
+    assert.equal(await crypto.decrypt_message(protocol.parse_ciphergap_packet(packet).data, secret), "سلام — private message");
+    await assert.rejects(crypto.decrypt_message(protocol.parse_ciphergap_packet(packet).data, "wrong-key"));
 });
 
 test("exchange messages use one canonical codec", () => {
@@ -365,11 +380,15 @@ test("manifest loads shared utilities before runtime and adapter code", () => {
     const expectedSharedOrder = [
         "share/namespace.js",
         "share/config.js",
+        "share/translations.js",
+        "share/i18n.js",
         "share/encoding.js",
         "share/crypto.js",
         "share/file_crypto.js",
+        "share/file_viewer.js",
         "share/dh_crypto.js",
         "share/protocol.js",
+        "share/exchange_ui.js",
         "share/messenger_adapter.js"
     ];
 
@@ -387,27 +406,17 @@ test("manifest loads shared utilities before runtime and adapter code", () => {
     });
 });
 
-test("manifest supplies the supported Chrome and Firefox background contexts", () => {
-    const manifest = JSON.parse(
-        fs.readFileSync(path.join(extensionRoot, "manifest.json"), "utf8")
-    );
-
+test("manifest uses the correct browser background context", () => {
+    const manifest = JSON.parse(fs.readFileSync(path.join(extensionRoot, "manifest.json"), "utf8"));
     assert.equal(manifest.manifest_version, 3);
-    assert.equal(manifest.background.service_worker, "background.js");
-    assert.deepEqual(manifest.background.scripts, ["background.js"]);
-    assert.equal(
-        fs.existsSync(path.join(extensionRoot, manifest.background.service_worker)),
-        true
-    );
-    assert.equal(
-        fs.existsSync(path.join(extensionRoot, manifest.background.scripts[0])),
-        true
-    );
-
-    const gecko = manifest.browser_specific_settings?.gecko;
-    assert.match(gecko?.id || "", /^\{[0-9a-f-]{36}\}$/i);
-    assert.equal(gecko?.strict_min_version, "128.0");
-    assert.deepEqual(gecko?.data_collection_permissions, { required: ["none"] });
+    if (manifest.background.scripts) {
+        assert.deepEqual(manifest.background.scripts, ["background.js"]);
+        assert.equal(manifest.background.service_worker, undefined);
+        assert.equal(manifest.browser_specific_settings.gecko.strict_min_version, "140.0");
+    } else {
+        assert.equal(manifest.background.service_worker, "background.js");
+        assert.equal(manifest.browser_specific_settings, undefined);
+    }
 });
 
 test("popup loads shared configuration and protocol before its module", () => {
@@ -424,4 +433,48 @@ test("popup loads shared configuration and protocol before its module", () => {
     assert.ok(namespaceIndex < configIndex);
     assert.ok(configIndex < protocolIndex);
     assert.ok(protocolIndex < popupIndex);
+});
+
+test("Base64 encoding does not access an Xray-protected TypedArray constructor", () => {
+    const bytes = Uint8Array.from({ length: 40000 }, (_, index) => index % 256);
+    const expected = Buffer.from(bytes).toString("base64");
+    Object.defineProperty(bytes, "constructor", {
+        get() { throw new Error("Permission denied to access property constructor"); }
+    });
+    assert.equal(globalThis.CipherGapShared.encoding.bytes_to_base64(bytes), expected);
+});
+
+
+test("ArrayBuffer validation accepts other realms and rejects forged tags", () => {
+    const other = vm.runInNewContext("new ArrayBuffer(16)");
+    assert.equal(globalThis.CipherGapShared.encoding.is_array_buffer(other), true);
+    assert.equal(globalThis.CipherGapShared.encoding.is_array_buffer({
+        byteLength: 16, [Symbol.toStringTag]: "ArrayBuffer"
+    }), false);
+});
+
+test("strict SAS parsing preserves the original absolute exchange deadline", () => {
+    const shared = globalThis.CipherGapShared;
+    const expiresAt = 1791134973210;
+    const packet = shared.protocol.build_sas_message("821437", "84A6E5B3", null, expiresAt);
+    const strict = shared.protocol.parse_strict_exchange_message(packet);
+    assert.equal(strict.parsed.expiresAt, expiresAt);
+    assert.equal(shared.protocol.get_exchange_expires_at(strict.parsed, expiresAt - 1000), expiresAt);
+});
+
+
+test("localized messenger digits preserve authenticated packets and exchange deadlines", async () => {
+    const { protocol, crypto, ecdh } = globalThis.CipherGapShared;
+    const session = await ecdh.create_dh_session();
+    const deadline = Date.now() + 900000;
+    const request = protocol.build_start_exchange_message(session.nonce, session.publicKeyB64, session.codecId, deadline);
+    const packet = protocol.build_ciphergap_packet(await crypto.encrypt_message("سلام ۱۲۳ — original digits", "localized-wire-key"));
+    for (const digits of ["۰۱۲۳۴۵۶۷۸۹", "٠١٢٣٤٥٦٧٨٩"]) {
+        const localize = text => text.replace(/[0-9]/g, d => digits[Number(d)]);
+        assert.deepEqual(protocol.parse_strict_exchange_message(localize(request)), protocol.parse_strict_exchange_message(request));
+        assert.equal(protocol.get_ciphergap_packet_codec(localize(packet)).id, "cgp_v1");
+        assert.deepEqual(protocol.find_ciphergap_notice(localize(packet)), protocol.find_ciphergap_notice(packet));
+        assert.equal(await crypto.decrypt_message(protocol.parse_ciphergap_packet(localize(packet)).data, "localized-wire-key"), "سلام ۱۲۳ — original digits");
+        assert.equal(protocol.parse_strict_exchange_message(localize(request) + "extra"), null);
+    }
 });

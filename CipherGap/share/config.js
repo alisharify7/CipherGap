@@ -78,9 +78,9 @@
     });
 
     const timeouts = Object.freeze({
-        pending_exchange_ms: 5 * 60 * 1000,
-        exchange_status_ms: 10 * 60 * 1000,
-        popup_exchange_wait_ms: 60 * 1000,
+        pending_exchange_ms: 15 * 60 * 1000,
+        exchange_status_ms: 15 * 60 * 1000,
+        popup_exchange_wait_ms: 15 * 60 * 1000,
         handled_nonce_ms: 24 * 60 * 60 * 1000
     });
 
@@ -89,12 +89,12 @@
             id: "bale",
             display_name: "Bale",
             hostnames: Object.freeze(["web.bale.ai"])
-        })
+        }),
+        eitaa: Object.freeze({ id: "eitaa", display_name: "Eitaa", hostnames: Object.freeze(["web.eitaa.com"]) }),
+        telegram: Object.freeze({ id: "telegram", display_name: "Telegram Web A", hostnames: Object.freeze(["web.telegram.org"]) })
     });
     const messenger_roadmap = Object.freeze([
         Object.freeze({ id: "rubika", display_name: "Rubika" }),
-        Object.freeze({ id: "eitaa", display_name: "Eitaa" }),
-        Object.freeze({ id: "telegram", display_name: "Telegram" }),
         Object.freeze({ id: "whatsapp", display_name: "WhatsApp" })
     ]);
 
@@ -134,7 +134,10 @@
             return `peer_fp_${chatStorageKey}`;
         },
         handled_nonces: "cg_handled_nonces",
-        ui_theme: "ciphergap_ui_theme"
+        ui_theme: "ciphergap_ui_theme",
+        ui_language: "ciphergap_ui_language",
+        enabled: "ciphergap_enabled",
+        chat_enabled(chatStorageKey) { return `${chatStorageKey}__enabled`; }
     });
 
     shared.formats = formats;

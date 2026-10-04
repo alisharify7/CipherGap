@@ -1,61 +1,76 @@
-
 {
   "manifest_version": 3,
   "name": "CipherGap",
-  "version": "1.1.0",
-  "description": "Client-side encrypted messages and files for Bale Web.",
-
+  "version": "1.4.0",
+  "description": "Client-side encrypted messages and files for Bale, Eitaa and Telegram Web A.",
   "icons": {
     "16": "assets/icon16.png",
     "32": "assets/icon32.png",
     "48": "assets/icon48.png",
     "128": "assets/icon128.png"
   },
-
   "permissions": [
     "storage",
     "activeTab"
   ],
   "host_permissions": [
-    "https://web.bale.ai/*"
+    "https://web.bale.ai/*",
+    "https://web.eitaa.com/*",
+    "https://web.telegram.org/a/*"
   ],
   "background": {
-    "service_worker": "background.js",
-    "scripts": [
-      "background.js"
-    ]
+    "service_worker": "background.js"
   },
   "content_scripts": [
     {
-      "matches": ["https://web.bale.ai/*"],
-      "js": ["content/main_world_bridge.js"],
+      "matches": [
+        "https://web.bale.ai/*",
+        "https://web.eitaa.com/*",
+        "https://web.telegram.org/a/*"
+      ],
+      "js": [
+        "content/main_world_bridge.js"
+      ],
       "world": "MAIN",
       "run_at": "document_start"
     },
     {
       "matches": [
-        "https://web.bale.ai/*"
+        "https://web.bale.ai/*",
+        "https://web.eitaa.com/*",
+        "https://web.telegram.org/a/*"
+      ],
+      "css": [
+        "share/theme.css",
+        "share/file_viewer.css",
+        "share/exchange_ui.css"
       ],
       "js": [
         "share/namespace.js",
         "share/config.js",
+        "share/translations.js",
+        "share/i18n.js",
         "share/encoding.js",
         "share/crypto.js",
         "share/file_crypto.js",
+        "share/file_viewer.js",
         "share/dh_crypto.js",
         "share/protocol.js",
+        "share/exchange_ui.js",
         "share/messenger_adapter.js",
         "content/utils.js",
         "content/storage.js",
         "content/key_exchange.js",
         "content/bale.js",
+        "content/eitaa.js",
+        "content/telegram.js",
+        "content/chat_runtime.js",
         "content/messenger.js",
         "content/observer.js",
         "content/content.js"
       ]
     }
   ],
-
   "action": {
     "default_title": "CipherGap",
     "default_icon": {
@@ -63,16 +78,5 @@
       "32": "assets/icon32.png"
     },
     "default_popup": "popup/popup.html"
-  },
-  "browser_specific_settings": {
-    "gecko": {
-      "id": "{7b3c6e34-9953-4dbb-b9b9-b5d55a5b333e}",
-      "strict_min_version": "128.0",
-      "data_collection_permissions": {
-        "required": [
-          "none"
-        ]
-      }
-    }
   }
 }
