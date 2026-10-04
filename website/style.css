@@ -44,3 +44,5 @@ html[lang=en] .hero-actions .button [aria-hidden],html[lang=en] .start-section .
 .tab-list button{flex:1;border:1px solid var(--cg-border);border-radius:12px;background:var(--cg-surface);padding:14px 12px;color:var(--cg-muted);font-size:13px}
 .tab-list button[aria-selected=true]{border:2px solid var(--cg-primary);background:var(--cg-soft);color:var(--cg-primary);box-shadow:0 4px 16px #3e63dd0d}
 @media(max-width:720px){.browser-choice-intro{padding:22px 18px 0}.tab-list{padding:14px 18px}.tab-list button{font-size:11px;padding:12px 8px}}
+
+.sticker-guide{padding:16px 18px;border:1px solid var(--cg-border);border-radius:14px;background:var(--cg-soft);line-height:1.8}.sticker-guide strong{display:block;margin-bottom:6px;color:var(--cg-text)}

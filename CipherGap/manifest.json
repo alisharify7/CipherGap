@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "CipherGap",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "Client-side encrypted messages and files for Bale, Eitaa and Telegram Web A.",
   "icons": {
     "16": "assets/icon16.png",
@@ -43,7 +43,8 @@
       "css": [
         "share/theme.css",
         "share/file_viewer.css",
-        "share/exchange_ui.css"
+        "share/exchange_ui.css",
+        "share/chat_ui.css"
       ],
       "js": [
         "share/namespace.js",
@@ -53,7 +54,9 @@
         "share/encoding.js",
         "share/crypto.js",
         "share/file_crypto.js",
+        "share/chat_ui.js",
         "share/file_viewer.js",
+        "share/stickers.js",
         "share/dh_crypto.js",
         "share/protocol.js",
         "share/exchange_ui.js",

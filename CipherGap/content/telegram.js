@@ -2,6 +2,17 @@
 (function (shared) {
     shared.chat_platforms ??= {};
     const input = () => document.getElementById("editable-message-text");
+    function file_control(carrier) {
+        const semantic = carrier.closest('[data-document-id], [role="button"]');
+        if (semantic) return semantic;
+        const row = carrier.closest('[id^="message-"][data-message-id]');
+        // Native documents have an icon followed by filename/size metadata.
+        // Stop at that structural pair instead of relying on File CSS classes.
+        for (let node=carrier.parentElement;node && node!==row;node=node.parentElement) {
+            if (node.children.length === 2 && !node.firstElementChild.contains(carrier) && node.lastElementChild.contains(carrier)) return node;
+        }
+        return carrier.parentElement?.parentElement;
+    }
     shared.chat_platforms.telegram = {
         name: "telegram", hostnames: shared.messengers.definitions.telegram.hostnames,
         supports_url: url => url.pathname.startsWith("/a/"),
@@ -12,7 +23,6 @@
         send_selector: '#MiddleColumn button[aria-label="Send Message"]',
         dynamic_send_control: true, toolbar_encrypt: true,
         composer: () => document.getElementById("message-input-text")?.parentElement?.parentElement,
-        read_input: element => element.innerText,
         write_input(element, text) {
             // Let the editor's native input/DOM observers synchronize its state.
             element.textContent = text;
@@ -30,6 +40,7 @@
         message_id: row => row.dataset.messageId,
         sent_at: () => 0, // New CG exchanges carry their own absolute deadline.
         is_incoming: row => getComputedStyle(row).flexDirection === "row",
+        file_action_anchor: file_control,
         trigger_file_picker() {
             const button = document.getElementById("attach-menu-button");
             const menu = document.getElementById("attach-menu-controls");
@@ -43,7 +54,7 @@
             const document = carrier?.closest('[data-document-id], [role="button"]');
             // File.tsx renders filename inside two wrappers; its outer File
             // container owns the native click handler and loading indicator.
-            const control = document && row.contains(document) ? document : carrier?.parentElement?.parentElement;
+            const control = file_control(carrier);
             if (!control || !row.contains(control)) throw new Error("Choose the downloaded .cgpe file to decrypt this attachment.");
             if (retry && control.querySelector('[role="progressbar"], [aria-busy="true"]')) return;
             if (!retry) (document ? control : control.firstElementChild)?.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));

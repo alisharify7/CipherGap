@@ -1,4 +1,13 @@
 window.CipherGapEnglish = {
+  "· پیام‌های مرتب‌تر، شکلک و استیکر رمز‌شده": "· Neater chats, encrypted emoji & stickers",
+  "گاهی یک استیکر همه‌چیز را می‌گوید.": "Sometimes a sticker says it all.",
+  "از دکمهٔ": "Use",
+  "در گفتگو، شکلک را به پیش‌نویس اضافه کنید و با": "in the chat to add an emoji to your draft, then use",
+  "بفرستید. برای استیکر، تب": "to send it. For a sticker, open",
+  "را باز کنید؛ یکی را انتخاب یا فایل خودتان را وارد کنید. پیش‌نمایش پیام‌رسان فقط فایل رمز‌شده را نشان می‌دهد. گیرنده با": "and choose a built-in sticker or import your own. The messenger preview shows only an encrypted file. Your partner uses",
+  "آن را داخل پیام می‌بیند و با": "to see it right inside the message, and",
+  "نسخهٔ اصلی را نگه می‌دارد.": "to keep the original.",
+  "استیکر ثابت و متحرک تا ۵ مگابایت؛ فرمت‌های PNG، JPEG، WebP، GIF، AVIF و WebM. هر دو نفر نسخهٔ 1.5.0 یا جدیدتر را نصب کنید. استیکرهای منوی معمولی پیام‌رسان رمزگذاری نمی‌شوند.": "Static and animated stickers up to 5 MB: PNG, JPEG, WebP, GIF, AVIF and WebM. Both people need version 1.5.0 or later. Ordinary messenger sticker menus do not encrypt stickers.",
   "CipherGap — یک لایهٔ خصوصی برای گفتگوهای شما": "CipherGap — A private layer for your conversations",
   "رفتن به محتوای اصلی": "Skip to main content",
   "منو": "Menu",

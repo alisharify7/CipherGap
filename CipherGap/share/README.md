@@ -23,7 +23,9 @@ are migrated incrementally.
 - `dh_crypto.js` owns P-256 ECDH, shared-secret derivation, SAS, and fingerprints.
 - `messenger_adapter.js` owns adapter registration and chat-context resolution.
 - `file_viewer.js` / `.css` own a native accessible dialog, raster image previews,
-  audio/video controls, safe MIME normalization, original downloads and Blob URL cleanup.
+  audio/video controls, safe MIME normalization, original downloads, inline sticker media and Blob URL cleanup.
+- `chat_ui.js` / `.css` own compact themed controls, message layout and native Unicode emoji extraction.
+- `stickers.js` owns the emoji/sticker picker and the authenticated CGS1 purpose envelope inside CGPE. It accepts passive raster media and WebM up to 5 MB; it does not implement a second cipher.
 - `exchange_ui.js` / `.css` own exchange/SAS cards, inline consent and countdowns.
 - `theme.css` supplies shared Radix Indigo/Slate color tokens to the popup, chat UI and website.
 - `i18n.js` / `translations.js` localize only CipherGap UI, preserving filenames marked `translate="no"`.
@@ -118,3 +120,21 @@ message/file readers are unchanged.
 `content/chat_runtime.js` owns message observers, draft preservation, consent cards, pause state, native file handoff and media mounting. `content/bale.js`, `content/eitaa.js` and `content/telegram.js` describe only each messenger’s DOM and native controls. Register the messenger in `share/config.js`, add its explicit hosts/paths to both content-script matches, and load its platform module before the runtime. Use semantic IDs/roles/data attributes or structural children; never select generated messenger classes. Platform adapters dispatch the same shared crypto/protocol operations.
 
 Key storage is scoped by hostname and numeric conversation ID. Telegram support is limited to Web A (`/a/`); Web K has no injected scripts. A new codec must retain legacy readers and pass shared compatibility vectors before release.
+
+## Sticker transport
+
+`stickers.pack(File)` creates a generic `.cgst` file: `CGS1`, uint32-LE JSON
+length, UTF-8 `{name,type}`, then original bytes. JSON is limited to 4096 bytes;
+media to 5 MB. `file_crypto.encrypt_file()` wraps the entire result in CGPE.
+Only after AES authentication does `stickers.unpack()` validate and expose the
+purpose/metadata/media. Outer CGPE v1 name/type fields do not establish sticker
+purpose. Unsupported active formats are rejected. TypedArray views/copies avoid
+Firefox Xray species lookups. `file_viewer.inline()` owns its Object URLs and
+cleans up on row removal, pause, key replacement and chat navigation.
+
+Floating toolbars mount under `document.body` and track the native composer via
+ResizeObserver and scroll/resize events. Inserting toolbar children into Teact's
+composer corrupts its positional child updates. Owned message ancestors disable
+inline-size containment, including the transition from pending to delivered
+Telegram messages. Eitaa's native timestamp identifies the actual body so a
+quoted older packet cannot become the current message's decrypt target.

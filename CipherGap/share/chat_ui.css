@@ -1,0 +1,482 @@
+/* CipherGap-owned surfaces only. No generated messenger classes. */
+[data-ciphergap-scroll="true"] { padding-block-end:calc(var(--cg-native-scroll-padding,0px) + var(--cg-scroll-extra,0px)) !important;scroll-padding-block-end:var(--cg-scroll-extra,0px); }
+[data-ciphergap-layout="message"] {
+  contain: none !important;
+  min-inline-size: 0 !important;
+}
+[data-ciphergap-composer="true"] {
+  margin-block-start: var(--cg-toolbar-space, 0px);
+}
+[data-ciphergap-message-raw][hidden],
+[data-ciphergap-native-file][hidden],
+[data-ciphergap-quote-raw][hidden],
+.ciphergap-action[hidden],
+[data-ciphergap-ui="file-action"][hidden],
+[data-ciphergap-link-preview][hidden],
+[data-ciphergap-message-notice][hidden],
+[data-ciphergap-protocol-raw="true"] {
+  display: none !important;
+}
+.ciphergap-sr-only {
+  position: absolute !important;
+  inline-size: 1px !important;
+  block-size: 1px !important;
+  overflow: hidden !important;
+  clip-path: inset(50%) !important;
+  white-space: nowrap !important;
+}
+.ciphergap-action {
+  appearance: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 7px !important;
+  box-sizing: border-box !important;
+  min-block-size: 34px !important;
+  padding: 7px 12px !important;
+  margin: 0 !important;
+  border: 0 !important;
+  border-radius: 9px !important;
+  background: var(--cg-primary) !important;
+  color: var(--cg-on-primary) !important;
+  font:
+    600 12px/1.3 system-ui,
+    sans-serif !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+  box-shadow: none !important;
+  text-decoration: none !important;
+}
+.ciphergap-action svg,
+#ciphergap-toolbar svg,
+.ciphergap-message svg,
+.ciphergap-file-decrypt-wrap svg {
+  inline-size: 17px;
+  block-size: 17px;
+  flex: 0 0 auto;
+}
+.ciphergap-action:hover:not(:disabled) {
+  background: var(--cg-primary-hover) !important;
+}
+.ciphergap-action:disabled {
+  opacity: 0.5 !important;
+  cursor: wait !important;
+}
+.ciphergap-action:focus-visible,
+#ciphergap-toolbar button:focus-visible,
+.ciphergap-sticker-inline button:focus-visible {
+  outline: 2px solid var(--cg-primary) !important;
+  outline-offset: 3px !important;
+}
+#chat_footer .ciphergap-send-controls {
+  display: inline-flex;
+  align-items: center;
+}
+#ciphergap-toolbar {
+  --cg-toolbar-bg: #ffffff;
+  --cg-toolbar-fg: #303640;
+  --cg-toolbar-muted: #606975;
+  --cg-toolbar-border: #e1e5eb;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  box-sizing: border-box;
+  padding: 5px 7px;
+  margin: 5px 10px;
+  border: 1px solid var(--cg-toolbar-border);
+  border-radius: 14px;
+  background: var(--cg-toolbar-bg);
+  color: var(--cg-toolbar-fg);
+  box-shadow: 0 3px 12px #0000000b;
+  font:
+    12px/1.3 system-ui,
+    sans-serif;
+  direction: inherit;
+}
+#ciphergap-toolbar[data-ciphergap-theme="dark"] {
+  --cg-toolbar-bg: #20242c;
+  --cg-toolbar-fg: #f0f2f5;
+  --cg-toolbar-muted: #a5afbd;
+  --cg-toolbar-border: #39414e;
+  color-scheme: dark;
+}
+#ciphergap-toolbar[dir="ltr"] {
+  direction: ltr;
+}
+#ciphergap-toolbar[dir="rtl"] {
+  direction: rtl;
+}
+#ciphergap-toolbar[data-ciphergap-floating="true"] {
+  position: fixed;
+  margin: 0;
+  z-index: 5;
+}
+#ciphergap-toolbar[hidden] {
+  display: none !important;
+}
+#ciphergap-toolbar button {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-block-size: 32px;
+  padding: 6px 8px;
+  border-radius: 9px;
+  font:
+    550 12px/1.3 system-ui,
+    sans-serif;
+  white-space: nowrap;
+  cursor: pointer;
+}
+#ciphergap-toolbar button:hover:not(:disabled) {
+  background: color-mix(in srgb, currentColor 8%, transparent);
+}
+#ciphergap-toolbar button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+#ciphergap-security-status {
+  margin-inline-end: auto;
+  justify-content: flex-start !important;
+  min-inline-size: 0;
+  gap: 7px !important;
+}
+#ciphergap-security-status > svg {
+  color: #7d98ff;
+}
+.ciphergap-status-copy {
+  display: grid;
+  gap: 1px;
+  text-align: start;
+}
+.ciphergap-status-copy strong {
+  font-size: 11px;
+  font-weight: 700;
+}
+.ciphergap-status-copy small {
+  font-size: 10px;
+  color: var(--cg-toolbar-muted);
+  max-inline-size: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#ciphergap-security-status[data-state="verified"] small {
+  color: #18794e;
+}
+#ciphergap-security-status[data-state="changed"] small {
+  color: #9e3f20;
+}
+#ciphergap-toolbar[data-enabled="false"] #ciphergap-security-status {
+  opacity: 0.65;
+}
+#ciphergap-toolbar #ciphergap-btn {
+  margin-inline-start: 3px !important;
+  min-inline-size: 34px;
+}
+#ciphergap-toolbar[data-compact="true"]
+  #ciphergap-secure-files
+  [data-cg-button-label],
+#ciphergap-toolbar[data-compact="true"] #ciphergap-media [data-cg-button-label],
+#ciphergap-toolbar[data-compact="true"] #ciphergap-btn [data-cg-button-label] {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+#ciphergap-toolbar[data-compact="true"] .ciphergap-status-copy small {
+  max-inline-size: 100px;
+}
+.ciphergap-message {
+  box-sizing: border-box;
+  max-inline-size: 100%;
+  min-inline-size: 0;
+  color: inherit;
+}
+.ciphergap-quote-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font:
+    11px/1.4 system-ui,
+    sans-serif;
+  opacity: 0.8;
+}
+.ciphergap-quote-label svg {
+  width: 12px;
+  height: 12px;
+}
+.ciphergap-decrypt-wrap {
+  display: flex !important;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 0;
+  inline-size: max-content;
+  max-inline-size: 100%;
+  font:
+    12px/1.4 system-ui,
+    sans-serif;
+  white-space: normal !important;
+}
+.ciphergap-message-lock {
+  display: grid;
+  place-items: center;
+  flex: 0 0 28px;
+  inline-size: 28px;
+  block-size: 28px;
+  border: 1px solid currentColor;
+  border-color: color-mix(in srgb, currentColor 22%, transparent);
+  border-radius: 9px;
+  opacity: 0.85;
+}
+.ciphergap-message-copy {
+  display: grid;
+  gap: 2px;
+  min-inline-size: 0;
+}
+.ciphergap-message-copy strong {
+  font-size: 12px;
+  font-weight: 600;
+}
+.ciphergap-message-copy small {
+  font-size: 10px;
+  opacity: 0.75;
+}
+.ciphergap-message[data-mode="decrypted"] {
+  display: block;
+}
+.ciphergap-plaintext {
+  display: block !important;
+  white-space: pre-wrap !important;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  line-height: inherit;
+}
+.ciphergap-plaintext[data-emoji-only="true"] {
+  font-size: 34px;
+  line-height: 1.25;
+  padding-block: 5px;
+}
+.ciphergap-encrypted-details {
+  margin-block-start: 4px;
+  color: inherit;
+  opacity: 0.65;
+  font:
+    10px/1.4 system-ui,
+    sans-serif;
+}
+.ciphergap-encrypted-details > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+.ciphergap-encrypted-details > summary svg {
+  inline-size: 11px;
+  block-size: 11px;
+}
+.ciphergap-encrypted-details:not([open]) > code {
+  display: none !important;
+}
+.ciphergap-encrypted-details[open] > code {
+  display: block;
+  box-sizing: border-box;
+  margin-block-start: 5px;
+  max-inline-size: min(400px, 70vw);
+  max-block-size: 110px;
+  overflow: auto;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  font-size: 10px;
+}
+.ciphergap-file-decrypt-wrap {
+  display: flex !important;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+  box-sizing: border-box;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  padding-block: 6px 2px;
+  color: inherit;
+  font:
+    11px/1.4 system-ui,
+    sans-serif;
+}
+.ciphergap-file-decrypt-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  opacity: 0.85;
+}
+.ciphergap-file-decrypt-wrap > details {
+  flex-basis: 100%;
+  font-size: 10px;
+  opacity: 0.7;
+}
+.ciphergap-file-decrypt-wrap > details summary {
+  cursor: pointer;
+}
+.ciphergap-file-decrypt-wrap > details button {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-decoration: underline;
+  font: inherit;
+  cursor: pointer;
+  padding: 5px 0;
+}
+.ciphergap-file-decrypt-button {
+  min-block-size: 30px !important;
+  font-size: 11px !important;
+  padding: 6px 10px !important;
+}
+.ciphergap-file-decrypt-button[data-state="success"] {
+  background: #297653 !important;
+  color: white !important;
+}
+.ciphergap-file-decrypt-button[data-state="error"] {
+  background: #a93d36 !important;
+  color: white !important;
+}
+#ciphergap-live-notice {
+  pointer-events: none;
+  position: fixed;
+  inset-inline-end: 16px;
+  bottom: 90px;
+  z-index: 2147483647;
+  max-inline-size: min(340px, calc(100vw - 32px));
+  padding: 10px 14px;
+  border: 1px solid #ffffff20;
+  border-radius: 12px;
+  background: #23312b;
+  box-shadow: 0 8px 24px #0003;
+  color: #f8fafc;
+  font:
+    500 12px/1.5 system-ui,
+    sans-serif;
+}
+#ciphergap-live-notice[data-kind="success"] {
+  background: #245f43;
+}
+#ciphergap-live-notice[data-kind="warning"] {
+  background: #77500e;
+}
+#ciphergap-live-notice[data-kind="error"] {
+  background: #8f342e;
+}
+.ciphergap-sticker-inline {
+  display: grid;
+  justify-items: start;
+  gap: 4px;
+  inline-size: min(220px, 70vw);
+  max-inline-size: 100%;
+}
+.ciphergap-sticker-inline img,
+.ciphergap-sticker-inline video {
+  display: block;
+  max-inline-size: 100%;
+  max-block-size: 220px;
+  object-fit: contain;
+}
+.ciphergap-sticker-inline footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font:
+    10px/1.4 system-ui,
+    sans-serif;
+}
+.ciphergap-sticker-inline button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  padding: 4px;
+}
+.ciphergap-sticker-inline svg {
+  inline-size: 13px;
+  block-size: 13px;
+}
+.ciphergap-media-picker {
+  width: min(420px, calc(100vw - 24px));
+}
+.ciphergap-media-picker [hidden] {
+  display: none !important;
+}
+.ciphergap-media-picker nav {
+  display: flex;
+  gap: 5px;
+  padding: 12px 16px 0;
+}
+.ciphergap-media-picker nav button[aria-selected="true"] {
+  background: var(--cg-soft);
+  color: var(--cg-primary);
+  border-color: var(--cg-primary);
+}
+.ciphergap-media-picker__grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 5px;
+  padding: 12px 16px;
+}
+.ciphergap-media-picker__grid button {
+  padding: 5px;
+  font-size: 28px;
+  aspect-ratio: 1;
+  background: transparent;
+  border-color: transparent;
+}
+.ciphergap-media-picker__grid button:hover {
+  background: var(--cg-muted-surface);
+}
+.ciphergap-media-picker__hint {
+  margin: 8px 16px;
+  font:
+    12px/1.5 system-ui,
+    sans-serif;
+  color: var(--cg-muted);
+}
+.ciphergap-media-picker__import {
+  margin: 0 16px 12px;
+}
+.ciphergap-media-picker [role="status"] {
+  padding: 0 16px 12px;
+  font-size: 12px;
+}
+[data-ciphergap-theme="dark"].ciphergap-file-viewer {
+  --cg-canvas: #171b22;
+  --cg-surface: #20242c;
+  --cg-muted-surface: #292f39;
+  --cg-text: #f0f2f5;
+  --cg-muted: #a5afbd;
+  --cg-border: #39414e;
+  --cg-primary: #96acff;
+  --cg-on-primary: #111827;
+  --cg-soft: #293657;
+  color-scheme: dark;
+}
+@media (forced-colors: active) {
+  #ciphergap-toolbar,
+  .ciphergap-action {
+    forced-color-adjust: auto !important;
+    border: 1px solid CanvasText !important;
+    background: Canvas !important;
+    color: CanvasText !important;
+  }
+}
+
+#ciphergap-toolbar[data-ciphergap-theme="dark"] #ciphergap-security-status[data-state="verified"] small{color:#65ba74} #ciphergap-toolbar[data-ciphergap-theme="dark"] #ciphergap-security-status[data-state="changed"] small{color:#ed9472}
