@@ -12,7 +12,8 @@ Messages are encrypted locally in your browser before being sent, ensuring that 
 * Per-chat keys and optional automatic message decryption
 * An installation guide for recipients without CipherGap, hidden while the extension is enabled
 * Separate Security, Files, Settings and Guide pages with light/dark themes
-* A chat security indicator and secure file picker inside the supported messenger's composer
+* Compact chat controls with icons, native light/dark surfaces and per-chat pause
+* Encrypted Unicode emoji and static/animated stickers, shown inside the message
 * Decrypt and preview images, play audio/video, or download the original file
 * Optional automatic download/decryption of newly received files
 * ECDH P-256 key exchange with a six-digit SAS verification step
@@ -22,7 +23,7 @@ Messages are encrypted locally in your browser before being sent, ensuring that 
 
 [Security interface](docs/images/security.png) · [File interface](docs/images/files.png)
 
-[Changelog](CHANGELOG.md) · [Release notes for v1.4.0](docs/releases/v1.4.0.md)
+[Changelog](CHANGELOG.md) · [Release notes for v1.5.0](docs/releases/v1.5.0.md)
 
 ## Installation
 
@@ -67,18 +68,37 @@ can read the guide on Bale); older encrypted messages remain readable with their
 
 Open **Files → Choose secure files**, or use **Encrypted file** in the chat’s CipherGap toolbar.
 Select files and confirm the messenger’s preview, which contains encrypted `.cgpe` files.
-The receiver clicks **Decrypt & view** to open images or a native audio/video player inside the chat, with **Download** to save the original. Unsupported formats remain downloadable; HTML and SVG are never embedded. Enable
+The receiver clicks **Open** to open images or a native audio/video player inside the chat, with **Download** to save the original. Unsupported formats remain downloadable; HTML and SVG are never embedded. Enable
 **Files → Receive files automatically** separately in each chat to download and
 decrypt newly received attachments while that conversation is open. Previously
 received files require a click; opening a chat does not download its history.
 The original filename is retained. If direct download is unavailable, download
 the `.cgpe` through the messenger and use **Choose downloaded file instead**.
 
+## Emoji and stickers
+
+Use **Emoji & stickers** (the smile icon) in CipherGap's chat toolbar.
+**Emoji** inserts Unicode into your draft; press **Encrypt** to send it securely.
+Native image-backed Unicode emoji, skin tones and joined emoji sequences are retained.
+
+Under **Stickers**, choose a built-in emoji sticker or **Choose sticker file**.
+PNG, JPEG, WebP, GIF, AVIF and animated WebM are supported, up to **5 MB**.
+The messenger preview contains only a `.cgst.cgpe` encrypted file. Confirm Send there.
+The receiver clicks **Open** to show the authenticated sticker inside its message.
+Click an image for a larger view or use **Download** to save its original bytes.
+Animated WebM uses native playback controls; no autoplay is required.
+
+Both participants need **1.5.0** for inline stickers. The sticker purpose, original
+name and media type are sealed inside the existing CGPE encrypted body. Saved
+keys, legacy text and normal CGPE files remain compatible. Ordinary native
+sticker menus send ordinary stickers; Telegram custom emoji packs and TGS/Lottie
+are not intercepted. Use CipherGap's picker for encrypted stickers.
+
 ## Language and pause controls
 
 Choose **فارسی / English** in the popup header. Language is shared with the chat controls and persists locally. The UI supports RTL/LTR and bundled Vazirmatn/Inter fonts.
 
-Under **Settings**, turn **CipherGap enabled** off to pause all chats, or **Enabled in this chat** off to pause only the current conversation. The in-chat **Pause chat / Enable chat** button controls the same setting. Keys are retained; encryption, incoming decryption, automatic file downloads and new key exchanges stop while paused. Existing decrypted text remains visible until the messenger is refreshed.
+Under **Settings**, turn **CipherGap enabled** off to pause all chats, or **Enabled in this chat** off to pause only the current conversation. The in-chat **Pause chat / Enable chat** button controls the same setting. Keys are retained; encryption, incoming decryption, automatic file downloads and new key exchanges stop while paused. Decrypted text and sticker previews are removed immediately; original ciphertext and installation links are restored.
 
 [Website and installation guide](https://alisharify7.github.io/CipherGap/) · [Website branch](https://github.com/alisharify7/CipherGap/tree/website)
 
@@ -93,7 +113,7 @@ Under **Settings**, turn **CipherGap enabled** off to pause all chats, or **Enab
 
 Messenger-independent code lives in `CipherGap/share/`. It is the single source
 of truth for message and key-exchange formats, AES/ECDH utilities, the CGPE file
-container, storage-key names, adapter registration, media viewer, exchange cards and theme tokens. The shared chat lifecycle, file handoff, message rendering and UI mounting live in `CipherGap/content/chat_runtime.js`. Small `bale.js`, `eitaa.js` and `telegram.js` modules supply native selectors, input/send behavior and attachment controls.
+container, storage-key names, adapter registration, media viewer, sticker envelope/picker, shared chat presentation, exchange cards and theme tokens. The shared chat lifecycle, file handoff, message rendering and UI mounting live in `CipherGap/content/chat_runtime.js`. Small `bale.js`, `eitaa.js` and `telegram.js` modules supply native selectors, input/send behavior and attachment controls.
 
 Integrations use stable IDs, roles, message/document data attributes and structural attachment children. They do not select messenger CSS classes. Native layout identifies incoming/outgoing rows. Telegram’s native editor receives input events; its send control is resolved only after the draft appears.
 The small MAIN-world bridge observes native Blob downloads, handles Eitaa’s bounded Service Worker download path, and transfers only
@@ -106,7 +126,7 @@ adapter contract documented in `CipherGap/share/README.md`; they must not copy
 encryption or packet-format code. Format upgrades add a new immutable codec and
 keep old readers registered, so existing messages and files remain compatible.
 
-Telegram exposes no machine-readable sending timestamp. Automatic receiving ignores the initial one-second settling period and messages at or below the observed message-ID baseline; missed or historical files remain available through **Decrypt & view**. Undated legacy exchange requests on Telegram require a new timed request. Eitaa’s app-encrypted cache (when an app passcode is enabled) falls back to native download handling. The manual downloaded-file option remains available on every platform.
+Telegram exposes no machine-readable sending timestamp. Automatic receiving ignores the initial one-second settling period and messages at or below the observed message-ID baseline; missed or historical files remain available through **Open**. Undated legacy exchange requests on Telegram require a new timed request. Eitaa’s app-encrypted cache (when an app passcode is enabled) falls back to native download handling. The manual downloaded-file option remains available on every platform.
 
 ## Security
 

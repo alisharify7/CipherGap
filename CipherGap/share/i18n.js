@@ -7,6 +7,8 @@
     const scoped = Boolean(location.protocol === "https:");
     const selector = '[data-ciphergap-ui], #ciphergap-btn, #ciphergap-toolbar, #ciphergap-live-notice';
     const patterns = [
+        [/^Insert emoji: (.+)$/, x => `افزودن شکلک: ${x}`],
+        [/^Send sticker: (.+)$/, x => `ارسال استیکر: ${x}`],
         [/^CipherGap · (.+)$/, x => `CipherGap · ${translate(x)}`],
         [/^Current (.+) chat$/, x => `گفتگوی فعلی ${x}`],
         [/^Chat ID ending (.+) · Settings apply only to this conversation\.$/, x => `انتهای شناسهٔ گفتگو: ${x} · تنظیمات فقط برای همین گفتگو هستند.`],

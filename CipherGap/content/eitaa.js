@@ -42,6 +42,12 @@
                 if (Number.isFinite(Date.parse(element.title.split("\n")[0]))) element.parentElement.dataset.ciphergapMetadata = "true";
             }
         },
+        payload_root(row) {
+            // The native sending-time tooltip belongs to the actual message
+            // body, while a reply preview above it can contain an older packet.
+            const time = [...row.querySelectorAll('[data-ciphergap-metadata]')].at(-1);
+            return time?.parentElement?.matches('div[dir="auto"]') ? time.parentElement : row;
+        },
         async trigger_file_picker() {
             const menu = native_row()?.querySelector('[data-icon="attach"]')?.parentElement;
             if (!menu) throw new Error("The file attachment menu is unavailable. Reopen the chat.");

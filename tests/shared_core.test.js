@@ -32,6 +32,7 @@ function load_classic_script(relativePath) {
     "share/encoding.js",
     "share/crypto.js",
     "share/file_crypto.js",
+    "share/stickers.js",
     "share/dh_crypto.js",
     "share/protocol.js",
     "share/messenger_adapter.js"
@@ -385,7 +386,9 @@ test("manifest loads shared utilities before runtime and adapter code", () => {
         "share/encoding.js",
         "share/crypto.js",
         "share/file_crypto.js",
+        "share/chat_ui.js",
         "share/file_viewer.js",
+        "share/stickers.js",
         "share/dh_crypto.js",
         "share/protocol.js",
         "share/exchange_ui.js",
@@ -404,6 +407,41 @@ test("manifest loads shared utilities before runtime and adapter code", () => {
             `${relativePath} must exist`
         );
     });
+});
+
+test("sticker purpose, original name and media bytes survive authenticated CGPE transport", async () => {
+    const s = CipherGapShared;
+    const original = new File([new Uint8Array([137,80,78,71,0,255])], "private.png", {type:"image/png"});
+    const wrapped = await s.stickers.pack(original);
+    const encrypted = await s.file_crypto.encrypt_file(wrapped,"sticker-secret");
+    const container = await encrypted.arrayBuffer();
+    const plain = await s.file_crypto.decrypt_cgpe(container,"sticker-secret");
+    // Unauthenticated outer CGPE metadata cannot change authenticated purpose.
+    const sticker = s.stickers.unpack({...plain,name:"changed.html",type:"text/html"});
+    assert.equal(sticker.name,"private.png");assert.equal(sticker.type,"image/png");
+    assert.deepEqual(new Uint8Array(sticker.data),new Uint8Array(await original.arrayBuffer()));
+    const changed = new Uint8Array(container);changed[changed.length-1]^=1;
+    await assert.rejects(s.file_crypto.decrypt_cgpe(changed.buffer,"sticker-secret"));
+    await assert.rejects(s.file_crypto.decrypt_cgpe(container,"wrong-key"));
+    assert.equal(s.stickers.unpack({data:new TextEncoder().encode("ordinary file").buffer}),null);
+});
+
+test("stickers reject active types, malformed lengths and oversized bodies", async () => {
+    const s = CipherGapShared.stickers;
+    await assert.rejects(s.pack(new File(["<svg/>"],"x.svg",{type:"image/svg+xml"})),/Choose/);
+    await assert.rejects(s.pack(new File([new Uint8Array(s.max_bytes+1)],"x.png",{type:"image/png"})),/5 MB/);
+    await assert.rejects(s.pack(new File([],"x.png",{type:"image/png"})),/5 MB/);
+    const invalid = new Uint8Array([67,71,83,49,255,255,255,255]);
+    assert.throws(()=>s.unpack({data:invalid.buffer}),/Invalid/);
+    const metadata = new TextEncoder().encode(JSON.stringify({name:"x.svg",type:"image/svg+xml"}));
+    const header=new Uint8Array(8);header.set([67,71,83,49]);new DataView(header.buffer).setUint32(4,metadata.length,true);
+    assert.throws(()=>s.unpack({data:new Uint8Array([...header,...metadata,1]).buffer}),/Invalid/);
+});
+
+test("Unicode emoji, modifiers, joined families and multiline drafts round-trip", async () => {
+    const text="سلام 👨‍👩‍👧‍👦\n👍🏽 ❤️ 🇮🇷 1️⃣";
+    const encrypted=await CipherGapShared.crypto.encrypt_message(text,"emoji-key");
+    assert.equal(await CipherGapShared.crypto.decrypt_message(encrypted,"emoji-key"),text);
 });
 
 test("manifest uses the correct browser background context", () => {

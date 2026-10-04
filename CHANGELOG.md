@@ -1,5 +1,27 @@
 # Changelog
 
+## [1.5.0](docs/releases/v1.5.0.md) - 2026-10-04
+
+### Added
+
+- An explicit emoji/sticker picker with built-in PNG stickers and imported PNG/JPEG/WebP/GIF/AVIF/WebM up to 5 MB.
+- Authenticated sticker purpose, name and type inside the shared CGPE body; inline display, native animated playback and original downloads.
+- Chrome/Firefox regressions for native Unicode emoji, sticker uploads, playback, exact downloads, quote selection and message dimensions.
+
+### Fixed
+
+- Telegram bubbles retain natural width while decrypting, after delivery and on window resize.
+- Native file previews work with a floating toolbar outside Teact's composer subtree.
+- Opened stickers and their download controls stay above the Eitaa toolbar after responsive native scroll anchoring.
+- Eitaa decrypts the actual message instead of a quoted older packet; encrypted quote previews stay compact.
+- Pause and key changes clear decrypted message/sticker views and restore original ciphertext.
+- Firefox sticker decoding avoids Xray-protected TypedArray constructor access.
+
+### Changed
+
+- Compact themed chat controls, icon actions, short encrypted-message cards and an expandable file fallback.
+- Both participants need 1.5.0 for inline stickers; the cipher, saved keys, text packets and normal file format are unchanged. Native sticker menus remain ordinary.
+
 ## [1.4.0](docs/releases/v1.4.0.md) - 2026-10-04
 
 ### Added
