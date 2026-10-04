@@ -41,9 +41,9 @@ function inject_ciphergap_content_styles() {
             min-block-size: 40px !important;
             margin: 0 !important;
             padding: 8px 12px !important;
-            border: 1px solid #1b4945 !important;
+            border: 1px solid var(--cg-primary-hover) !important;
             border-radius: 9px !important;
-            background: #245d58 !important;
+            background: var(--cg-primary) !important;
             box-shadow: none !important;
             color: #fff !important;
             cursor: pointer !important;
@@ -55,16 +55,16 @@ function inject_ciphergap_content_styles() {
             white-space: nowrap !important;
         }
         #chat_footer .ciphergap-action {
-            background: #245d58 !important; border-color: #245d58 !important;
+            background: var(--cg-primary) !important; border-color: var(--cg-primary) !important;
             min-block-size: 34px !important; block-size: 34px !important;
             font-weight: 600 !important; border-radius: 8px !important;
         }
         .ciphergap-action:hover:not(:disabled) {
-            border-color: #163e3b !important;
-            background: #1b4945 !important;
+            border-color: #1f2d5c !important;
+            background: var(--cg-primary-hover) !important;
         }
         .ciphergap-action:focus-visible {
-            outline: 2px solid #f6c453 !important;
+            outline: 2px solid #8da4ef !important;
             outline-offset: 2px !important;
             box-shadow: 0 0 0 2px rgba(15, 23, 42, .5) !important;
         }
@@ -87,7 +87,7 @@ function inject_ciphergap_content_styles() {
             background: rgba(248, 251, 250, .96);
             border-block-end: 1px solid rgba(128,128,128,.16);
             font: 600 11px/1.4 system-ui, sans-serif;
-            color: #60716f;
+            color: var(--cg-muted);
             direction: inherit;
             flex-wrap: wrap;
             justify-content: flex-start;
@@ -104,7 +104,7 @@ function inject_ciphergap_content_styles() {
         }
         #ciphergap-security-status { margin-inline-end: auto; border-color: transparent !important; }
         #ciphergap-toolbar[data-enabled="false"] { opacity: .75; }
-        #ciphergap-secure-files { color: #245d58 !important; }
+        #ciphergap-secure-files { color: var(--cg-primary) !important; }
         #ciphergap-toolbar button:hover:not(:disabled) { background: rgba(96,113,111,.09); }
         #ciphergap-toolbar button:disabled { opacity: .5; cursor: not-allowed; }
         #ciphergap-btn {
@@ -117,94 +117,6 @@ function inject_ciphergap_content_styles() {
         }
         [data-ciphergap-protocol-raw="true"] {
             display: none !important;
-        }
-        .ciphergap-chat-card {
-            box-sizing: border-box !important;
-            position: static !important;
-            display: grid !important;
-            float: none !important;
-            clear: both !important;
-            inline-size: min(238px, 100%) !important;
-            min-inline-size: 0 !important;
-            max-inline-size: 100% !important;
-            margin: 2px 0 !important;
-            padding: 8px 10px !important;
-            gap: 4px !important;
-            border: 1px solid rgba(15, 23, 42, .15) !important;
-            border-color: color-mix(in srgb, currentColor 18%, transparent) !important;
-            border-inline-start-width: 3px !important;
-            border-radius: 10px !important;
-            background: rgba(255, 255, 255, .38) !important;
-            background: color-mix(in srgb, currentColor 7%, transparent) !important;
-            color: inherit !important;
-            direction: ltr !important;
-            text-align: start !important;
-            white-space: normal !important;
-            overflow: hidden !important;
-            font: 500 12px/1.4 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
-        }
-        .ciphergap-chat-card--exchange {
-            --ciphergap-card-accent: #0f766e;
-            border-inline-start-color: var(--ciphergap-card-accent) !important;
-        }
-        .ciphergap-chat-card--sas {
-            --ciphergap-card-accent: #8a5b00;
-            border-inline-start-color: var(--ciphergap-card-accent) !important;
-        }
-        @supports (color: color-mix(in srgb, red, blue)) {
-            .ciphergap-chat-card--exchange {
-                --ciphergap-card-accent: color-mix(in srgb, #0f766e 78%, currentColor);
-            }
-            .ciphergap-chat-card--sas {
-                --ciphergap-card-accent: color-mix(in srgb, #b7791f 76%, currentColor);
-            }
-        }
-        .ciphergap-chat-card__heading {
-            display: flex !important;
-            align-items: center !important;
-            gap: 7px !important;
-            min-inline-size: 0 !important;
-            font: 700 12px/1.3 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
-        }
-        .ciphergap-chat-card__mark {
-            box-sizing: border-box !important;
-            display: inline-grid !important;
-            place-items: center !important;
-            flex: 0 0 22px !important;
-            inline-size: 22px !important;
-            block-size: 22px !important;
-            border-radius: 7px !important;
-            background: rgba(15, 118, 110, .13) !important;
-            background: color-mix(in srgb, var(--ciphergap-card-accent) 15%, transparent) !important;
-            color: var(--ciphergap-card-accent) !important;
-            font: 800 9px/1 system-ui, sans-serif !important;
-            letter-spacing: 0 !important;
-        }
-        .ciphergap-chat-card--exchange .ciphergap-chat-card__mark {
-            color: var(--ciphergap-card-accent) !important;
-        }
-        .ciphergap-chat-card--sas .ciphergap-chat-card__mark {
-            color: var(--ciphergap-card-accent) !important;
-        }
-        .ciphergap-chat-card__code {
-            display: block !important;
-            max-inline-size: 100% !important;
-            margin-block: 1px !important;
-            overflow: hidden !important;
-            color: inherit !important;
-            font: 750 20px/1.25 ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace !important;
-            font-variant-numeric: tabular-nums !important;
-            letter-spacing: .15em !important;
-            white-space: nowrap !important;
-            unicode-bidi: isolate !important;
-        }
-        .ciphergap-chat-card__meta {
-            display: block !important;
-            min-inline-size: 0 !important;
-            max-inline-size: 100% !important;
-            color: inherit !important;
-            overflow-wrap: anywhere !important;
-            font: 450 11px/1.38 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
         }
         .ciphergap-plaintext {
             display: block !important;
@@ -280,6 +192,7 @@ function inject_ciphergap_content_styles() {
             background: #a93d36 !important;
         }
         #ciphergap-live-notice {
+            pointer-events: none;
             position: fixed;
             inset-inline-end: 16px;
             bottom: 82px;
@@ -296,21 +209,12 @@ function inject_ciphergap_content_styles() {
         #ciphergap-live-notice[data-kind="success"] { background: #245f43; }
         #ciphergap-live-notice[data-kind="warning"] { background: #77500e; }
         #ciphergap-live-notice[data-kind="error"] { background: #8f342e; }
-        @media (prefers-color-scheme: dark) {
-            .ciphergap-chat-card {
-                border-color: rgba(255, 255, 255, .2) !important;
-                border-color: color-mix(in srgb, currentColor 18%, transparent) !important;
-                background: rgba(255, 255, 255, .06) !important;
-                background: color-mix(in srgb, currentColor 7%, transparent) !important;
-            }
-        }
         @media (prefers-reduced-motion: reduce) {
             .ciphergap-action {
                 transition-duration: .01ms !important;
             }
         }
         @media (forced-colors: active) {
-            .ciphergap-chat-card,
             .ciphergap-file-decrypt-wrap {
                 border: 1px solid CanvasText !important;
                 border-inline-start-width: 3px !important;
@@ -602,12 +506,14 @@ let cg_cached_chat_enabled = true;
 let cg_cached_auto_decrypt = false;
 let cg_cached_auto_files = false;
 let cg_cached_message_key = null;
+let cg_cached_exchange_status = null;
 let cg_cache_ready = false;
 let cg_cache_refresh_token = 0;
 let cg_cache_refresh_promise = null;
 let cg_cache_refresh_storage_key = null;
 
 function invalidate_cg_chat_cache(storageKey = get_storage_key()) {
+    if (cg_cached_storage_key !== storageKey) globalThis.CipherGapShared.file_viewer?.close();
     cg_cache_refresh_token += 1;
     cg_cached_storage_key = storageKey;
     cg_cached_key = null;
@@ -666,10 +572,12 @@ async function refresh_cg_chat_cache(force = false) {
         cg_cached_auto_decrypt = cg_cached_enabled && Boolean(result[autoDecryptKey]);
         cg_cached_auto_files = cg_cached_enabled && Boolean(result[autoFilesKey]);
         cg_cached_message_key = messageKey;
+        cg_cached_exchange_status = result[exchangeKey] ?? null;
         cg_cache_ready = true;
         update_bale_security_toolbar(result[trustKey], result[exchangeKey]);
         if (cg_cached_enabled && bale_observed_scroller) scan_bale_messages(bale_observed_scroller, bale_scan_generation).catch(() => {});
         if (!cg_cached_enabled) {
+            globalThis.CipherGapShared.file_viewer?.close();
             bale_file_bridge_request?.cancel();
             document.querySelectorAll('[data-ciphergap-message-notice]').forEach(node => { node.hidden = false; });
             document.querySelectorAll(BALE_MESSAGE_ITEM).forEach(node => { delete node.dataset.ciphergapProcessed; });
@@ -712,6 +620,7 @@ if (IS_BALE_HOST) {
                 });
             }
             const chatKeyChanged = Boolean(changes[storageKey]);
+            if (chatKeyChanged) globalThis.CipherGapShared.file_viewer?.close();
             invalidate_cg_chat_cache(storageKey);
             refresh_cg_chat_cache(true)
                 .then(() => {
@@ -1376,44 +1285,37 @@ function create_file_decrypt_button() {
     const button = document.createElement("button");
     button.className = "ciphergap-action ciphergap-file-decrypt-button";
     button.type = "button";
-    button.innerText = "Decrypt & download";
-    button.setAttribute("aria-label", "Download and decrypt this CipherGap attachment");
+    button.innerText = "Decrypt & view";
+    button.setAttribute("aria-label", "Decrypt and preview this CipherGap attachment");
     return button;
 }
 
-// Trigger a browser download of a decrypted file (Blob → download).
-function download_decrypted_file(decrypted) {
-    const blob = new Blob([decrypted.data], { type: decrypted.type });
-    const blobUrl = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = blobUrl;
-    anchor.download = decrypted.name;
-    anchor.style.display = "none";
-    document.body.appendChild(anchor);
-    anchor.click();
-    document.body.removeChild(anchor);
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
-}
-
 // Decrypt a CGPE file from a Blob/ArrayBuffer and trigger download.
-async function decrypt_and_download_file(
+async function decrypt_and_present_file(
     encryptedBuffer,
     secretKey,
     statusButton,
-    fileCryptoKey = null
+    fileCryptoKey = null,
+    automatic = false,
+    storageKey = get_storage_key()
 ) {
     const decrypted = await BALE_SHARED_FILE_CRYPTO.decrypt_cgpe(
         encryptedBuffer,
         secretKey,
         fileCryptoKey
     );
-    download_decrypted_file(decrypted);
+    await refresh_cg_chat_cache();
+    if (storageKey !== get_storage_key() || !cg_cached_enabled || cg_cached_key !== secretKey) {
+        throw new Error("The chat, key or enabled state changed during file decryption.");
+    }
+    if (automatic) globalThis.CipherGapShared.file_viewer.download(decrypted);
+    else globalThis.CipherGapShared.file_viewer.open(decrypted);
     if (statusButton) {
-        statusButton.innerText = "Downloaded";
+        statusButton.innerText = automatic ? "Downloaded" : "Open again";
         statusButton.setAttribute("aria-label", "CipherGap file decrypted");
         statusButton.dataset.state = "success";
     }
-    show_ciphergap_notice(`${decrypted.name} was decrypted and downloaded.`, "success");
+    if (automatic) show_ciphergap_notice(`${decrypted.name} was decrypted and downloaded.`, "success");
 }
 
 // Fallback decrypt path: open a hidden file picker so the user can select
@@ -1460,7 +1362,7 @@ function choose_downloaded_cgpe_file(event, messageElement, decryptButton) {
 
             const encryptedBuffer = await file.arrayBuffer();
             if (storageKey !== get_storage_key()) throw new Error("The active chat changed before decryption.");
-            await decrypt_and_download_file(
+            await decrypt_and_present_file(
                 encryptedBuffer,
                 secretKey,
                 decryptButton,
@@ -1569,7 +1471,7 @@ function download_bale_encrypted_file(messageElement, button, automatic = false)
         const encrypted = await request_bale_encrypted_file(messageElement, payload.normalized, storageKey);
         if (storageKey !== get_storage_key() || secretKey !== cg_cached_key) throw new Error("The chat or key changed during download.");
         button.textContent = "Decrypting…";
-        await decrypt_and_download_file(encrypted, secretKey, button, cg_cached_message_key);
+        await decrypt_and_present_file(encrypted, secretKey, button, cg_cached_message_key, automatic, storageKey);
         if (automatic) {
             const key = globalThis.CipherGapShared.storage_keys.downloaded_files(storageKey);
             const result = await chrome.storage.local.get(key);
@@ -1687,74 +1589,28 @@ function process_cgpe_file_message(messageElement) {
 // Hide exchange protocol messages
 // =========================
 
-function create_chat_card_heading(title) {
-    const heading = document.createElement("span");
-    heading.className = "ciphergap-chat-card__heading";
-
-    const mark = document.createElement("span");
-    mark.className = "ciphergap-chat-card__mark";
-    mark.setAttribute("aria-hidden", "true");
-    mark.textContent = "CG";
-
-    const titleElement = document.createElement("span");
-    titleElement.textContent = title;
-
-    heading.append(mark, titleElement);
-    return heading;
+function update_bale_exchange_cards() {
+    globalThis.CipherGapShared.exchange_ui.update(document.querySelectorAll('[data-ciphergap-ui="protocol"]'), {
+        storageKey: get_storage_key(), enabled: cg_cached_enabled, status: cg_cached_exchange_status
+    });
 }
 
 function create_exchange_chat_card(parsed, signature) {
-    const isStart = parsed.type === "start";
-    const card = document.createElement("span");
-    card.className = "ciphergap-chat-card ciphergap-chat-card--exchange";
-    card.dataset.ciphergapUi = "protocol";
-    card.dataset.ciphergapProtocolKind = parsed.type;
-    card.dataset.ciphergapProtocolSignature = signature;
-    card.appendChild(create_chat_card_heading(
-        isStart ? "Key exchange request" : "Key exchange response"
-    ));
-
-    const meta = document.createElement("span");
-    meta.className = "ciphergap-chat-card__meta";
-    meta.textContent = isStart
-        ? "Open CipherGap to review this request."
-        : "Open CipherGap to verify the code.";
-    card.appendChild(meta);
-    return card;
+    return globalThis.CipherGapShared.exchange_ui.create_request(parsed, signature, {
+        readState: () => ({ storageKey: get_storage_key(), enabled: cg_cached_enabled, hasKey: Boolean(cg_cached_key) }),
+        onRespond: async (accept, nonce) => { await respond_to_incoming_exchange(accept, nonce); await refresh_cg_chat_cache(true); },
+        onError: error => show_ciphergap_notice(error.message, 'error', 7000),
+        onUpdate: update_bale_exchange_cards
+    });
 }
 
-function create_sas_chat_card(parsed, signature) {
-    const card = document.createElement("span");
-    card.className = "ciphergap-chat-card ciphergap-chat-card--sas";
-    card.dataset.ciphergapUi = "protocol";
-    card.dataset.ciphergapProtocolKind = "sas";
-    card.dataset.ciphergapProtocolSignature = signature;
-    card.setAttribute("role", "group");
-    card.appendChild(create_chat_card_heading("Verification code"));
-
-    const code = document.createElement("span");
-    code.className = "ciphergap-chat-card__code";
-    code.dir = "ltr";
-    code.setAttribute(
-        "aria-label",
-        BALE_SHARED_PROTOCOL.speak_protocol_digits(parsed.sas)
-    );
-    code.textContent = BALE_SHARED_PROTOCOL.format_protocol_digits(parsed.sas);
-    card.appendChild(code);
-
-    const compareHint = document.createElement("span");
-    compareHint.className = "ciphergap-chat-card__meta";
-    compareHint.textContent = "Compare this code in CipherGap.";
-    card.appendChild(compareHint);
-
-    const fingerprint = document.createElement("span");
-    fingerprint.className = "ciphergap-chat-card__meta";
-    fingerprint.dir = "ltr";
-    fingerprint.textContent =
-        `Key fingerprint · ${BALE_SHARED_PROTOCOL.format_protocol_fingerprint(parsed.fingerprint)}`;
-    card.appendChild(fingerprint);
-    return card;
-}
+if (IS_BALE_HOST) setInterval(() => {
+    update_bale_exchange_cards();
+    if (cg_cached_enabled && cg_cached_exchange_status &&
+        BALE_SHARED_PROTOCOL.get_exchange_expires_at(cg_cached_exchange_status) <= Date.now()) {
+        cleanup_stale_exchange_status(get_storage_key()).catch(() => {});
+    }
+}, 1000);
 
 function clear_legacy_protocol_row_styles(messageElement) {
     const border = messageElement.style.borderInlineStart;
@@ -1798,15 +1654,24 @@ function hide_exchange_protocol_message(messageElement, payload) {
     );
     if (!card) {
         card = parsed.type === "sas"
-            ? create_sas_chat_card(parsed, signature)
+            ? globalThis.CipherGapShared.exchange_ui.create_code(parsed, signature)
             : create_exchange_chat_card(parsed, signature);
+        const timer = document.createElement('span');
+        timer.className = 'ciphergap-chat-card__timer';
+        timer.dir = 'ltr';
+        timer.setAttribute('aria-label', 'Time remaining for this exchange');
+        card.append(timer);
     }
+    card.dataset.ciphergapStorageKey = get_storage_key();
+    card.dataset.ciphergapNonce = parsed.nonce ?? '';
+    card.dataset.ciphergapExpiresAt = String(BALE_SHARED_PROTOCOL.get_exchange_expires_at(parsed, messageElement.dataset.date));
 
     // The raw payload's parent is Bale's real text container. Mounting here
     // keeps the card inside the native bubble without generated class names.
     if (card.parentElement !== rawPayload.parentElement || card.previousElementSibling !== rawPayload) {
         rawPayload.insertAdjacentElement("afterend", card);
     }
+    update_bale_exchange_cards();
     return true;
 }
 
@@ -1850,8 +1715,8 @@ function process_bale_message(
             messageElement.dataset.ciphergapExchangeHandled =
                 protocolPayload.signature;
             const sentAt = Number(messageElement.dataset.date);
-            const stale = Number.isFinite(sentAt) && Date.now() - sentAt > EXCHANGE_TIMEOUT_MS;
-            (stale ? Promise.resolve() : handle_incoming_exchange_message(protocolPayload.protocolText))
+            const stale = BALE_SHARED_PROTOCOL.get_exchange_expires_at(protocolPayload.parsed, sentAt) <= Date.now();
+            (stale ? Promise.resolve() : handle_incoming_exchange_message(protocolPayload.protocolText, sentAt))
                 .catch((error) => {
                     if (
                         messageElement.dataset.ciphergapExchangeHandled ===

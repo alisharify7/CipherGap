@@ -1,7 +1,6 @@
 // popup.js
 
-const EXCHANGE_STATUS_EXPIRY_MS = globalThis.CipherGapShared.timeouts
-    .exchange_status_ms;
+
 const EXCHANGE_WAIT_TIMEOUT_MS = globalThis.CipherGapShared.timeouts
     .popup_exchange_wait_ms;
 const MASKED_KEY = "••••••••••••••••";
@@ -773,7 +772,7 @@ function is_exchange_expired(entry) {
     if (!entry || !Number.isFinite(entry.at)) {
         return false;
     }
-    return Date.now() - entry.at > EXCHANGE_STATUS_EXPIRY_MS;
+    return Date.now() >= globalThis.CipherGapShared.protocol.get_exchange_expires_at(entry);
 }
 
 async function refresh_popup_state({ announceStale = false } = {}) {

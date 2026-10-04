@@ -1,4 +1,5 @@
 import sys,time,json,base64,tempfile
+from browser_fixtures import media_fixtures, ATTACHMENT_JS, ENCRYPT_JS
 from pathlib import Path
 import os,shutil,importlib.util,gc
 ROOT=Path(__file__).resolve().parents[1]
@@ -62,13 +63,21 @@ try:
  m.switch_to_window(extension_handle)
  statuskey='exchange_status_'+contexts[1]['storageKey']
  poll(lambda:check(async_js('return (await browser.storage.local.get(arguments[0]))[arguments[0]];',[statuskey])),lambda x:x and x.get('status')=='incoming')
- accepted=action(1,{'action':'respond_key_exchange','accept':True,'nonce':started['nonce']});assert accepted['ok'],accepted
+ m.switch_to_window(handles[1])
+ poll(lambda:script('return Boolean(document.querySelector("[data-ciphergap-exchange-action=accept]") && !document.querySelector(".ciphergap-chat-card__actions").hidden)'),lambda x:x)
+ from marionette_driver.by import By
+ m.find_element(By.CSS_SELECTOR,'[data-ciphergap-exchange-action="accept"]').click()
+ poll(lambda:script('return testSent.find(x=>x.startsWith("start exchange ack:"))'),lambda x:bool(x))
  m.switch_to_window(handles[1]);ack=script('return testSent.find(x=>x.startsWith("start exchange ack:"))');assert ack;append_message(handles[0],ack)
  m.switch_to_window(extension_handle)
  keys=[x['storageKey'] for x in contexts]
  storage=poll(lambda:check(async_js('return await browser.storage.local.get(arguments[0]);',[keys+['exchange_status_'+k for k in keys]])),lambda x:all(x.get(k) for k in keys))
  assert storage[keys[0]]==storage[keys[1]]
  assert storage['exchange_status_'+keys[0]]['sas']==storage['exchange_status_'+keys[1]]['sas']
+ # SAS cards carry the request's deadline, even when received later.
+ m.switch_to_window(handles[0]);sas_packet=script('return testSent.find(x=>x.startsWith("cg-sas|"))')
+ append_message(handles[1],sas_packet)
+ poll(lambda:script('return Number(document.querySelector("[data-ciphergap-protocol-kind=sas]")?.dataset.ciphergapExpiresAt)'),lambda x:x==storage['exchange_status_'+keys[1]]['expiresAt'])
  for i in [0,1]:
   verified=action(i,{'action':'mark_key_verified','nonce':started['nonce']});assert verified['ok'],verified
  print('PASS real content-script ECDH, matching SAS and verification in both fixtures',flush=True)
@@ -81,13 +90,37 @@ try:
  # Wait for this send; an earlier verification confirmation is also a CGP packet.
  poll(lambda:script('return document.getElementById("ciphergap-btn").disabled'),lambda x:not x)
  packet=script('return testSent.at(-1)');append_message(handles[1],packet)
- assert packet.endswith('https://github.com/alisharify7/CipherGap')
+ assert 'https://github.com/alisharify7/CipherGap' in packet
+ assert packet.endswith('https://alisharify7.github.io/CipherGap/')
  text=poll(lambda:script('return document.getElementById("message_list_scroller_id").textContent'),lambda s:'Firefox — سلام، پیام رمز‌شده' in s)
  assert script('return document.querySelector("[data-ciphergap-message-notice]").hidden')
  assert 'https://github.com/alisharify7/CipherGap' not in script('return document.getElementById("message_list_scroller_id").innerText')
  print('PASS encrypted composer text and automatic peer decryption',flush=True)
  m.switch_to_window(extension_handle)
  check(async_js('''for(const file of ['encoding','crypto','file_crypto']) {await new Promise((resolve,reject)=>{const s=document.createElement('script');s.src='../share/'+file+'.js';s.onload=resolve;s.onerror=reject;document.head.append(s)});}return true;'''))
+ for name,mime,data,kind in media_fixtures(ROOT):
+  m.switch_to_window(extension_handle)
+  encoded=check(async_js(ENCRYPT_JS,[[list(data),name,mime,storage[keys[0]]]]))
+  check(async_js('await browser.tabs.update(arguments[0],{active:true});return true;',[tabs[0]]))
+  m.switch_to_window(handles[0]);sid=script(ATTACHMENT_JS,script_args=[[encoded,name]])
+  poll(lambda:script('return Boolean(document.querySelector(arguments[0]))',script_args=[f'[data-sid="{sid}"] .ciphergap-file-decrypt-button']),lambda x:x)
+  m.find_element(By.CSS_SELECTOR,f'[data-sid="{sid}"] .ciphergap-file-decrypt-button').click()
+  poll(lambda:script('return Boolean(document.querySelector("dialog[open][data-ciphergap-ui=file-viewer]"))'),lambda x:x)
+  assert script('return document.querySelector(".ciphergap-file-viewer h2").textContent')==name
+  if kind=='img':poll(lambda:script('return document.querySelector(".ciphergap-file-viewer img")?.naturalWidth'),lambda x:x==128)
+  elif kind in ['audio','video']:
+   m.find_element(By.CSS_SELECTOR,'.ciphergap-file-viewer '+kind).click()
+   check(async_js('await document.querySelector(".ciphergap-file-viewer audio,.ciphergap-file-viewer video").play();return true;'))
+   poll(lambda:script('return document.querySelector(".ciphergap-file-viewer audio,.ciphergap-file-viewer video")?.currentTime'),lambda x:x and x>0)
+   if kind=='video':assert script('return document.querySelector(".ciphergap-file-viewer video").videoWidth')==64
+  else:assert not script('return Boolean(window.unsafePreview || document.querySelector(".ciphergap-file-viewer iframe,.ciphergap-file-viewer script"))')
+  m.find_element(By.CSS_SELECTOR,'.ciphergap-file-viewer__download').click()
+  poll(lambda:(folder/name).is_file() and (folder/name).stat().st_size==len(data),lambda x:x)
+  assert (folder/name).read_bytes()==data
+  m.find_element(By.CSS_SELECTOR,'.ciphergap-file-viewer header button').click()
+  poll(lambda:script('return !document.querySelector(".ciphergap-file-viewer")'),lambda x:x)
+ print('PASS manual image/audio/video preview, actual playback, safe document fallback and exact downloads',flush=True)
+ m.switch_to_window(extension_handle)
  encoded=check(async_js('''const key=(await browser.storage.local.get(arguments[0]))[arguments[0]];const bytes=Uint8Array.from({length:4096},(_,i)=>i%256);const file=await CipherGapShared.file_crypto.encrypt_file(new File([bytes],'firefox-fixture.bin',{type:'application/octet-stream'}),key);return btoa(String.fromCharCode(...new Uint8Array(await file.arrayBuffer())));''',[keys[1]]))
  assert action(0,{'action':'set_auto_files','enabled':True})['ok']
  check(async_js('await browser.tabs.update(arguments[0],{active:true});return true;',[tabs[0]]))

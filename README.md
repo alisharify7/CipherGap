@@ -13,15 +13,16 @@ Messages are encrypted locally in your browser before being sent, ensuring that 
 * An installation guide for recipients without CipherGap, hidden while the extension is enabled
 * Separate Security, Files, Settings and Guide pages with light/dark themes
 * A chat security indicator and secure file picker inside Bale's composer
-* Direct attachment download/decryption and optional automatic receipt of new files
+* Decrypt and preview images, play audio/video, or download the original file
+* Optional automatic download/decryption of newly received files
 * ECDH P-256 key exchange with a six-digit SAS verification step
 * Persistent peer-fingerprint change warnings (TOFU)
-* Explicit accept/decline controls for incoming key exchanges
+* In-chat accept/decline controls, a countdown and a 15-minute exchange deadline
 * Manifest V3 with no external servers or cloud processing
 
 [Security interface](docs/images/security.png) · [File interface](docs/images/files.png)
 
-[Changelog](CHANGELOG.md) · [Release notes for v1.2.1](docs/releases/v1.2.1.md)
+[Changelog](CHANGELOG.md) · [Release notes for v1.3.0](docs/releases/v1.3.0.md)
 
 ## Installation
 
@@ -53,20 +54,20 @@ install, package and sign the extension through Firefox Add-ons (AMO).
 
 1. Open a conversation in [Bale Web](https://web.bale.ai/).
 2. Open CipherGap's **Security** page and choose **Set up secure chat**.
-3. The other participant opens CipherGap and accepts the incoming request.
-4. Compare the six-digit verification code over a trusted channel, then mark the key verified.
+3. The other participant clicks **Accept request** on the request in the chat. Replacing an existing key requires an additional confirmation.
+4. Within 15 minutes of sending the request, compare the six-digit code over a trusted channel, then mark the key verified on both sides. Request expiry does not delete existing chat keys.
 5. Use the injected **Encrypt** button to send an encrypted message. Use **Encrypted file** to send `.cgpe` attachments. Bale’s ordinary attachment picker sends ordinary files.
 
 A manually shared key is available under **Settings → Advanced**, but it remains marked unverified.
 
-Encrypted messages end with a Persian installation guide and the GitHub link.
+Encrypted messages end with a Persian installation guide and both GitHub and the installation website links.
 CipherGap hides this guide in the conversation while enabled and shows it again
-when paused. Both participants should use 1.2.1 or later for messages with this
+when paused. Both participants should use 1.3.0 or later for messages with this
 guide; older encrypted messages remain readable with their original key.
 
 Open **Files → Choose secure files**, or use **Encrypted file** above Bale's composer.
 Select files and confirm Bale's preview, which contains encrypted `.cgpe` files.
-The receiver can click **Decrypt & download** on the attachment. Enable
+The receiver clicks **Decrypt & view** to open images or a native audio/video player inside the chat, with **Download** to save the original. Unsupported formats remain downloadable; HTML and SVG are never embedded. Enable
 **Files → Receive files automatically** separately in each chat to download and
 decrypt newly received attachments while that conversation is open. Previously
 received files require a click; opening a chat does not download its history.
@@ -92,14 +93,14 @@ Under **Settings**, turn **CipherGap enabled** off to pause all chats, or **Enab
 
 Messenger-independent code lives in `CipherGap/share/`. It is the single source
 of truth for message and key-exchange formats, AES/ECDH utilities, the CGPE file
-container, storage-key names, and adapter registration. Bale-specific selectors,
-DOM observers, composer behavior, and rendering stay in `CipherGap/content/bale.js`.
+container, storage-key names, adapter registration, media viewer, exchange cards and theme tokens. Bale-specific selectors,
+DOM observers, composer behavior, and mounting stay in `CipherGap/content/bale.js`.
 
 Bale integration uses stable composer/scroller IDs, accessible labels, message
 metadata and structural attachment children, without generated Bale class names.
 The small MAIN-world bridge observes native Blob downloads and transfers only
-the requested encrypted container to the isolated content script. Keys and
-decrypted bytes stay outside the page's JavaScript context. Message drafts are
+the requested encrypted container to the isolated content script. Keys and cryptographic operations stay in the isolated content script. Decrypted
+text and previews are displayed in the messenger DOM and can be read by that page. Message drafts are
 preserved during key exchange, and asynchronous sends are bound to their chat.
 
 Future Eitaa, Rubika, Telegram and WhatsApp integrations should implement the messenger
@@ -112,7 +113,7 @@ keep old readers registered, so existing messages and files remain compatible.
 * Encryption and decryption occur entirely on the client side.
 * Incoming key exchanges require explicit approval and remain unverified until the SAS codes are compared.
 * Peer fingerprints are retained when a chat key is cleared so unexpected identity changes can still be detected.
-* CGPE v1 processes complete files in memory and therefore applies a 100 MB safety limit.
+* CGPE v1 authenticates the complete file before preview/playback and applies a 100 MB safety limit. Playback uses local decrypted bytes, not network streaming.
 * CipherGap has no backend; plaintext processing happens locally before ciphertext is sent through Bale.
 * Source code is publicly available for review and auditing.
 

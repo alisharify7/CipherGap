@@ -1,6 +1,7 @@
 from pathlib import Path
 import tempfile,json,shutil
 from playwright.sync_api import sync_playwright
+from browser_fixtures import media_fixtures, ATTACHMENT_JS, ENCRYPT_JS
 root=Path(__file__).resolve().parents[1];extension=root/'CipherGap'
 fixture='''<!doctype html><html><body><div id="message_list_scroller_id"></div><footer id="chat_footer"><input type="file"><div id="editable-message-text" contenteditable="true"></div><div><button aria-label="send-button">Send</button></div></footer><script>window.received=[];document.querySelector('input[type=file]').addEventListener('change', async event=>{for(const file of event.target.files){received.push({name:file.name,bytes:Array.from(new Uint8Array(await file.arrayBuffer()))});}});window.testSent=[];document.querySelector('[aria-label="send-button"]').onclick=()=>{testSent.push(document.getElementById('editable-message-text').textContent);document.getElementById('editable-message-text').textContent='';};</script></body></html>'''
 profile=Path(tempfile.mkdtemp(prefix='cg-check-'))
@@ -33,7 +34,8 @@ with sync_playwright() as p:
  page.locator('#editable-message-text').fill('سلام — notice round trip')
  page.locator('#ciphergap-btn').click();page.wait_for_function('testSent.length===1')
  packet=page.evaluate('testSent[0]');notice=packet.split('\n\n',1)[1]
- assert notice.endswith('https://github.com/alisharify7/CipherGap')
+ assert 'https://github.com/alisharify7/CipherGap' in notice
+ assert notice.endswith('https://alisharify7.github.io/CipherGap/')
  page.evaluate('''([packet,notice])=>{
    const core=packet.split('\\n\\n')[0],scroller=document.getElementById('message_list_scroller_id');
    for(const mode of ['single','split','nested']){
@@ -42,7 +44,7 @@ with sync_playwright() as p:
      if(mode==='single'){const p=document.createElement('p');p.textContent=packet;body.append(p);}
      else {const p=document.createElement('p');p.textContent=core;if(mode==='nested'){const span=document.createElement('span');span.textContent=core;p.replaceChildren(span);}body.append(p);
        const hint=document.createElement('p');hint.textContent=notice.split('\\n')[0];body.append(hint);
-       const a=document.createElement('a');a.href=notice.split('\\n')[1];a.textContent=a.href;body.append(a);
+       for(const url of notice.split('\\n').slice(1)){const a=document.createElement('a');a.href=url;a.textContent=a.href;body.append(a);}
        const time=document.createElement('small');time.textContent='12:34';body.append(time);}
      scroller.append(row);
    }
@@ -73,7 +75,53 @@ with sync_playwright() as p:
  print('FA remaining',json.dumps(remaining,ensure_ascii=False))
  popup.locator('#languageSelect').select_option('en');popup.wait_for_function('document.documentElement.lang==="en"');assert 'Security' in popup.locator('#nav-security').inner_text()
  popup.screenshot(path='/tmp/ciphergap-popup-en.png',full_page=True)
+ # Documentation screenshots use the real extension at its native popup size.
+ worker.evaluate("chrome.storage.local.set({'key_trust_web.bale.ai_601':{state:'verified',source:'exchange',nonce:'fixture',fingerprint:'84A6E5B3',at:Date.now()}})")
+ popup.locator('#nav-security').click();popup.wait_for_function("document.getElementById('securityCard').dataset.view==='verified'")
+ popup.screenshot(path='/tmp/ciphergap-security-1.3.png',clip={'x':0,'y':0,'width':440,'height':590})
+ popup.locator('#nav-files').click();popup.screenshot(path='/tmp/ciphergap-files-1.3.png',clip={'x':0,'y':0,'width':440,'height':590})
  assert not errors,errors
  print('PASS actual popup localization, RTL/LTR, fonts and English restore')
+ # Exercise actual CGPE decryption through the native bridge, then shared media UI.
+ popup.evaluate("""async()=>{for(const name of ['encoding','crypto','file_crypto','dh_crypto'])await new Promise((resolve,reject)=>{const s=document.createElement('script');s.src='../share/'+name+'.js';s.onload=resolve;s.onerror=reject;document.head.append(s)});} """)
+ for name,mime,data,kind in media_fixtures(root):
+  encoded=popup.evaluate('async args=>{'+ENCRYPT_JS.replace('arguments[0]','args')+'}',[list(data),name,mime,'fixture-long-shared-key'])
+  sid=page.evaluate('args=>{'+ATTACHMENT_JS.replace('arguments[0]','args')+'}',[encoded,name])
+  page.locator(f'[data-sid="{sid}"] .ciphergap-file-decrypt-button').click()
+  viewer=page.locator('dialog[data-ciphergap-ui="file-viewer"]');viewer.wait_for(state='visible')
+  assert viewer.locator('h2').inner_text()==name
+  if kind=='img':page.wait_for_function('document.querySelector(".ciphergap-file-viewer img")?.naturalWidth===128')
+  elif kind in ['audio','video']:
+   media=viewer.locator(kind);media.click();media.evaluate('(m)=>m.play()');page.wait_for_function('document.querySelector(".ciphergap-file-viewer audio,.ciphergap-file-viewer video")?.currentTime>0')
+   if kind=='video':assert media.evaluate('(m)=>m.videoWidth')==64
+  else:
+   assert viewer.locator('iframe,object,embed,script').count()==0
+   assert not page.evaluate('Boolean(window.unsafePreview)')
+  with page.expect_download() as download:viewer.locator('.ciphergap-file-viewer__download').click()
+  assert download.value.suggested_filename==name
+  assert Path(download.value.path()).read_bytes()==data
+  page.screenshot(path='/tmp/ciphergap-media-'+kind+'.png')
+  media_url=viewer.locator('img,audio,video').first.get_attribute('src') if kind!='fallback' else None
+  if kind=='img':
+   worker.evaluate("chrome.storage.local.set({'ciphergap_enabled':false})")
+   viewer.wait_for(state='detached')
+   worker.evaluate("chrome.storage.local.set({'ciphergap_enabled':true})")
+   page.wait_for_selector('#ciphergap-secure-files:not([disabled])')
+  else:viewer.locator('header button').click();viewer.wait_for(state='detached')
+  if media_url:assert page.evaluate('async url=>{try{await fetch(url);return false}catch{return true}}',media_url)
+
+ print('PASS manual authenticated image/audio/video preview, actual playback, safe HTML fallback and exact downloads')
+ # Countdown expires in the chat and the consent controls disappear.
+ request=popup.evaluate("""async()=>{const session=await CipherGapShared.ecdh.create_dh_session();return CipherGapShared.protocol.build_start_exchange_message(session.nonce,session.publicKeyB64,session.codecId,Date.now()+4000);}""")
+ page.evaluate("""text=>{const row=document.createElement('div');row.dataset.sid='expiry';row.dataset.date=String(Date.now());row.setAttribute('aria-label','message-item');row.innerHTML='<svg aria-label="LeftBubble-icon"></svg><div><p></p></div>';row.querySelector('p').textContent=text;document.getElementById('message_list_scroller_id').append(row);}""",request)
+ card=page.locator('[data-sid="expiry"] [data-ciphergap-ui="protocol"]')
+ card.locator('[data-ciphergap-exchange-action="accept"]').wait_for(state='visible')
+ page.wait_for_function('document.querySelector("[data-sid=expiry] .ciphergap-chat-card").classList.contains("ciphergap-chat-card--expired")')
+ assert card.locator('.ciphergap-chat-card__timer').inner_text()=='00:00'
+ assert not card.locator('.ciphergap-chat-card__actions').is_visible()
+ assert 'expired' in card.inner_text()
+ page.screenshot(path='/tmp/ciphergap-expired.png')
+ print('PASS visible absolute countdown, expired notice and unavailable acceptance')
+ assert not errors,errors
  context.close()
 shutil.rmtree(profile,ignore_errors=True)

@@ -98,6 +98,7 @@ test("CGP v1 adds an installation notice while parsing the original payload", ()
     const legacy = "CGP|1|AESGCM|1700000000|payload|with|pipes";
     assert.equal(packet, legacy + "\n\n" + protocol.message_notice);
     assert.equal(protocol.strip_ciphergap_notice(packet), legacy);
+    assert.equal(protocol.strip_ciphergap_notice(packet.replace('\nhttps://alisharify7.github.io/CipherGap/', '')), legacy);
     assert.deepEqual(protocol.parse_ciphergap_packet(legacy), protocol.parse_ciphergap_packet(packet));
     assert.deepEqual(protocol.parse_ciphergap_packet(packet.replace(/\n/g, "")), protocol.parse_ciphergap_packet(legacy));
     assert.equal(protocol.strip_ciphergap_notice(protocol.message_notice), protocol.message_notice);
@@ -384,8 +385,10 @@ test("manifest loads shared utilities before runtime and adapter code", () => {
         "share/encoding.js",
         "share/crypto.js",
         "share/file_crypto.js",
+        "share/file_viewer.js",
         "share/dh_crypto.js",
         "share/protocol.js",
+        "share/exchange_ui.js",
         "share/messenger_adapter.js"
     ];
 
@@ -448,4 +451,13 @@ test("ArrayBuffer validation accepts other realms and rejects forged tags", () =
     assert.equal(globalThis.CipherGapShared.encoding.is_array_buffer({
         byteLength: 16, [Symbol.toStringTag]: "ArrayBuffer"
     }), false);
+});
+
+test("strict SAS parsing preserves the original absolute exchange deadline", () => {
+    const shared = globalThis.CipherGapShared;
+    const expiresAt = 1791134973210;
+    const packet = shared.protocol.build_sas_message("821437", "84A6E5B3", null, expiresAt);
+    const strict = shared.protocol.parse_strict_exchange_message(packet);
+    assert.equal(strict.parsed.expiresAt, expiresAt);
+    assert.equal(shared.protocol.get_exchange_expires_at(strict.parsed, expiresAt - 1000), expiresAt);
 });
