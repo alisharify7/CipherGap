@@ -3,7 +3,7 @@
     shared.chat_platforms ??= {};
     function input() {
         return [...document.querySelectorAll('#column-center [contenteditable="true"][enterkeyhint]')]
-            .find(e => e.getClientRects().length && e.getAttribute("aria-disabled") !== "true") ?? null;
+            .find(e => e.getAttribute("aria-disabled") !== "true") ?? null;
     }
     function native_row() {
         let node = input();
@@ -23,6 +23,7 @@
         input_selector: '#column-center [contenteditable="true"][enterkeyhint]',
         scroller_selector: "#column-center",
         message_selector: 'div[data-mid][data-peer-id][data-timestamp]',
+        lifecycle_selector: '[data-icon="attach"], [data-icon="send"], input[type="file"]',
         send_selector: '[data-ciphergap-composer="true"] > div:last-child button',
         toolbar_encrypt: true,
         composer,
@@ -57,6 +58,7 @@
             throw new Error("The document attachment option is unavailable in this conversation.");
         },
         document_id: row => row.querySelector('[data-doc-id]')?.dataset.docId,
+        file_action_anchor: carrier => carrier.closest('[data-doc-id]'),
         async read_cached_file(row, limit) {
             const id = row.querySelector('[data-doc-id]')?.dataset.docId;
             if (!/^\d+$/.test(id ?? "") || !globalThis.caches) return null;
