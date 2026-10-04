@@ -744,7 +744,11 @@ function init_key_exchange_listener() {
             return false;
         }
         if (message.action === "choose_secure_files") {
-            choose_bale_secure_files()
+            Promise.resolve().then(() => {
+                const adapter = globalThis.CipherGapShared.messenger_adapters.get_active();
+                if (!adapter?.choose_secure_files) throw new Error("Secure files are unavailable in this chat.");
+                return adapter.choose_secure_files();
+            })
                 .then(() => sendResponse({ ok: true }))
                 .catch((error) => sendResponse({ ok: false, error: error.message }));
             return true;

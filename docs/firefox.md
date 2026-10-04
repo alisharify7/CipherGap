@@ -19,7 +19,7 @@ but Android behavior has not been validated.
 For temporary desktop installation, download the `firefox` branch, open
 `about:debugging#/runtime/this-firefox`, choose **Load Temporary Add-on**, and
 select `CipherGap/manifest.json`. Alternatively select the generated Firefox
-ZIP. Allow Bale site access and refresh Bale. Temporary installations disappear
+ZIP. Allow access to your supported messenger and refresh its tab. Temporary installations disappear
 on browser restart. Permanent installation requires Mozilla signing; this
 repository does not contain a signed AMO release.
 
@@ -45,13 +45,15 @@ node --test tests/*.test.js
 python3 -m unittest discover -s tests -p '*_test.py'
 python3 tests/browser_chrome.py
 python3 tests/browser_firefox.py
+python3 tests/browser_messengers.py
+python3 tests/browser_messengers_firefox.py
 ```
 
 Browser checks need optional Python Playwright/Marionette tools. Install them in
 an isolated environment with `pip install playwright marionette_driver`, and
 install Chromium with `playwright install chromium`. The Firefox check defaults
 to Debian's real ESR binary; set FIREFOX_BINARY on other systems. Media fixtures additionally require ffmpeg. Both checks
-use new, isolated profiles and synthetic Bale DOM fixtures. They do not log into
+use new, isolated profiles and synthetic Bale, Eitaa and Telegram Web A DOM fixtures. They do not log into
 user accounts or send messages over the network.
 
 Actual Firefox ESR 140.16 validation covered unsigned installation, background
@@ -68,3 +70,10 @@ types between the logged-in Firefox and Chrome ahmad profiles; see
 [browser-validation.md](browser-validation.md). Firefox popup width is explicitly
 bounded to match Chrome's layout. Media and exchange UI are shared; only the
 manifest is generated differently.
+
+Version 1.4.0 also passed Eitaa and Telegram Web A fixtures on Firefox ESR
+153.4.0: two-party exchange/SAS, verified trust, text encryption/decryption,
+native encrypted uploads, image/audio/video playback, exact downloads and pause.
+The additional fixture addon replaces main-frame HTML only inside the temporary
+test profile; it is never installed in a user's profile. Live Eitaa/Telegram
+account checks in this release used Chrome's self chats.

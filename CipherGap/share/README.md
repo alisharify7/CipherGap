@@ -112,3 +112,9 @@ extend a deadline. Start, ACK and SAS carry the same Unix millisecond deadline;
 legacy requests require the original messenger sending timestamp. Both peers
 must update to 1.3.0 for timed exchange messages. CGP/CGPE encryption and old
 message/file readers are unchanged.
+
+## Chat DOM modules
+
+`content/chat_runtime.js` owns message observers, draft preservation, consent cards, pause state, native file handoff and media mounting. `content/bale.js`, `content/eitaa.js` and `content/telegram.js` describe only each messenger’s DOM and native controls. Register the messenger in `share/config.js`, add its explicit hosts/paths to both content-script matches, and load its platform module before the runtime. Use semantic IDs/roles/data attributes or structural children; never select generated messenger classes. Platform adapters dispatch the same shared crypto/protocol operations.
+
+Key storage is scoped by hostname and numeric conversation ID. Telegram support is limited to Web A (`/a/`); Web K has no injected scripts. A new codec must retain legacy readers and pass shared compatibility vectors before release.

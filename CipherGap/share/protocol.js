@@ -9,8 +9,16 @@ const CIPHERGAP_NOTICE_PATTERN = new RegExp([CIPHERGAP_MESSAGE_NOTICE, CIPHERGAP
     .map(notice => notice.split(/\s+/).map(word => word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
         .join("[\\s\\u200B-\\u200D\\uFEFF]*")).join("|"));
 
+// Some Persian messenger interfaces localize digits in message text nodes.
+// Restore wire characters only while parsing; plaintext and rendered text stay
+// untouched. Each replacement has the same length, so notice ranges stay valid.
+function canonical_protocol_text(text) {
+    return String(text ?? "").replace(/[۰-۹٠-٩]/g, digit =>
+        String(digit.charCodeAt(0) - (digit >= "۰" ? 0x06F0 : 0x0660)));
+}
+
 function find_ciphergap_notice(text) {
-    const match = CIPHERGAP_NOTICE_PATTERN.exec(text ?? "");
+    const match = CIPHERGAP_NOTICE_PATTERN.exec(canonical_protocol_text(text));
     return match ? { index: match.index, length: match[0].length } : null;
 }
 
@@ -77,6 +85,7 @@ function parse_ciphergap_packet(packet) {
         return null;
     }
 
+    packet = canonical_protocol_text(packet);
     for (const format of get_format_codecs("message")) {
         const parts = strip_ciphergap_notice(packet).trim().split(format.separator);
 
@@ -107,7 +116,7 @@ function is_ciphergap_packet(text) {
 
 function get_ciphergap_packet_codec(packetOrParsed) {
     if (typeof packetOrParsed === "string") {
-        const normalized = packetOrParsed.trim();
+        const normalized = canonical_protocol_text(packetOrParsed).trim();
         for (const format of get_format_codecs("message")) {
             const parts = normalized.split(format.separator);
             if (
@@ -144,7 +153,7 @@ function get_ciphergap_packet_crypto_profile(packetOrParsed) {
 }
 
 function normalize_exchange_text(text) {
-    return String(text ?? "")
+    return canonical_protocol_text(text)
         .replace(/[\u200B-\u200D\uFEFF]/g, "")
         .replace(/[\r\n]+/g, " ")
         .trim();

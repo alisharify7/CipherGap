@@ -17,7 +17,7 @@ function harness() {
         postMessage: (data) => posted.push(data)
     };
     const context = vm.createContext({
-        window, location: window.location, document: {}, crypto: webcrypto,
+        window, location: window.location, document: { addEventListener() {} }, crypto: webcrypto,
         TextEncoder, TextDecoder, URL, Blob, ArrayBuffer, Uint8Array, DataView,
         Event, MouseEvent: Event, console, setTimeout, clearTimeout, setInterval, clearInterval,
         get_storage_key: () => context.chatKey,
@@ -27,6 +27,7 @@ function harness() {
         vm.runInContext(source(`share/${file}.js`), context);
     }
     vm.runInContext(source("content/bale.js"), context);
+    vm.runInContext(source("content/chat_runtime.js"), context);
     return {
         context, posted, listeners,
         emit(data) { for (const listener of [...listeners]) listener({ source: window, origin: window.location.origin, data }); }
@@ -44,13 +45,13 @@ function composer(h) {
 test("key-exchange sends preserve drafts and do not erase newly typed text", async () => {
     const h = harness();
     const { input, sent } = composer(h);
-    await h.context.bale_send_message("public-key-packet");
+    await h.context.chat_send_message("public-key-packet");
     assert.deepEqual(sent, ["public-key-packet"]);
     assert.equal(input.textContent, "unsent draft");
     h.context.document.querySelector = (selector) => selector === "#editable-message-text" ? input : {
         click() { input.textContent = "new draft typed while sending"; }
     };
-    await h.context.bale_send_message("encrypted-packet", { preserveDraft: false });
+    await h.context.chat_send_message("encrypted-packet", { preserveDraft: false });
     assert.equal(input.textContent, "new draft typed while sending");
 });
 
@@ -58,7 +59,7 @@ test("changing chats during a send never clicks the new chat's send control", as
     const h = harness();
     const { sent } = composer(h);
     h.context.wait_for_main_thread = async () => { h.context.chatKey = "chat-B"; };
-    await assert.rejects(h.context.bale_send_message("packet"), /active chat changed/);
+    await assert.rejects(h.context.chat_send_message("packet"), /active chat changed/);
     assert.deepEqual(sent, []);
 });
 
@@ -68,7 +69,7 @@ test("a send-control failure retains the draft even for encrypted-message sends"
     h.context.wait_for_main_thread = async () => {
         h.context.document.querySelector = (selector) => selector === "#editable-message-text" ? input : null;
     };
-    await assert.rejects(h.context.bale_send_message("packet", { preserveDraft: false }), /no longer available/);
+    await assert.rejects(h.context.chat_send_message("packet", { preserveDraft: false }), /no longer available/);
     assert.equal(input.textContent, "unsent draft");
 });
 
@@ -81,7 +82,7 @@ test("native attachment children work for both uncached and cached files", async
         const carrier = { closest: () => anchor, dispatchEvent: () => clicks.push("filename") };
         const row = { isConnected: true, contains: (element) => element === anchor };
         h.context.find_cgpe_file_in_message = () => ({ element: carrier });
-        const result = h.context.request_bale_encrypted_file(row, "example.txt.cgpe", "chat-A");
+        const result = h.context.request_chat_encrypted_file(row, "example.txt.cgpe", "chat-A");
         const { id } = h.posted[0];
         h.emit({ source: "ciphergap-main", type: "file_ready", id });
         assert.deepEqual(clicks, [cached ? "filename" : "icon"]);
@@ -97,7 +98,7 @@ test("native attachment children work for both uncached and cached files", async
 
 test("changing chats cancels file requests before another native attachment is clicked", async () => {
     const h = harness();
-    const result = h.context.request_bale_encrypted_file({ isConnected: true }, "example.cgpe", "chat-A");
+    const result = h.context.request_chat_encrypted_file({ isConnected: true }, "example.cgpe", "chat-A");
     h.context.chatKey = "chat-B";
     h.emit({ source: "ciphergap-main", type: "file_ready", id: h.posted[0].id });
     await assert.rejects(result, /active chat changed/);
@@ -109,17 +110,17 @@ test("automatic receipt is opt-in, ignores history/outgoing files and queues eac
     const received = [];
     h.context.refresh_cg_chat_cache = async () => {};
     h.context.chrome = { storage: { local: { get: async () => ({}) } } };
-    h.context.download_bale_encrypted_file = async (row) => received.push(row.dataset.sid);
+    h.context.download_chat_encrypted_file = async (row) => received.push(row.dataset.sid);
     vm.runInContext('cg_cached_key = "test-key";', h.context);
     const row = (sid, date = Date.now() + 1000, incoming = true) => ({
         dataset: { sid, date: String(date) }, querySelector: () => incoming ? {} : null
     });
-    await h.context.auto_receive_bale_file(row("disabled"), {});
+    await h.context.auto_receive_chat_file(row("disabled"), {});
     vm.runInContext("cg_cached_auto_files = true;", h.context);
-    await h.context.auto_receive_bale_file(row("history", 1), {});
-    await h.context.auto_receive_bale_file(row("outgoing", Date.now() + 1000, false), {});
+    await h.context.auto_receive_chat_file(row("history", 1), {});
+    await h.context.auto_receive_chat_file(row("outgoing", Date.now() + 1000, false), {});
     const incoming = row("incoming");
-    await Promise.all([h.context.auto_receive_bale_file(incoming, {}), h.context.auto_receive_bale_file(incoming, {})]);
+    await Promise.all([h.context.auto_receive_chat_file(incoming, {}), h.context.auto_receive_chat_file(incoming, {})]);
     assert.deepEqual(received, ["incoming"]);
 });
 
@@ -149,6 +150,7 @@ test("MAIN bridge ignores normal/wrong-name/oversize blobs and suppresses only r
     const blobs = new Map();
     const urls = { createObjectURL(blob) { const url = `blob:https://web.bale.ai/${blobs.size}`; blobs.set(url, blob); return url; } };
     h.context.HTMLAnchorElement = Anchor;
+    h.context.HTMLInputElement = class { click() {} };
     h.context.URL = urls;
     h.context.window.fetch = async (url) => ({ blob: async () => blobs.get(url) });
     vm.runInContext(source("content/main_world_bridge.js"), h.context);
@@ -178,4 +180,13 @@ test("MAIN bridge ignores normal/wrong-name/oversize blobs and suppresses only r
     assert.deepEqual(new Uint8Array(response.bytes), new Uint8Array(await encrypted.arrayBuffer()));
     Object.assign(new Anchor(), { download: "example.txt.cgpe", href: cachedURL }).click();
     assert.deepEqual(nativeDownloads, ["ordinary.txt", "example.txt.cgpe"]);
+    h.emit({ source: "ciphergap-content", type: "read_file", id: "late-anchor", filename: "example.txt.cgpe", maxBytes: 1024 });
+    const liveURL = urls.createObjectURL(encrypted);
+    await new Promise(resolve => setTimeout(resolve, 10));
+    assert.equal(h.posted.filter(m => m.type === "file_bytes").length, 2);
+    Object.assign(new Anchor(), { download: "ordinary.txt", href: liveURL }).click();
+    Object.assign(new Anchor(), { download: "example.txt.cgpe", href: liveURL }).click();
+    assert.deepEqual(nativeDownloads, ["ordinary.txt", "example.txt.cgpe", "ordinary.txt"]);
+    Object.assign(new Anchor(), { download: "example.txt.cgpe", href: liveURL }).click();
+    assert.equal(nativeDownloads.at(-1), "example.txt.cgpe"); // Suppression is one-shot.
 });
