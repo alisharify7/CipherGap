@@ -2,7 +2,7 @@
 
 <img src="CipherGap/assets/ciphergap.svg" width="80" height="80" alt="CipherGap logo"/>
 
-**CipherGap** is an open-source Chrome and Firefox extension for private messaging. **Bale Web** is currently supported; Eitaa, Rubika, Telegram and WhatsApp integrations are planned but are not active yet.
+**CipherGap** is an open-source Chrome and Firefox extension for private messaging. **Bale Web, Eitaa Web and Telegram Web A** are supported. Rubika and WhatsApp remain in development. Telegram Web K is not supported.
 
 Messages are encrypted locally in your browser before being sent, ensuring that only users with the shared secret can read the original content.
 
@@ -12,7 +12,7 @@ Messages are encrypted locally in your browser before being sent, ensuring that 
 * Per-chat keys and optional automatic message decryption
 * An installation guide for recipients without CipherGap, hidden while the extension is enabled
 * Separate Security, Files, Settings and Guide pages with light/dark themes
-* A chat security indicator and secure file picker inside Bale's composer
+* A chat security indicator and secure file picker inside the supported messenger's composer
 * Decrypt and preview images, play audio/video, or download the original file
 * Optional automatic download/decryption of newly received files
 * ECDH P-256 key exchange with a six-digit SAS verification step
@@ -22,7 +22,7 @@ Messages are encrypted locally in your browser before being sent, ensuring that 
 
 [Security interface](docs/images/security.png) · [File interface](docs/images/files.png)
 
-[Changelog](CHANGELOG.md) · [Release notes for v1.3.0](docs/releases/v1.3.0.md)
+[Changelog](CHANGELOG.md) · [Release notes for v1.4.0](docs/releases/v1.4.0.md)
 
 ## Installation
 
@@ -45,34 +45,34 @@ Firefox desktop 140 or newer is required. Download the [`firefox` branch](https:
 
 1. Open `about:debugging#/runtime/this-firefox`.
 2. Click **Load Temporary Add-on** and select `CipherGap/manifest.json`.
-3. Open or refresh Bale Web.
+3. Open or refresh the supported messenger.
 
 Temporary Firefox installs are removed when Firefox restarts. For a permanent
 install, package and sign the extension through Firefox Add-ons (AMO).
 
 ## Usage
 
-1. Open a conversation in [Bale Web](https://web.bale.ai/).
+1. Open a conversation in [Bale Web](https://web.bale.ai/), [Eitaa Web](https://web.eitaa.com/) or [Telegram Web A](https://web.telegram.org/a/). Eitaa and Telegram use numeric chat IDs in the URL hash.
 2. Open CipherGap's **Security** page and choose **Set up secure chat**.
 3. The other participant clicks **Accept request** on the request in the chat. Replacing an existing key requires an additional confirmation.
 4. Within 15 minutes of sending the request, compare the six-digit code over a trusted channel, then mark the key verified on both sides. Request expiry does not delete existing chat keys.
-5. Use the injected **Encrypt** button to send an encrypted message. Use **Encrypted file** to send `.cgpe` attachments. Bale’s ordinary attachment picker sends ordinary files.
+5. Use the injected **Encrypt** button to send an encrypted message. Use **Encrypted file** to send `.cgpe` attachments. The messenger’s ordinary attachment picker sends ordinary files.
 
 A manually shared key is available under **Settings → Advanced**, but it remains marked unverified.
 
 Encrypted messages end with a Persian installation guide and both GitHub and the installation website links.
 CipherGap hides this guide in the conversation while enabled and shows it again
-when paused. Both participants should use 1.3.0 or later for messages with this
-guide; older encrypted messages remain readable with their original key.
+when paused. Both participants should use 1.4.0 for Eitaa or Telegram (1.3.0 or later
+can read the guide on Bale); older encrypted messages remain readable with their original key.
 
-Open **Files → Choose secure files**, or use **Encrypted file** above Bale's composer.
-Select files and confirm Bale's preview, which contains encrypted `.cgpe` files.
+Open **Files → Choose secure files**, or use **Encrypted file** in the chat’s CipherGap toolbar.
+Select files and confirm the messenger’s preview, which contains encrypted `.cgpe` files.
 The receiver clicks **Decrypt & view** to open images or a native audio/video player inside the chat, with **Download** to save the original. Unsupported formats remain downloadable; HTML and SVG are never embedded. Enable
 **Files → Receive files automatically** separately in each chat to download and
 decrypt newly received attachments while that conversation is open. Previously
 received files require a click; opening a chat does not download its history.
 The original filename is retained. If direct download is unavailable, download
-the `.cgpe` through Bale and use **Choose downloaded file instead**.
+the `.cgpe` through the messenger and use **Choose downloaded file instead**.
 
 ## Language and pause controls
 
@@ -93,20 +93,20 @@ Under **Settings**, turn **CipherGap enabled** off to pause all chats, or **Enab
 
 Messenger-independent code lives in `CipherGap/share/`. It is the single source
 of truth for message and key-exchange formats, AES/ECDH utilities, the CGPE file
-container, storage-key names, adapter registration, media viewer, exchange cards and theme tokens. Bale-specific selectors,
-DOM observers, composer behavior, and mounting stay in `CipherGap/content/bale.js`.
+container, storage-key names, adapter registration, media viewer, exchange cards and theme tokens. The shared chat lifecycle, file handoff, message rendering and UI mounting live in `CipherGap/content/chat_runtime.js`. Small `bale.js`, `eitaa.js` and `telegram.js` modules supply native selectors, input/send behavior and attachment controls.
 
-Bale integration uses stable composer/scroller IDs, accessible labels, message
-metadata and structural attachment children, without generated Bale class names.
-The small MAIN-world bridge observes native Blob downloads and transfers only
+Integrations use stable IDs, roles, message/document data attributes and structural attachment children. They do not select messenger CSS classes. Native layout identifies incoming/outgoing rows. Telegram’s native editor receives input events; its send control is resolved only after the draft appears.
+The small MAIN-world bridge observes native Blob downloads, handles Eitaa’s bounded Service Worker download path, and transfers only
 the requested encrypted container to the isolated content script. Keys and cryptographic operations stay in the isolated content script. Decrypted
 text and previews are displayed in the messenger DOM and can be read by that page. Message drafts are
 preserved during key exchange, and asynchronous sends are bound to their chat.
 
-Future Eitaa, Rubika, Telegram and WhatsApp integrations should implement the messenger
+Future Rubika and WhatsApp integrations should implement the messenger
 adapter contract documented in `CipherGap/share/README.md`; they must not copy
 encryption or packet-format code. Format upgrades add a new immutable codec and
 keep old readers registered, so existing messages and files remain compatible.
+
+Telegram exposes no machine-readable sending timestamp. Automatic receiving ignores the initial one-second settling period and messages at or below the observed message-ID baseline; missed or historical files remain available through **Decrypt & view**. Undated legacy exchange requests on Telegram require a new timed request. Eitaa’s app-encrypted cache (when an app passcode is enabled) falls back to native download handling. The manual downloaded-file option remains available on every platform.
 
 ## Security
 
@@ -114,7 +114,7 @@ keep old readers registered, so existing messages and files remain compatible.
 * Incoming key exchanges require explicit approval and remain unverified until the SAS codes are compared.
 * Peer fingerprints are retained when a chat key is cleared so unexpected identity changes can still be detected.
 * CGPE v1 authenticates the complete file before preview/playback and applies a 100 MB safety limit. Playback uses local decrypted bytes, not network streaming.
-* CipherGap has no backend; plaintext processing happens locally before ciphertext is sent through Bale.
+* CipherGap has no backend; plaintext processing happens locally before ciphertext is sent through the messenger.
 * Source code is publicly available for review and auditing.
 
 > CipherGap improves privacy on supported messaging platforms, but users should independently review the cryptographic implementation before relying on it for highly sensitive communications.
@@ -141,3 +141,5 @@ Released under the MIT License.
 ---
 
 ⭐ If you find CipherGap useful, consider starring the repository.
+
+New messenger browser checks: `python3 tests/browser_messengers.py` (Playwright/Chromium) and `PYTHONPATH=/tmp/ciphergap-firefox-tools python3 tests/browser_messengers_firefox.py` (Marionette; install `marionette-driver` in your chosen environment). These use isolated profiles and sanitized DOM fixtures. Live account checks and limits are recorded in [browser validation](docs/browser-validation.md).

@@ -461,3 +461,20 @@ test("strict SAS parsing preserves the original absolute exchange deadline", () 
     assert.equal(strict.parsed.expiresAt, expiresAt);
     assert.equal(shared.protocol.get_exchange_expires_at(strict.parsed, expiresAt - 1000), expiresAt);
 });
+
+
+test("localized messenger digits preserve authenticated packets and exchange deadlines", async () => {
+    const { protocol, crypto, ecdh } = globalThis.CipherGapShared;
+    const session = await ecdh.create_dh_session();
+    const deadline = Date.now() + 900000;
+    const request = protocol.build_start_exchange_message(session.nonce, session.publicKeyB64, session.codecId, deadline);
+    const packet = protocol.build_ciphergap_packet(await crypto.encrypt_message("سلام ۱۲۳ — original digits", "localized-wire-key"));
+    for (const digits of ["۰۱۲۳۴۵۶۷۸۹", "٠١٢٣٤٥٦٧٨٩"]) {
+        const localize = text => text.replace(/[0-9]/g, d => digits[Number(d)]);
+        assert.deepEqual(protocol.parse_strict_exchange_message(localize(request)), protocol.parse_strict_exchange_message(request));
+        assert.equal(protocol.get_ciphergap_packet_codec(localize(packet)).id, "cgp_v1");
+        assert.deepEqual(protocol.find_ciphergap_notice(localize(packet)), protocol.find_ciphergap_notice(packet));
+        assert.equal(await crypto.decrypt_message(protocol.parse_ciphergap_packet(localize(packet)).data, "localized-wire-key"), "سلام ۱۲۳ — original digits");
+        assert.equal(protocol.parse_strict_exchange_message(localize(request) + "extra"), null);
+    }
+});

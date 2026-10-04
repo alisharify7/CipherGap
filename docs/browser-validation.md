@@ -1,4 +1,42 @@
-# Bale browser validation
+# Browser validation
+
+## 1.4.0 — 2026-10-04
+
+The unpacked extension was installed and tested in the user's logged-in Chrome
+**Your Chrome / Default** profile at `https://web.eitaa.com/#70024058` and
+`https://web.telegram.org/a/#5793551013`. Both URLs opened **Saved Messages** in
+these accounts. Live checks therefore used self chats, not a second person.
+
+- Encrypted English/Persian messages were sent through each native composer,
+  persisted in the messenger, and decrypted to the exact original text.
+- A PNG was encrypted through the dedicated picker on each platform. The native
+  upload confirmation contained only a `.cgpe` container; the file was sent.
+- Each received attachment opened in CipherGap's image viewer. Downloads matched
+  the original PNG byte for byte. Eitaa also passed a cold-cache download after
+  clearing only that test document's ciphertext cache entry and reloading.
+- Telegram's installation-link preview and footer are hidden while enabled.
+  The toolbar reserves space above the native composer rather than covering the
+  last message. These changes were checked in the actual chat DOM and visually.
+- Test keys were created only for these previously empty self-chat slots and are
+  explicitly **unverified**. Test messages/files remain readable there.
+
+Separate isolated Chrome and Firefox ESR **153.4.0** profiles run the actual
+extension against sanitized native DOM contracts for two distinct chat IDs on
+both platforms. They check two-party ECDH, matching keys/SAS, inline acceptance,
+verified trust, encrypted text, native upload handoff (including Telegram's
+otherwise detached input), image preview, WAV/WebM playback, safe HTML fallback,
+exact manual/automatic original downloads, history/outgoing exclusion and pause.
+Chrome also checks request expiry and abandoning a secure picker during chat
+navigation. These
+fixtures do not log into accounts or send messages to the live services.
+The existing Bale browser checks still pass in both browsers. All 31 Node
+regressions, the package identity check, Firefox lint (zero warnings/errors),
+JavaScript syntax checks and the responsive bilingual website checks pass.
+
+Protocol regressions cover Persian/Arabic digit localization without changing
+original plaintext. The shared crypto formats and legacy vectors are unchanged.
+Telegram Web K, username-only URLs, Android, host interface languages other than
+English/Persian, and slow near-100-MB live transfers were not validated.
 
 ## 1.3.0 — 2026-10-04
 

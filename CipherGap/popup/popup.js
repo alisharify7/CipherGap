@@ -671,7 +671,7 @@ function render_action_availability() {
     autoFilesToggle.disabled = !ready || !currentSecretKey || is_button_busy(autoFilesToggle);
     chooseFilesBtn.disabled = !ready || !currentSecretKey;
     document.getElementById("fileKeyHint").textContent = currentSecretKey
-        ? "Up to 100 MB combined · Bale previews encrypted files only"
+        ? "Up to 100 MB combined · Only encrypted files reach the messenger"
         : "Set up a key in Security before sending files.";
     revealKeyBtn.disabled = !ready || !currentSecretKey;
     copyKeyBtn.disabled = !ready || !currentSecretKey;

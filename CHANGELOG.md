@@ -1,5 +1,27 @@
 # Changelog
 
+## [1.4.0](docs/releases/v1.4.0.md) - 2026-10-04
+
+### Added
+
+- Eitaa Web and Telegram Web A integrations, using the same crypto, key exchange, media viewer, language and pause controls as Bale.
+- Small platform modules over one shared chat lifecycle and file handoff.
+- Secure uploads through native document previews, including Telegram’s detached file input.
+- Eitaa ciphertext-cache receipt and bounded native Service Worker download handling.
+- Two-party browser fixtures for both new messengers in Chrome and Firefox.
+
+### Fixed
+- Localized Persian/Arabic wire digits are restored for parsing without changing plaintext.
+- Returning quickly to a chat refreshes invalidated key state; abandoned encrypted selections never reach the host.
+- Telegram’s delayed native ciphertext download is suppressed once after opening the local viewer.
+
+- Preserve native timestamps outside protocol and decrypted message content.
+- Preserve drafts when the native messenger does not accept a send.
+- Hide Telegram installation-link previews while CipherGap is enabled.
+- Reserve space for chat controls instead of covering the last message.
+- Stop secure selections after navigating out of a chat.
+
+
 ## [1.3.0](docs/releases/v1.3.0.md) - 2026-10-04
 
 ### Added
