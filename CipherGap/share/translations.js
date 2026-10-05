@@ -38,6 +38,8 @@ globalThis.CipherGapShared.fa = Object.freeze({
   "This request is already being processed.": "این درخواست در حال پردازش است.",
 
   "Exchange again to verify": "برای تأیید دوباره تبادل کنید",
+  "Rubika": "روبیکا",
+  "Soroush Plus": "سروش پلاس",
   "Coming soon: Rubika and WhatsApp": "در برنامهٔ توسعه: روبیکا و واتساپ",
   "PRIVATE CONVERSATIONS": "گفتگوهای خصوصی",
   "Current chat": "گفتگوی فعلی",

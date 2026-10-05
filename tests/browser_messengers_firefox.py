@@ -1,7 +1,16 @@
 """Firefox addon integration over the same Eitaa/Telegram DOM contracts."""
-import os,time,tempfile,shutil,zipfile,importlib.util,json,gc
+import os,time,tempfile,shutil,zipfile,importlib.util,json,gc,sys
 from pathlib import Path
 from messenger_fixtures import html
+if '--new-messengers' in sys.argv:
+ from new_messenger_fixtures import html
+ platforms=[('rubika','https://web.rubika.ir/'),('splus','https://web.splus.ir/')]
+else:platforms=[('eitaa','https://web.eitaa.com/'),('telegram','https://web.telegram.org/a/')]
+
+def row_selector(platform,sid):
+ if platform=='eitaa':return '[data-mid="'+sid+'"]'
+ if platform=='rubika':return '[data-msg-id="'+sid+'"] [rb-message-item]'
+ return '#message'+('-' if platform=='telegram' else '')+sid
 from browser_fixtures import media_fixtures,ENCRYPT_JS
 from marionette_driver.marionette import Marionette
 from marionette_driver.addons import Addons
@@ -23,30 +32,35 @@ def poll(fn,accept,seconds=20):
   time.sleep(.1)
  print("DIAGNOSTIC",js('return {url:location.href,toolbar:document.getElementById("ciphergap-toolbar")?.textContent,notice:document.getElementById("ciphergap-live-notice")?.textContent,buttons:[...document.querySelectorAll(".ciphergap-file-decrypt-button")].map(b=>({text:b.textContent,state:b.dataset.state,disabled:b.disabled})),rows:[...document.querySelectorAll("[data-mid][data-timestamp],[data-message-id][id]")].map(e=>({id:e.id,attrs:[...e.attributes].filter(a=>a.name!=="class").map(a=>[a.name,a.value]),prefix:e.textContent.slice(0,70),cards:e.querySelectorAll("[data-ciphergap-ui=protocol]").length}))};'),flush=True)
  raise AssertionError(f"Received {len(value)} bytes, expected exact original" if isinstance(value,bytes) else value)
+def click(selector):
+ # A newly appended file can be clipped at the native scrollport edge. Center
+ # the target and wait for paint instead of clicking through floating controls.
+ js('document.querySelector(arguments[0]).scrollIntoView({block:"center"});',[selector])
+ poll(lambda:js('const e=document.querySelector(arguments[0]),r=e.getBoundingClientRect(),hit=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);return e===hit||e.contains(hit);',[selector]),bool)
+ m.find_element(By.CSS_SELECTOR,selector).click()
 try:
  with zipfile.ZipFile(builder.build('firefox',folder/'addon.zip')) as z:z.extractall(package)
  m.start_session();m.timeout.script=25;m.timeout.page_load=25
  # Replace only this isolated profile's main-frame responses. Keep the real
  # origins/permissions while preventing host scripts from changing fixtures.
  routes=folder/'fixtures';routes.mkdir()
- (routes/'manifest.json').write_text(json.dumps({'manifest_version':2,'name':'CipherGap isolated DOM fixtures','version':'1.0','permissions':['webRequest','webRequestBlocking','https://web.eitaa.com/*','https://web.telegram.org/a/*'],'background':{'scripts':['fixture.js']}}))
- (routes/'fixture.js').write_text('const fixtures='+json.dumps({p:html(p) for p in ['eitaa','telegram']})+'''
+ (routes/'manifest.json').write_text(json.dumps({'manifest_version':2,'name':'CipherGap isolated DOM fixtures','version':'1.0','permissions':['webRequest','webRequestBlocking']+[base+'*' for _,base in platforms],'background':{'scripts':['fixture.js']}}))
+ (routes/'fixture.js').write_text('const fixtures='+json.dumps({base:html(name) for name,base in platforms})+';const urls='+json.dumps([base+'*' for _,base in platforms])+""";
  browser.webRequest.onBeforeRequest.addListener(details=>{
- const filter=browser.webRequest.filterResponseData(details.requestId);
- filter.ondata=()=>{};
- filter.onstop=()=>{filter.write(new TextEncoder().encode(fixtures[details.url.includes('eitaa')?'eitaa':'telegram']));filter.close();};
+ const filter=browser.webRequest.filterResponseData(details.requestId);filter.ondata=()=>{};
+ filter.onstop=()=>{const base=Object.keys(fixtures).find(base=>details.url.startsWith(base));filter.write(new TextEncoder().encode(fixtures[base]));filter.close();};
  return {};
- },{urls:['https://web.eitaa.com/*','https://web.telegram.org/a/*'],types:['main_frame']},['blocking']);
- ''')
+ },{urls,types:['main_frame']},['blocking']);
+ """)
  Addons(m).install(str(routes),temp=True)
  addon=Addons(m).install(str(package),temp=True);m.set_context('chrome')
  meta=async_js('const {ExtensionParent}=ChromeUtils.importESModule("resource://gre/modules/ExtensionParent.sys.mjs");const e=ExtensionParent.GlobalManager.getExtension(arguments[0]);await e.wakeupBackground();return {base:e.baseURI.spec,errors:e.errors,warnings:e.warnings};',[addon]);assert not meta['errors'] and not meta['warnings'],meta
  m.set_context('content');m.navigate(meta['base']+'popup/popup.html');kernel=m.current_window_handle
  async_js("for(const file of ['encoding','crypto','file_crypto','dh_crypto','stickers'])await new Promise((resolve,reject)=>{const s=document.createElement('script');s.src='../share/'+file+'.js';s.onload=resolve;s.onerror=reject;document.head.append(s)});return true;")
- for platform,base in [('eitaa','https://web.eitaa.com/'),('telegram','https://web.telegram.org/a/')]:
+ for platform,base in platforms:
   handles=[]
   for uid in [601,602]:
-   m.switch_to_window(kernel);before=set(m.window_handles);async_js('return (await browser.tabs.create({url:arguments[0],active:false})).id;',[base+'#'+str(uid)]);handle=next(h for h in m.window_handles if h not in before);handles.append(handle);m.switch_to_window(handle);poll(lambda:js('return location.href;'),lambda s:bool(s) and s.startswith(base));time.sleep(1)
+   m.switch_to_window(kernel);before=set(m.window_handles);async_js('return (await browser.tabs.create({url:arguments[0],active:false})).id;',[base+('#c=u'+str(uid) if platform=='rubika' else '#'+str(uid))]);handle=next(h for h in m.window_handles if h not in before);handles.append(handle);m.switch_to_window(handle);poll(lambda:js('return location.href;'),lambda s:bool(s) and s.startswith(base));time.sleep(1)
    poll(lambda:js('return document.getElementById("ciphergap-toolbar")?.textContent;'),lambda s:s and 'Set up security' in s)
   m.switch_to_window(kernel);tabs=async_js('return (await browser.tabs.query({url:arguments[0]+"*"})).map(t=>t.id);',[base])
   contexts=[async_js('return browser.tabs.sendMessage(arguments[0],{action:"get_chat_context"});',[t]) for t in tabs]
@@ -65,7 +79,7 @@ try:
   for i in [0,1]:action(i,{'action':'mark_key_verified','nonce':start['nonce']})
   m.switch_to_window(handles[0]);js('const e=document.querySelector("[contenteditable=true]");e.textContent=arguments[0];e.dispatchEvent(new Event("input",{bubbles:true}));document.getElementById("ciphergap-btn").click();',['Firefox '+platform+' — سلام'])
   poll(lambda:js('return !document.getElementById("ciphergap-btn").disabled;'),bool);packet=js('return testSent.at(-1);');assert packet.startswith('CGP|')
-  m.switch_to_window(handles[1]);sid=js('return addMessage(arguments[0]);',[packet]);row=f'[data-mid="{sid}"]' if platform=='eitaa' else '#message-'+sid
+  m.switch_to_window(handles[1]);sid=js('return addMessage(arguments[0]);',[packet]);row=row_selector(platform,sid)
   if platform=='eitaa':js('const r=document.querySelector(arguments[0]),quote=document.createElement("div");quote.dir="auto";quote.textContent="CGP|1|AESGCM|1|truncatedQuotedCiphertext";r.firstElementChild.prepend(quote);',[row])
   poll(lambda:js('return Boolean(document.querySelector(arguments[0]+" .ciphergap-decrypt-button"));',[row]),bool);m.find_element(By.CSS_SELECTOR,row+' .ciphergap-decrypt-button').click()
   text=poll(lambda:js('return document.querySelector(arguments[0]+" .ciphergap-plaintext")?.textContent;',[row]),bool);assert text=='Firefox '+platform+' — سلام'
@@ -73,7 +87,7 @@ try:
   # Unicode emoji and native image-backed emoji preserve their full sequence.
   m.switch_to_window(handles[0]);js('const e=document.querySelector("[contenteditable=true]");e.replaceChildren(document.createTextNode("سلام "));const img=document.createElement("img");img.alt="👨‍👩‍👧‍👦";e.append(img,document.createElement("br"),document.createTextNode("👍🏽 ❤️"));e.dispatchEvent(new Event("input",{bubbles:true}));document.getElementById("ciphergap-btn").click();')
   poll(lambda:js('return !document.getElementById("ciphergap-btn").disabled;'),bool);packet=js('return testSent.at(-1)');assert packet.startswith('CGP|')
-  m.switch_to_window(handles[1]);sid=js('return addMessage(arguments[0]);',[packet]);emoji_row=f'[data-mid="{sid}"]' if platform=='eitaa' else '#message-'+sid
+  m.switch_to_window(handles[1]);sid=js('return addMessage(arguments[0]);',[packet]);emoji_row=row_selector(platform,sid)
   poll(lambda:js('return Boolean(document.querySelector(arguments[0]+" .ciphergap-decrypt-button"));',[emoji_row]),bool);m.find_element(By.CSS_SELECTOR,emoji_row+' .ciphergap-decrypt-button').click()
   text=poll(lambda:js('return document.querySelector(arguments[0]+" .ciphergap-plaintext")?.textContent;',[emoji_row]),bool);assert text=='سلام 👨‍👩‍👧‍👦\n👍🏽 ❤️'
   # A sticker traverses real Firefox File/DataTransfer and the native upload.
@@ -83,16 +97,16 @@ try:
   m.find_element(By.ID,'ciphergap-media-tab-1').click();m.find_element(By.CSS_SELECTOR,'.ciphergap-media-picker__import').click()
   js('const input=document.querySelector(".ciphergap-media-picker input[type=file]"),dt=new DataTransfer();dt.items.add(new File([new Uint8Array(arguments[0])],"secret-sticker.png",{type:"image/png"}));input.files=dt.files;input.dispatchEvent(new Event("change",{bubbles:true}));',[list(picture)])
   upload=poll(lambda:js('return received[0];'),bool);assert upload['name'].endswith('.cgst.cgpe') and b'secret-sticker.png' not in bytes(upload['bytes'])
-  m.switch_to_window(handles[1]);sid=js('return addAttachment(arguments[0],arguments[1]);',[upload['bytes'],upload['name'][:-5]]);sticker_row=f'[data-mid="{sid}"]' if platform=='eitaa' else '#message-'+sid
-  poll(lambda:js('return Boolean(document.querySelector(arguments[0]+" .ciphergap-file-decrypt-button"));',[sticker_row]),bool);m.find_element(By.CSS_SELECTOR,sticker_row+' .ciphergap-file-decrypt-button').click()
+  m.switch_to_window(handles[1]);sid=js('return addAttachment(arguments[0],arguments[1]);',[upload['bytes'],upload['name'][:-5]]);sticker_row=row_selector(platform,sid)
+  poll(lambda:js('return Boolean(document.querySelector(arguments[0]+" .ciphergap-file-decrypt-button"));',[sticker_row]),bool);click(sticker_row+' .ciphergap-file-decrypt-button')
   poll(lambda:js('return document.querySelector(arguments[0]+" .ciphergap-sticker-inline img")?.naturalWidth;',[sticker_row]),lambda w:w==128)
   m.find_element(By.CSS_SELECTOR,sticker_row+' .ciphergap-sticker-inline button').click();poll(lambda:(folder/'secret-sticker.png').read_bytes() if (folder/'secret-sticker.png').exists() else None,lambda value:value==picture);(folder/'secret-sticker.png').unlink()
   m.find_element(By.CSS_SELECTOR,sticker_row+' .ciphergap-sticker-inline img').click();poll(lambda:js('return Boolean(document.querySelector("dialog[data-ciphergap-ui=file-viewer]"));'),bool)
   m.find_element(By.CSS_SELECTOR,'.ciphergap-file-viewer header button').click();assert js('return Boolean(document.querySelector(arguments[0]+" .ciphergap-sticker-inline img"));',[sticker_row])
   video=next(item for item in media_fixtures(root) if item[3]=='video');m.switch_to_window(kernel)
   animated=async_js('const f=await CipherGapShared.stickers.pack(new File([new Uint8Array(arguments[0])],"motion.webm",{type:"video/webm"}));const e=await CipherGapShared.file_crypto.encrypt_file(f,arguments[1]);return {bytes:Array.from(new Uint8Array(await e.arrayBuffer())),name:e.name.slice(0,-5)};',[list(video[2]),stored[keys[0]]])
-  m.switch_to_window(handles[1]);sid=js('return addAttachment(arguments[0],arguments[1]);',[animated['bytes'],animated['name']]);animated_row=f'[data-mid="{sid}"]' if platform=='eitaa' else '#message-'+sid
-  poll(lambda:js('return Boolean(document.querySelector(arguments[0]+" .ciphergap-file-decrypt-button"));',[animated_row]),bool);m.find_element(By.CSS_SELECTOR,animated_row+' .ciphergap-file-decrypt-button').click()
+  m.switch_to_window(handles[1]);sid=js('return addAttachment(arguments[0],arguments[1]);',[animated['bytes'],animated['name']]);animated_row=row_selector(platform,sid)
+  poll(lambda:js('return Boolean(document.querySelector(arguments[0]+" .ciphergap-file-decrypt-button"));',[animated_row]),bool);click(animated_row+' .ciphergap-file-decrypt-button')
   poll(lambda:js('return Boolean(document.querySelector(".ciphergap-sticker-inline video"));'),bool);async_js('await document.querySelector(".ciphergap-sticker-inline video").play();return true;');poll(lambda:js('return document.querySelector(".ciphergap-sticker-inline video").currentTime;'),lambda t:t>0)
   m.find_element(By.ID,'ciphergap-chat-toggle').click();poll(lambda:js('return document.getElementById("ciphergap-secure-files").disabled;'),bool)
   assert not js('return Boolean(document.querySelector(".ciphergap-sticker-inline, .ciphergap-plaintext"));')
@@ -106,8 +120,8 @@ try:
   upload=poll(lambda:js('return received[1];'),bool);assert upload['name']=='private.txt.cgpe' and bytes(upload['bytes']).startswith(b'CGPE')
   for name,mime,data,kind in media_fixtures(root):
    m.switch_to_window(kernel);encoded=async_js(ENCRYPT_JS,[ [list(data),name,mime,stored[keys[0]]] ])
-   m.switch_to_window(handles[1]);sid=js('return addAttachment(arguments[0],arguments[1]);',[encoded,name]);row=f'[data-mid="{sid}"]' if platform=='eitaa' else '#message-'+sid
-   poll(lambda:js('return Boolean(document.querySelector(arguments[0]+" .ciphergap-file-decrypt-button"));',[row]),bool);m.find_element(By.CSS_SELECTOR,row+' .ciphergap-file-decrypt-button').click()
+   m.switch_to_window(handles[1]);sid=js('return addAttachment(arguments[0],arguments[1]);',[encoded,name]);row=row_selector(platform,sid)
+   poll(lambda:js('return Boolean(document.querySelector(arguments[0]+" .ciphergap-file-decrypt-button"));',[row]),bool);click(row+' .ciphergap-file-decrypt-button')
    poll(lambda:js('return Boolean(document.querySelector("dialog[data-ciphergap-ui=file-viewer]"));'),bool)
    assert js('return document.querySelector(".ciphergap-file-viewer h2").textContent;')==name
    if kind=='img':poll(lambda:js('return document.querySelector(".ciphergap-file-viewer img")?.naturalWidth;'),lambda w:w==128)
@@ -119,7 +133,7 @@ try:
   data=bytes(range(256))*16;name='automatic-'+platform+'.bin'
   m.switch_to_window(kernel);encoded=async_js(ENCRYPT_JS,[[list(data),name,'application/octet-stream',stored[keys[0]]]])
   action(1,{'action':'set_auto_files','enabled':True});m.switch_to_window(handles[1])
-  js('const id=addAttachment(arguments[0],arguments[1]);const r=document.querySelector("[data-mid=\\""+id+"\\"],#message-"+id);r.dataset.timestamp="1";if(r.dataset.messageId){r.dataset.messageId="1";r.id="message-1";}',[encoded,name])
+  js('const id=addAttachment(arguments[0],arguments[1]);const r=document.querySelector("[data-mid=\\""+id+"\\"],#message-"+id+",#message"+id+",[data-msg-id=\\""+id+"\\"] [rb-message-item]");r.dataset.timestamp="1";if(r.dataset.messageId){r.dataset.messageId="1";r.id="message-1";}else if(r.closest("[data-msg-id]"))r.closest("[data-msg-id]").dataset.msgId="1";',[encoded,name])
   js('addAttachment(arguments[0],arguments[1],false);',[encoded,name]);time.sleep(.5);assert not (folder/name).exists()
   js('addAttachment(arguments[0],arguments[1]);',[encoded,name]);poll(lambda:(folder/name).read_bytes() if (folder/name).exists() else None,lambda value:value==data)
   m.switch_to_window(handles[0]);js('document.getElementById("ciphergap-chat-toggle").click();');poll(lambda:js('return document.getElementById("ciphergap-secure-files").disabled;'),bool)
