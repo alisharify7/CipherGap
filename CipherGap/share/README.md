@@ -1,7 +1,7 @@
 # CipherGap shared core
 
 This directory is the messenger-independent source of truth. Bale, Eitaa,
-Rubika, Telegram, and future adapters must call these utilities instead of
+Rubika, Soroush Plus, Telegram, and future adapters must call these utilities instead of
 defining their own CipherGap formats or cryptography.
 
 There is no bundler in this project. The files are classic scripts loaded in
@@ -117,9 +117,9 @@ message/file readers are unchanged.
 
 ## Chat DOM modules
 
-`content/chat_runtime.js` owns message observers, draft preservation, consent cards, pause state, native file handoff and media mounting. `content/bale.js`, `content/eitaa.js` and `content/telegram.js` describe only each messenger’s DOM and native controls. Register the messenger in `share/config.js`, add its explicit hosts/paths to both content-script matches, and load its platform module before the runtime. Use semantic IDs/roles/data attributes or structural children; never select generated messenger classes. Platform adapters dispatch the same shared crypto/protocol operations.
+`content/chat_runtime.js` owns message observers, draft preservation, consent cards, pause state, native file handoff and media mounting. `content/bale.js`, `content/eitaa.js`, `content/telegram.js`, `content/rubika.js` and `content/splus.js` describe only each messenger’s DOM and native controls. Register the messenger in `share/config.js`, add its explicit hosts/paths to both content-script matches, and load its platform module before the runtime. Use semantic IDs/roles/data attributes or structural children; never select generated messenger classes. Platform adapters dispatch the same shared crypto/protocol operations.
 
-Key storage is scoped by hostname and numeric conversation ID. Telegram support is limited to Web A (`/a/`); Web K has no injected scripts. A new codec must retain legacy readers and pass shared compatibility vectors before release.
+Key storage is scoped by hostname and stable conversation ID. Telegram support is limited to Web A (`/a/`); Web K has no injected scripts. A new codec must retain legacy readers and pass shared compatibility vectors before release.
 
 ## Sticker transport
 
@@ -138,3 +138,11 @@ composer corrupts its positional child updates. Owned message ancestors disable
 inline-size containment, including the transition from pending to delivered
 Telegram messages. Eitaa's native timestamp identifies the actual body so a
 quoted older packet cannot become the current message's decrypt target.
+
+Soroush reuses Telegram’s semantic editor/file helpers. Its message controls are
+mounted after the native send commit settles; mutating a pending bubble earlier
+breaks Teact’s positional updates. Rubika uses directive attributes such as
+`rb-composer`, `rb-message-item` and `rb-observer-container`, synchronizes drafts
+on keyup, and activates only the sending ripple (never the voice-recording one).
+Floating toolbars can provide `toolbar_anchor` to follow the actual text surface
+rather than the wider row containing the separate native send button.

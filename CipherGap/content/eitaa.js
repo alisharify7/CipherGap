@@ -27,6 +27,7 @@
         send_selector: '[data-ciphergap-composer="true"] > div:last-child button',
         toolbar_encrypt: true,
         composer,
+        toolbar_anchor: native_row,
         send_control: () => composer()?.querySelector('[data-icon="send"]')?.closest("button"),
         message_id: row => row.dataset.mid,
         sent_at: row => Number(row.dataset.timestamp) * 1000,

@@ -5,7 +5,7 @@
     function file_control(carrier) {
         const semantic = carrier.closest('[data-document-id], [role="button"]');
         if (semantic) return semantic;
-        const row = carrier.closest('[id^="message-"][data-message-id]');
+        const row = carrier.closest('[id^="message"][data-message-id]');
         // Native documents have an icon followed by filename/size metadata.
         // Stop at that structural pair instead of relying on File CSS classes.
         for (let node=carrier.parentElement;node && node!==row;node=node.parentElement) {
@@ -21,8 +21,14 @@
         scroller_selector: "#MiddleColumn",
         message_selector: '[id^="message-"][data-message-id]',
         send_selector: '#MiddleColumn button[aria-label="Send Message"]',
-        dynamic_send_control: true, toolbar_encrypt: true,
+        dynamic_send_control: true, toolbar_encrypt: true, history_by_id: true,
         composer: () => document.getElementById("message-input-text")?.parentElement?.parentElement,
+        toolbar_anchor() {
+            const inputRow = document.getElementById("message-input-text")?.parentElement;
+            // New Web A includes Send inside the rounded composer surface.
+            const surface = inputRow?.parentElement?.parentElement;
+            return surface && !["transparent", "rgba(0, 0, 0, 0)"].includes(getComputedStyle(surface).backgroundColor) ? surface : inputRow;
+        },
         write_input(element, text) {
             // Let the editor's native input/DOM observers synchronize its state.
             element.textContent = text;
@@ -41,14 +47,22 @@
         sent_at: () => 0, // New CG exchanges carry their own absolute deadline.
         is_incoming: row => getComputedStyle(row).flexDirection === "row",
         file_action_anchor: file_control,
-        trigger_file_picker() {
+        async trigger_file_picker() {
             const button = document.getElementById("attach-menu-button");
-            const menu = document.getElementById("attach-menu-controls");
-            const item = [...(menu?.querySelectorAll('[role="menuitem"]') ?? [])]
-                .find(e => /^(File|فایل|پرونده)$/iu.test(e.textContent.trim()));
-            if (!button || !item) throw new Error("Open a writable chat with file attachments available (English or Persian interface).");
+            if (!button) throw new Error("Open a writable chat with file attachments available (English or Persian interface).");
+            button.dispatchEvent(new MouseEvent("mousedown", {bubbles:true,cancelable:true,button:0}));
+            button.dispatchEvent(new MouseEvent("mouseup", {bubbles:true,cancelable:true,button:0}));
             button.click();
-            item.click();
+            // Opening the menu can replace its children. Resolve the live item
+            // after the native render instead of clicking a detached old node.
+            for (let attempt = 0; attempt < 30; attempt++) {
+                await new Promise(resolve => setTimeout(resolve, 50));
+                const menu = document.getElementById("attach-menu-controls");
+                const item = [...(menu?.querySelectorAll('[role="menuitem"]') ?? [])]
+                    .find(e => /^(File|فایل|پرونده|AttachDocument)$/iu.test(e.textContent.trim()) && e.getClientRects().length);
+                if (item) {item.click();return;}
+            }
+            throw new Error("The file attachment menu is unavailable. Reopen the chat.");
         },
         click_attachment(row, carrier, retry) {
             const document = carrier?.closest('[data-document-id], [role="button"]');

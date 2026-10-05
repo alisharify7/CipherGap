@@ -5,7 +5,7 @@ browser using this same core. See [Android installation/build guide](android/REA
 
 <img src="CipherGap/assets/ciphergap.svg" width="80" height="80" alt="CipherGap logo"/>
 
-**CipherGap** is an open-source Chrome and Firefox extension for private messaging. **Bale Web, Eitaa Web and Telegram Web A** are supported. Rubika and WhatsApp remain in development. Telegram Web K is not supported.
+**CipherGap** is an open-source Chrome and Firefox extension for private messaging. **Bale Web, Eitaa Web, Telegram Web A, Rubika Web and Soroush Plus Web** are supported on desktop. WhatsApp remains in development. The published Android preview currently supports Bale, Eitaa and Telegram Web A. Telegram Web K is not supported.
 
 Messages are encrypted locally in your browser before being sent, ensuring that only users with the shared secret can read the original content.
 
@@ -26,7 +26,7 @@ Messages are encrypted locally in your browser before being sent, ensuring that 
 
 [Security interface](docs/images/security.png) · [File interface](docs/images/files.png)
 
-[Changelog](CHANGELOG.md) · [Release notes for v1.5.0](docs/releases/v1.5.0.md)
+[Changelog](CHANGELOG.md) · [Release notes for v1.6.0](docs/releases/v1.6.0.md)
 
 ## Installation
 
@@ -56,7 +56,7 @@ install, package and sign the extension through Firefox Add-ons (AMO).
 
 ## Usage
 
-1. Open a conversation in [Bale Web](https://web.bale.ai/), [Eitaa Web](https://web.eitaa.com/) or [Telegram Web A](https://web.telegram.org/a/). Eitaa and Telegram use numeric chat IDs in the URL hash.
+1. Open a conversation in [Bale Web](https://web.bale.ai/), [Eitaa Web](https://web.eitaa.com/), [Telegram Web A](https://web.telegram.org/a/), [Rubika Web](https://web.rubika.ir/) or [Soroush Plus Web](https://web.splus.ir/). Eitaa, Telegram and Soroush use numeric chat IDs in the URL hash; Rubika uses its opaque `#c=<chat-id>` route.
 2. Open CipherGap's **Security** page and choose **Set up secure chat**.
 3. The other participant clicks **Accept request** on the request in the chat. Replacing an existing key requires an additional confirmation.
 4. Within 15 minutes of sending the request, compare the six-digit code over a trusted channel, then mark the key verified on both sides. Request expiry does not delete existing chat keys.
@@ -124,12 +124,12 @@ the requested encrypted container to the isolated content script. Keys and crypt
 text and previews are displayed in the messenger DOM and can be read by that page. Message drafts are
 preserved during key exchange, and asynchronous sends are bound to their chat.
 
-Future Rubika and WhatsApp integrations should implement the messenger
+Future WhatsApp integrations should implement the messenger
 adapter contract documented in `CipherGap/share/README.md`; they must not copy
 encryption or packet-format code. Format upgrades add a new immutable codec and
 keep old readers registered, so existing messages and files remain compatible.
 
-Telegram exposes no machine-readable sending timestamp. Automatic receiving ignores the initial one-second settling period and messages at or below the observed message-ID baseline; missed or historical files remain available through **Open**. Undated legacy exchange requests on Telegram require a new timed request. Eitaa’s app-encrypted cache (when an app passcode is enabled) falls back to native download handling. The manual downloaded-file option remains available on every platform.
+Telegram, Rubika and Soroush expose no machine-readable sending timestamp. Automatic receiving ignores the initial one-second settling period and messages at or below the observed message-ID baseline; missed or historical files remain available through **Open**. Undated legacy exchange requests on Telegram require a new timed request. Eitaa’s app-encrypted cache (when an app passcode is enabled) falls back to native download handling. The manual downloaded-file option remains available on every platform.
 
 ## Security
 

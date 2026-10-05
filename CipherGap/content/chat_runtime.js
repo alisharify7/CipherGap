@@ -145,9 +145,10 @@ function inject_chat_security_toolbar() {
     (CHAT_FLOATING_TOOLBAR ? document.body : footer).append(toolbar);
     if (CHAT_FLOATING_TOOLBAR) {
         let frame = null;
+        const anchor = CHAT_DOM.toolbar_anchor?.() ?? footer;
         const position = () => {frame = null;
             if (!toolbar.isConnected || !footer.isConnected) {chat_toolbar_cleanup?.();toolbar.remove();return;}
-            const rect = footer.getBoundingClientRect();
+            const rect = anchor.getBoundingClientRect();
             const theme = CHAT_UI.theme(document.querySelector(CHAT_CHAT_INPUT));
             if (toolbar.dataset.ciphergapTheme !== theme) toolbar.dataset.ciphergapTheme = theme;
             toolbar.hidden = !get_current_chat_id() || !rect.width || !rect.height;
@@ -159,7 +160,7 @@ function inject_chat_security_toolbar() {
             reserve_chat_scroll_space(undefined, true);
         };
         const schedule = () => {if (!frame) frame = requestAnimationFrame(position);};
-        const resize = new ResizeObserver(schedule);resize.observe(toolbar);resize.observe(footer);
+        const resize = new ResizeObserver(schedule);resize.observe(toolbar);resize.observe(footer);resize.observe(anchor);
         const appearance = new MutationObserver(schedule);
         for (const root of [document.documentElement, document.body]) appearance.observe(root, {attributes:true,attributeFilter:["class", "style", "data-theme"]});
         window.addEventListener("resize", schedule);window.addEventListener("scroll", schedule, true);
@@ -702,6 +703,7 @@ async function chat_send_message(text, { storageKey = get_storage_key(), preserv
             chat_write_input(input, preserveDraft || !sent ? draft : "");
         }
         cg_sending = false;
+        if (CHAT_DOM.defer_render_while_sending) document.querySelectorAll(CHAT_MESSAGE_ITEM).forEach(row => schedule_chat_message_processing(row, storageKey));
     }
 }
 
@@ -1719,6 +1721,9 @@ function process_chat_message(
     messageElement,
     expectedStorageKey = get_storage_key()
 ) {
+    // Some native clients finish their send commit after mounting the bubble.
+    // Leave those children alone until their editor/draft has settled.
+    if (cg_sending && CHAT_DOM.defer_render_while_sending) return;
     if (
         !cg_cached_enabled || !cg_cache_ready || !messageElement?.matches?.(CHAT_MESSAGE_ITEM) ||
         !get_current_chat_id() ||
@@ -1730,9 +1735,9 @@ function process_chat_message(
 
     if (!chat_seen_rows.has(messageElement)) {
         const id = Number(CHAT_DOM.message_id(messageElement));
-        const historical = CHAT_DOM.name === "telegram" && (Date.now() - chat_chat_opened_at < 1000 || !Number.isFinite(id) || id <= chat_auto_file_floor);
+        const historical = CHAT_DOM.history_by_id && (Date.now() - chat_chat_opened_at < 1000 || !Number.isFinite(id) || id <= chat_auto_file_floor);
         chat_seen_rows.set(messageElement, historical ? 1 : Date.now());
-        if (CHAT_DOM.name === "telegram" && Number.isFinite(id)) chat_auto_file_floor = Math.max(chat_auto_file_floor, id);
+        if (CHAT_DOM.history_by_id && Number.isFinite(id)) chat_auto_file_floor = Math.max(chat_auto_file_floor, id);
         const receivedAt = CHAT_DOM.sent_at(messageElement) || chat_seen_at(messageElement);
         if (receivedAt >= chat_chat_opened_at && CHAT_DOM.is_incoming(messageElement)) {
             globalThis.CipherGapHost?.messageObserved?.({
