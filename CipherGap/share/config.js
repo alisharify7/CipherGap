@@ -91,10 +91,11 @@
             hostnames: Object.freeze(["web.bale.ai"])
         }),
         eitaa: Object.freeze({ id: "eitaa", display_name: "Eitaa", hostnames: Object.freeze(["web.eitaa.com"]) }),
-        telegram: Object.freeze({ id: "telegram", display_name: "Telegram Web A", hostnames: Object.freeze(["web.telegram.org"]) })
+        telegram: Object.freeze({ id: "telegram", display_name: "Telegram Web A", hostnames: Object.freeze(["web.telegram.org"]) }),
+        rubika: Object.freeze({ id: "rubika", display_name: "Rubika", hostnames: Object.freeze(["web.rubika.ir"]) }),
+        splus: Object.freeze({ id: "splus", display_name: "Soroush Plus", hostnames: Object.freeze(["web.splus.ir"]) })
     });
     const messenger_roadmap = Object.freeze([
-        Object.freeze({ id: "rubika", display_name: "Rubika" }),
         Object.freeze({ id: "whatsapp", display_name: "WhatsApp" })
     ]);
 

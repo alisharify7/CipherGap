@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "CipherGap",
-  "version": "1.5.0",
-  "description": "Client-side encrypted messages and files for Bale, Eitaa and Telegram Web A.",
+  "version": "1.6.0",
+  "description": "Client-side encrypted messages and files for Bale, Eitaa, Telegram Web A, Rubika and Soroush Plus.",
   "icons": {
     "16": "assets/icon16.png",
     "32": "assets/icon32.png",
@@ -17,7 +17,9 @@
   "host_permissions": [
     "https://web.bale.ai/*",
     "https://web.eitaa.com/*",
-    "https://web.telegram.org/a/*"
+    "https://web.telegram.org/a/*",
+    "https://web.rubika.ir/*",
+    "https://web.splus.ir/*"
   ],
   "background": {
     "scripts": [
@@ -29,7 +31,9 @@
       "matches": [
         "https://web.bale.ai/*",
         "https://web.eitaa.com/*",
-        "https://web.telegram.org/a/*"
+        "https://web.telegram.org/a/*",
+        "https://web.rubika.ir/*",
+        "https://web.splus.ir/*"
       ],
       "js": [
         "content/main_world_bridge.js"
@@ -41,7 +45,9 @@
       "matches": [
         "https://web.bale.ai/*",
         "https://web.eitaa.com/*",
-        "https://web.telegram.org/a/*"
+        "https://web.telegram.org/a/*",
+        "https://web.rubika.ir/*",
+        "https://web.splus.ir/*"
       ],
       "css": [
         "share/theme.css",
@@ -70,6 +76,8 @@
         "content/bale.js",
         "content/eitaa.js",
         "content/telegram.js",
+        "content/splus.js",
+        "content/rubika.js",
         "content/chat_runtime.js",
         "content/messenger.js",
         "content/observer.js",
