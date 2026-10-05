@@ -1,5 +1,10 @@
 # Changelog
 
+## Website release links — 2026-10-06
+
+- Updated Chrome/Firefox downloads to the 1.6.1 release packages and Android to 0.1.2.
+- Matched install instructions to the ZIP layout and announced the cleaner Bale controls.
+
 ## Website desktop messengers - 2026-10-05
 
 - Added Rubika and Soroush Plus links and logos for desktop extension 1.6.
