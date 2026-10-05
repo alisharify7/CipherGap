@@ -1,5 +1,14 @@
 # Changelog
 
+## Website setup guide - 2026-10-05
+
+- Added bilingual Android APK, Chrome, Firefox and Edge/Brave installation helpers.
+- Added cross-device key setup, messenger links, everyday settings and troubleshooting.
+- Documented Android WebView/notification limits and native emoji/sticker behavior.
+- Added responsive, keyboard and preference-persistence checks.
+
+See [guide release notes](docs/releases/website-android-guide.md).
+
 ## [1.5.0](docs/releases/v1.5.0.md) - 2026-10-04
 
 ### Added
