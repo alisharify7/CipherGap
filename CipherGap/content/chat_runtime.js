@@ -1722,6 +1722,15 @@ function process_chat_message(
         const historical = CHAT_DOM.name === "telegram" && (Date.now() - chat_chat_opened_at < 1000 || !Number.isFinite(id) || id <= chat_auto_file_floor);
         chat_seen_rows.set(messageElement, historical ? 1 : Date.now());
         if (CHAT_DOM.name === "telegram" && Number.isFinite(id)) chat_auto_file_floor = Math.max(chat_auto_file_floor, id);
+        const receivedAt = CHAT_DOM.sent_at(messageElement) || chat_seen_at(messageElement);
+        if (receivedAt >= chat_chat_opened_at && CHAT_DOM.is_incoming(messageElement)) {
+            globalThis.CipherGapHost?.messageObserved?.({
+                id: CHAT_DOM.message_id(messageElement),
+                storageKey: expectedStorageKey,
+                url: location.href,
+                exchange: find_exchange_protocol_payload(messageElement)?.parsed.type === "start"
+            });
+        }
     }
     render_chat_quote_previews(messageElement);
     reserve_chat_scroll_space(messageElement);

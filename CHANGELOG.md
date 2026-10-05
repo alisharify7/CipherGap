@@ -1,5 +1,17 @@
 # Changelog
 
+## [Android 0.1.0 preview](docs/releases/android-v0.1.0.md) - 2026-10-05
+
+- Added an Android messenger browser for Bale, Eitaa and Telegram Web A, with a
+  bilingual launcher, matching theme/fonts, settings and an offline guide.
+- Reused the extension core/adapters and conversation popup; added isolated-world
+  integration, authenticated Keystore-backed storage and native file pick/save.
+- Added opt-in generic notifications while the app/page is active; no relay or
+  closed-app delivery. Rubika and WhatsApp remain in development.
+- Added reproducible APK packaging and Android/desktop compatibility checks.
+- Added optional host hooks for downloads, message metadata and local UI
+  translation without changing the cipher or existing packet formats.
+
 ## [1.5.0](docs/releases/v1.5.0.md) - 2026-10-04
 
 ### Added

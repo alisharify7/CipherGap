@@ -1,0 +1,1 @@
+#ciphergap-toolbar button{min-width:44px;min-height:44px}#ciphergap-toolbar{gap:3px;max-width:calc(100vw - 16px)}[data-ciphergap-ui] button{min-height:44px}dialog[data-ciphergap-ui]{max-width:calc(100vw - 24px);max-height:calc(100dvh - 24px)}.ciphergap-file-viewer{width:min(100%,680px)}.ciphergap-chat-card{max-width:calc(100vw - 40px)}

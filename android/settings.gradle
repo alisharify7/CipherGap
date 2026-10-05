@@ -1,0 +1,18 @@
+pluginManagement {
+    repositories {
+        if (System.getenv('CIPHERGAP_MAVEN_MIRROR')) maven { url System.getenv('CIPHERGAP_MAVEN_MIRROR') }
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        if (System.getenv('CIPHERGAP_MAVEN_MIRROR')) maven { url System.getenv('CIPHERGAP_MAVEN_MIRROR') }
+        google()
+        mavenCentral()
+    }
+}
+rootProject.name = 'CipherGapMobile'
+include ':app'

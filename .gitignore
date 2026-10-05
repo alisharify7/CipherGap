@@ -6,3 +6,8 @@ nul
 
 /dist/
 __pycache__/
+/android/.gradle/
+/android/**/build/
+/android/local.properties
+*.jks
+*.keystore

@@ -1,0 +1,33 @@
+plugins { id 'com.android.application' }
+
+android {
+    namespace 'com.ciphergap.mobile'
+    compileSdk 36
+    buildToolsVersion '36.0.0'
+    defaultConfig {
+        applicationId 'com.ciphergap.mobile'
+        minSdk 26
+        targetSdk 36
+        versionCode 1
+        versionName '0.1.0'
+    }
+    buildFeatures { buildConfig true }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    sourceSets.main.assets.srcDirs = [layout.buildDirectory.dir('generated/ciphergapAssets')]
+}
+
+dependencies { implementation 'androidx.webkit:webkit:1.17.1' }
+
+// Assets are always generated from the extension source of truth, never edited copies.
+tasks.register('prepareCipherGapAssets', Exec) {
+    inputs.dir '../../CipherGap'
+    inputs.dir 'src/main/assets'
+    inputs.file '../../tools/build_android_assets.py'
+    outputs.dir layout.buildDirectory.dir('generated/ciphergapAssets')
+    commandLine 'python3', '../../tools/build_android_assets.py', '--output',
+        layout.buildDirectory.dir('generated/ciphergapAssets').get().asFile.absolutePath
+}
+tasks.named('preBuild').configure { dependsOn 'prepareCipherGapAssets' }

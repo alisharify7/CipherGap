@@ -1,5 +1,8 @@
 # CipherGap 🔒
 
+**Android preview:** the `android` branch includes an installable messenger
+browser using this same core. See [Android installation/build guide](android/README.md).
+
 <img src="CipherGap/assets/ciphergap.svg" width="80" height="80" alt="CipherGap logo"/>
 
 **CipherGap** is an open-source Chrome and Firefox extension for private messaging. **Bale Web, Eitaa Web and Telegram Web A** are supported. Rubika and WhatsApp remain in development. Telegram Web K is not supported.

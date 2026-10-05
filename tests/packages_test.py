@@ -1,5 +1,6 @@
 """Browser packages must share every byte except their platform manifest."""
 import importlib.util
+import hashlib
 import json
 from pathlib import Path
 import tempfile
@@ -12,6 +13,27 @@ spec.loader.exec_module(builder)
 
 
 class BrowserPackages(unittest.TestCase):
+    def test_android_packages_current_extension_core(self):
+        root = Path(__file__).resolve().parents[1]
+        spec = importlib.util.spec_from_file_location("android_builder", root / "tools/build_android_assets.py")
+        android = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(android)
+        with tempfile.TemporaryDirectory() as folder:
+            output = Path(folder)
+            android.build(output)
+            sources = json.loads((output / "core-sources.json").read_text())
+            for name, digest in sources.items():
+                original = (root / name).read_bytes()
+                self.assertEqual(hashlib.sha256(original).hexdigest(), digest, name)
+                if name != "CipherGap/popup/popup.html":
+                    self.assertEqual(original, (output / "extension" / name.removeprefix("CipherGap/")).read_bytes(), name)
+            manifest = json.loads((root / "CipherGap/manifest.json").read_text())
+            for group in manifest["content_scripts"]:
+                bundle = (output / ("page.js" if group.get("world") == "MAIN" else "content.js")).read_text()
+                for name in group.get("js", []):
+                    self.assertIn((root / "CipherGap" / name).read_text(), bundle, name)
+            self.assertIn("popup_host.js", (output / "extension/popup/popup.html").read_text())
+
     def test_common_source_and_platform_manifests(self):
         with tempfile.TemporaryDirectory() as folder:
             a = builder.build("chrome", Path(folder) / "chrome.zip")
