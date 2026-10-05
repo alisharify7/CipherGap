@@ -7,3 +7,5 @@ Locally hosted identifiers downloaded from the respective official sites. Marks 
 - `rubika.png`: https://web.rubika.ir/assets/img/logo_share.png
 - `telegram.svg`: https://telegram.org/img/website_icon.svg?4
 - `whatsapp.svg`: https://static.whatsapp.net/rsrc.php/y1/r/FJbTMJqMap7.svg
+
+- Soroush Plus: https://web.splus.ir/favicon.svg (official web app favicon).

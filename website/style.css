@@ -31,6 +31,7 @@ html[lang=en] .hero-actions .button [aria-hidden],html[lang=en] .start-section .
 
 /* Service marks stay muted until their integration is available. */
 .messengers li{grid-template-columns:36px auto;opacity:1;column-gap:10px}
+@media(max-width:420px){.messengers li{width:calc((100% - 18px)/2)}}
 .messenger-logo{grid-row:1/3;object-fit:contain;filter:grayscale(1);opacity:.45;max-width:100%}
 .messengers .available .messenger-logo{opacity:1;filter:drop-shadow(0 3px 8px #22b99530)}
 .messengers .available small{color:var(--green);font-weight:600}
