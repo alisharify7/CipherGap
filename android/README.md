@@ -6,7 +6,7 @@ Rubika and WhatsApp are shown as in development.
 
 ## Install and use
 
-1. Download `ciphergap-android-0.1.0.apk` from the Android prerelease.
+1. Download `ciphergap-android-0.1.2.apk` from the Android prerelease.
 2. Allow installation from your browser/Files app for this installation, install
    the APK, then disable that permission again.
 3. Choose a messenger and sign in **on its own website**.
@@ -14,7 +14,7 @@ Rubika and WhatsApp are shown as in development.
    Android or desktop. Start an exchange; accept it on the other device; compare
    the six-digit SAS over a trusted channel and mark it verified. Requests expire
    after 15 minutes. Never send a chat key as an ordinary message.
-5. Use CipherGap's encrypted send/file/sticker controls. Ordinary messenger
+5. Use CipherGap's encrypted send and file controls. Ordinary messenger
    controls still send normally. Tap received ciphertext to decrypt locally;
    preview supported media and use Download to select where to save it.
 

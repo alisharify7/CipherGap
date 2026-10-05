@@ -1,5 +1,12 @@
 # Changelog
 
+## [Android 0.1.2 preview](docs/releases/android-v0.1.2.md) - 2026-10-06
+
+- Packaged the shared 1.6.1 core with Bale composer alignment.
+- Reset the notification switch immediately after permission denial.
+- Increased the APK version while keeping the existing debug signing identity.
+- Retained the three Android messenger origins and existing settings/session storage.
+
 ## [1.6.1](docs/releases/v1.6.1.md) - 2026-10-06
 
 - Moved Bale desktop controls out of the native composer into an aligned floating toolbar.

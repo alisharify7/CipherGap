@@ -34,6 +34,6 @@ document.getElementById('clear').onclick=()=>safely(()=>host('clear_browser'));
 document.getElementById('language').onchange=event=>safely(()=>chrome.storage.local.set({ciphergap_ui_language:event.target.value}));
 document.getElementById('theme').onchange=event=>safely(()=>chrome.storage.local.set({ciphergap_ui_theme:event.target.value}));
 document.getElementById('enabled').onchange=event=>safely(()=>chrome.storage.local.set({ciphergap_enabled:event.target.checked}));
-document.getElementById('notifications').onchange=event=>safely(async()=>{const enabled=event.target.checked;const allowed=await host('notifications',{enabled});if(enabled&&!allowed)status(language()==='fa'?'مجوز اعلان داده نشد؛ می‌توانید از تنظیمات اندروید فعالش کنید.':'Notifications are not permitted. You can enable them in Android settings.');});
+document.getElementById('notifications').onchange=event=>safely(async()=>{const enabled=event.target.checked;const allowed=await host('notifications',{enabled});event.target.checked=enabled&&allowed;if(enabled&&!allowed)status(language()==='fa'?'مجوز اعلان داده نشد؛ می‌توانید از تنظیمات اندروید فعالش کنید.':'Notifications are not permitted. You can enable them in Android settings.');});
 chrome.storage.onChanged.addListener(()=>refresh().catch(()=>{}));
 navigate('home').catch(e=>status(e.message));

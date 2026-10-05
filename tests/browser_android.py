@@ -132,7 +132,7 @@ def mobile_fixture(platform):
     if platform=='bale':
         fixture=fixture.replace('<div id="editable-message-text" contenteditable="true"></div>','<textarea id="editable-message-text" aria-label="Message"></textarea>')
         fixture=fixture.replace("document.getElementById('editable-message-text').textContent","document.getElementById('editable-message-text').value")
-    css="""<meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;font:15px/1.6 system-ui;background:#f6f8fc;color:#182238}#messages,#message_list_scroller_id{height:calc(100dvh - 100px);overflow:auto;padding:12px}#chat_footer{display:flex;align-items:center;gap:8px;position:fixed;bottom:0;left:0;right:0;padding:12px;background:white}#chat_footer input[type=file]{display:none}#chat_footer textarea{min-width:0;flex:1;min-height:48px;border:1px solid #dce3ef;border-radius:12px;font:inherit;padding:8px}#chat_footer button{padding:12px}#MiddleColumn>[style],#column-center>[style]{position:fixed!important;bottom:0;left:0;right:0;min-height:70px;padding:12px;background:white}[contenteditable=true]{border:1px solid #dce3ef;border-radius:12px;padding:8px;min-height:40px}#messages>div,#message_list_scroller_id>div{margin-block:12px;max-width:90%}</style>"""
+    css="""<meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;font:15px/1.6 system-ui;background:#f6f8fc;color:#182238}#messages,#message_list_scroller_id{height:calc(100dvh - 100px);overflow:auto;padding:12px}#chat_footer{display:flex;align-items:center;gap:8px;position:fixed;bottom:0;left:0;right:0;padding:12px;background:white}#chat_footer [aria-label=message-composer]{flex:1;min-width:0}#chat_footer input[type=file]{display:none}#chat_footer textarea{min-width:0;flex:1;min-height:48px;border:1px solid #dce3ef;border-radius:12px;font:inherit;padding:8px}#chat_footer button{padding:12px}#MiddleColumn>[style],#column-center>[style]{position:fixed!important;bottom:0;left:0;right:0;min-height:70px;padding:12px;background:white}[contenteditable=true]{border:1px solid #dce3ef;border-radius:12px;padding:8px;min-height:40px}#messages>div,#message_list_scroller_id>div{margin-block:12px;max-width:90%}</style>"""
     return fixture.replace('<head>','<head>'+css)
 
 def tap_dom(phone,selector):
@@ -165,7 +165,7 @@ def main():
     shell.evaluate('navigate("settings")')
     shell.evaluate('document.getElementById("notifications").click()')
     tap_resource('permission_deny_button')
-    wait(lambda:shell.evaluate('document.getElementById("status").textContent.includes("not permitted")'))
+    wait(lambda:shell.evaluate('document.getElementById("status").textContent.includes("not permitted") && !document.getElementById("notifications").checked'))
     assert not shell.evaluate('document.getElementById("notifications").checked')
     adb('shell','pm','clear-permission-flags',APP,'android.permission.POST_NOTIFICATIONS','user-set','user-fixed')
     shell.evaluate('document.getElementById("notifications").click()')
@@ -233,7 +233,7 @@ def main():
                 editor='[contenteditable=true][enterkeyhint]' if platform=='eitaa' else '#editable-message-text'
                 text='Android ↔ desktop — سلام 👨‍👩‍👧‍👦 👍🏽'
                 phone.evaluate('(()=>{const e=document.querySelector('+json.dumps(editor)+');if(e.tagName==="TEXTAREA")e.value='+json.dumps(text)+';else{e.textContent="Android ↔ desktop — سلام ";for(const emoji of ["👨‍👩‍👧‍👦","👍🏽"]){const img=document.createElement("img");img.alt=emoji;img.src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==";e.append(img," ")}}e.dispatchEvent(new Event("input",{bubbles:true}))})()')
-                wait(lambda:phone.evaluate('(()=>{const a=document.getElementById("ciphergap-toolbar").getBoundingClientRect(),b=document.querySelector("[data-ciphergap-composer]").getBoundingClientRect();return a.bottom<=b.top && a.left>=0 && a.right<=innerWidth+1})()'))
+                wait(lambda:phone.evaluate('(()=>{const a=document.getElementById("ciphergap-toolbar").getBoundingClientRect(),b=document.querySelector("#editable-message-text, [contenteditable=true][enterkeyhint]").getBoundingClientRect();return a.bottom<=b.top && a.left>=0 && a.right<=innerWidth+1})()'))
                 assert phone.evaluate('document.getElementById("ciphergap-media")===null')
                 tap_dom(phone,'#ciphergap-btn')
                 packet=wait(lambda:phone.evaluate('testSent.at(-1)?.startsWith("CGP|") ? testSent.at(-1):null'))

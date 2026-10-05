@@ -1,3 +1,21 @@
+# Android 0.1.2 validation — 2026-10-06
+
+Built and linted successfully with the existing pinned toolchain and packaged
+shared core 1.6.1. The APK signature matches 0.1.1, and `adb install -r`
+succeeded. No physical phone or live Android-account delivery is claimed.
+
+The complete emulator check passed Bale, Eitaa and Telegram Web A: two-party
+ECDH/SAS through the actual security screen, text/Unicode emoji, native encrypted
+file selection, authenticated media, exact downloads, corruption, expiry, pause
+and isolated key access. Settings, keyboard/Back, persisted sessions/keys,
+confirmed deletion, private encrypted storage and generic notifications also
+passed, including denial/grant, history/outgoing/duplicate exclusion and no
+background delivery. The notification switch now reflects permission denial
+immediately. Mobile toolbar checks compare with the actual typing surface.
+
+Both package checks passed. Emulator and compatible-provider limitations from
+the reports below still apply; new desktop messengers are not Android origins.
+
 # Android 0.1.1 validation — 2026-10-05
 
 The 0.1.1 APK passed assembleDebug/lintDebug on the toolchain below. The full
