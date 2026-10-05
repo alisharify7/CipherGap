@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.6.1](docs/releases/v1.6.1.md) - 2026-10-06
+
+- Moved Bale desktop controls out of the native composer into an aligned floating toolbar.
+- Kept the encrypted send action separate from Bale’s ordinary send and voice controls.
+- Added narrow/wide native-layout regressions and retained Chrome/Firefox messaging and file coverage.
+
 ## [1.6.0](docs/releases/v1.6.0.md) - 2026-10-05
 
 - Added desktop adapters for Rubika Web and Soroush Plus Web using the shared encryption, exchange and media core.

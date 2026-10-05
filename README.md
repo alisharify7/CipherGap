@@ -23,7 +23,7 @@ Messages are encrypted locally in your browser before being sent, ensuring that 
 
 [Security interface](docs/images/security.png) · [File interface](docs/images/files.png)
 
-[Changelog](CHANGELOG.md) · [Release notes for v1.6.0](docs/releases/v1.6.0.md)
+[Changelog](CHANGELOG.md) · [Release notes for v1.6.1](docs/releases/v1.6.1.md)
 
 ## Installation
 
