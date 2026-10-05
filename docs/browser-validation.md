@@ -1,5 +1,39 @@
 # Browser validation
 
+## 1.6.0 — 2026-10-05
+
+Rubika and Soroush Plus desktop adapters were inspected against the supplied
+URLs using saved **Your Chrome / Default** account sessions in an isolated
+browser profile. Native Google Chrome provided the DOM inspection; a Chromium
+window loaded the real unpacked extension for live transport checks.
+
+- Both services sent/decrypted test text and Unicode emoji.
+- Both native attachment previews contained `ciphergap-test.txt.cgpe`; the file
+  was sent, returned through the messenger, decrypted and downloaded with exact
+  original test bytes. Soroush sent/decrypted another message after file preview.
+- Existing drafts and keys in the original user profile were not replaced;
+  temporary test keys were scoped to the isolated extension profile.
+- Actual chat toolbars were visually inspected on Rubika, Soroush, Eitaa and
+  Telegram. They follow the native text surface, excluding separate send buttons.
+- Rubika required its native keyup draft synchronization and the sending ripple
+  child rather than the surrounding button/voice-recording ripple.
+- Soroush required delaying message rendering until its native send commit
+  completes. Attachment-menu activation also requires native mouse-down events
+  and resolving live items after render, including `AttachDocument` fallback.
+
+Two independent peer contexts in real Chromium and Firefox ESR 153.4.0 used
+sanitized native DOM fixtures for ECDH/SAS, inline acceptance, timed expiry,
+message/emoji encryption, file handoff, stickers, preview/playback, exact
+manual/automatic downloads and pause. No two-live-account key exchange is
+claimed for Rubika or Soroush. The Chromium fixture also checks native delayed
+positional send commits and desktop/390-pixel toolbar alignment.
+
+Run `python3 tests/browser_new_messengers.py` and
+`python3 tests/browser_messengers_firefox.py --new-messengers`.
+Existing Eitaa/Telegram integrations, 35 Node checks and deterministic Chrome /
+Firefox byte-for-byte core packaging also pass. Android 0.1.1 support remains
+Bale/Eitaa/Telegram; this release adds desktop messenger support.
+
 ## 1.5.0 — 2026-10-04
 
 Live checks used the same logged-in **Your Chrome / Default** profile and

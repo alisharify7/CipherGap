@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.6.0](docs/releases/v1.6.0.md) - 2026-10-05
+
+- Added desktop adapters for Rubika Web and Soroush Plus Web using the shared encryption, exchange and media core.
+- Aligned floating controls with the native message box instead of its wider send-button row.
+- Synchronized Rubika drafts through native key events and selected its actual send handler.
+- Deferred Soroush message controls until its native send commit completes.
+- Resolved live attachment-menu items after rendering, including untranslated native labels.
+- Added Chromium and Firefox native DOM regressions for key exchange, expiry, emoji, files, media and pause.
+
 ## Unreleased — shared mobile compatibility - 2026-10-05
 
 - Kept the same core in Chrome, Firefox and Android: optional platform hooks
