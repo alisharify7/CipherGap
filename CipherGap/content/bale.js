@@ -5,7 +5,7 @@
         name: "bale", hostnames: shared.messengers.definitions.bale.hostnames,
         supports_url: () => true,
         chat_id: url => url.searchParams.get("uid"),
-        input_selector: "#editable-message-text",
+        input_selector: '#editable-message-text, #chat_footer textarea, #chat_footer [contenteditable="true"][role="textbox"]',
         scroller_selector: "#message_list_scroller_id",
         message_selector: '[data-sid][aria-label="message-item"]',
         send_selector: '[aria-label="send-button"]',

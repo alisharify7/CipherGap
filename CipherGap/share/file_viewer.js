@@ -45,6 +45,7 @@
         ogg: "audio/ogg",
     };
     function download(file) {
+        if (globalThis.CipherGapHost?.download) return globalThis.CipherGapHost.download(file);
         const url = URL.createObjectURL(
             new Blob([file.data], { type: file.type }),
         );

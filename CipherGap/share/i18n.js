@@ -4,7 +4,7 @@
     let language = navigator.language.startsWith("fa") ? "fa" : "en";
     const originals = new WeakMap();
     const attributes = new WeakMap();
-    const scoped = Boolean(location.protocol === "https:");
+    const scoped = Boolean(location.protocol === "https:" && !globalThis.CipherGapHost?.trustedUI);
     const selector = '[data-ciphergap-ui], #ciphergap-btn, #ciphergap-toolbar, #ciphergap-live-notice';
     const patterns = [
         [/^Insert emoji: (.+)$/, x => `افزودن شکلک: ${x}`],
@@ -16,6 +16,7 @@
         [/^Fingerprint: (.+)$/, x => `اثر انگشت: ${x}`],
         [/^Previous fingerprint: (.+)$/, x => `اثر انگشت قبلی: ${x}`],
         [/^Verified (.+)\.$/, x => `تأیید شده در ${x}`],
+        [/^The key and partner fingerprint were verified on (.+)\.$/, x => `کلید و اثر انگشت طرف مقابل در ${x} تأیید شدند.`],
         [/^(.+) was decrypted and downloaded\.$/, x => `${x} رمزگشایی و دانلود شد.`],
         [/^(\d+) attachments? encrypted and ready to send\.$/, x => `${x} فایل رمزگذاری شد و آمادهٔ ارسال است.`],
         [/^Attachment not sent: (.+)$/, x => `فایل ارسال نشد: ${translate(x)}`],
