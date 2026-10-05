@@ -1,5 +1,10 @@
 # Changelog
 
+## Website copy - 2026-10-05
+
+- Made Persian and English introductions, setup steps and FAQs more conversational.
+- Kept installation requirements, encryption controls and privacy limits explicit.
+
 ## Website setup guide - 2026-10-05
 
 - Added bilingual Android APK, Chrome, Firefox and Edge/Brave installation helpers.
