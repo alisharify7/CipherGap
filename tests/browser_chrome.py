@@ -3,7 +3,7 @@ import tempfile,json,shutil
 from playwright.sync_api import sync_playwright
 from browser_fixtures import media_fixtures, ATTACHMENT_JS, ENCRYPT_JS
 root=Path(__file__).resolve().parents[1];extension=root/'CipherGap'
-fixture='''<!doctype html><html><body><div id="message_list_scroller_id"></div><footer id="chat_footer"><input type="file"><div id="editable-message-text" contenteditable="true"></div><div><button aria-label="send-button">Send</button></div></footer><script>window.received=[];document.querySelector('input[type=file]').addEventListener('change', async event=>{for(const file of event.target.files){received.push({name:file.name,bytes:Array.from(new Uint8Array(await file.arrayBuffer()))});}});window.testSent=[];document.querySelector('[aria-label="send-button"]').onclick=()=>{testSent.push(document.getElementById('editable-message-text').textContent);document.getElementById('editable-message-text').textContent='';};</script></body></html>'''
+fixture='''<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>*{box-sizing:border-box}body{margin:0}#message_list_scroller_id{height:calc(100dvh - 80px);overflow:auto}#chat_footer{position:fixed;bottom:12px;left:12px;right:12px}#chat_footer [aria-label=message-composer]{display:flex;align-items:center;gap:8px;padding:12px;background:white;border-radius:16px}#editable-message-text{flex:1;min-width:0;min-height:24px}#chat_footer input[type=file]{display:none}</style></head><body><div id="message_list_scroller_id"></div><footer id="chat_footer"><div aria-label="message-composer"><input type="file"><div id="editable-message-text" contenteditable="true"></div><div><button aria-label="send-button">Send</button></div></div></footer><script>window.received=[];document.querySelector('input[type=file]').addEventListener('change', async event=>{for(const file of event.target.files){received.push({name:file.name,bytes:Array.from(new Uint8Array(await file.arrayBuffer()))});}});window.testSent=[];document.querySelector('[aria-label="send-button"]').onclick=()=>{testSent.push(document.getElementById('editable-message-text').textContent);document.getElementById('editable-message-text').textContent='';};</script></body></html>'''
 profile=Path(tempfile.mkdtemp(prefix='cg-check-'))
 with sync_playwright() as p:
  context=p.chromium.launch_persistent_context(str(profile),channel='chromium',headless=True,args=[f'--disable-extensions-except={extension}',f'--load-extension={extension}'],viewport={'width':440,'height':760})
@@ -18,6 +18,14 @@ with sync_playwright() as p:
  with page.expect_file_chooser() as chooser:page.locator('#ciphergap-secure-files').click()
  chooser.value.set_files({'name':'private.txt','mimeType':'text/plain','buffer':b'private bytes'})
  page.wait_for_function('received.length===2');secure=page.evaluate('received[1]');assert secure['name']=='private.txt.cgpe';assert bytes(secure['bytes']).startswith(b'CGPE');assert b'private bytes' not in bytes(secure['bytes'])
+ # The toolbar lives outside React's composer and follows its native width.
+ assert page.locator('body > #ciphergap-toolbar #ciphergap-btn').count()==1
+ for width in [320,390,1280]:
+  page.set_viewport_size({'width':width,'height':760});page.wait_for_timeout(180)
+  geometry=page.evaluate("""()=>{const t=document.getElementById('ciphergap-toolbar').getBoundingClientRect(),c=document.querySelector('[aria-label=message-composer]').getBoundingClientRect();return {x:Math.abs(t.x-c.x),w:Math.abs(t.width-c.width),above:t.bottom<c.top,inside:t.left>=0&&t.right<=innerWidth};}""")
+  assert geometry['x']<1 and geometry['w']<1 and geometry['above'] and geometry['inside'],geometry
+ page.set_viewport_size({'width':440,'height':760})
+ print('PASS Bale separate send controls and aligned 320/390/1280 px toolbar')
  # Stop while a secure picker is open. Never deliver its original bytes.
  with page.expect_file_chooser() as chooser:page.locator('#ciphergap-secure-files').click()
  worker.evaluate("chrome.storage.local.set({'ciphergap_enabled':false})");page.wait_for_selector('#ciphergap-secure-files[disabled]')

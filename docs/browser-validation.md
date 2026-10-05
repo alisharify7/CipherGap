@@ -1,3 +1,14 @@
+# Bale toolbar — 1.6.1, 2026-10-06
+
+Bale now mounts its security and encrypted-send controls outside the native
+composer, anchored to its stable `aria-label="message-composer"` surface
+(with the footer as fallback). Native generated classes are not selected.
+Chrome fixture regressions cover 320/390/1280 px alignment, separate send
+controls, ordinary/encrypted file picking, pause, manual/automatic decryption,
+media playback, exact downloads, timed expiry and bilingual popup settings.
+Firefox native DOM fixtures cover two-peer ECDH/SAS, encrypted text and file
+previews/playback/downloads. All 35 shared Node checks passed.
+
 # Browser validation
 
 ## 1.6.0 — 2026-10-05

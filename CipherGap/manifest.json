@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "CipherGap",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "description": "Client-side encrypted messages and files for Bale, Eitaa, Telegram Web A, Rubika and Soroush Plus.",
   "icons": {
     "16": "assets/icon16.png",
