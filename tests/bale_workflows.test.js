@@ -19,7 +19,7 @@ function harness() {
     const context = vm.createContext({
         window, location: window.location, document: { addEventListener() {} }, crypto: webcrypto,
         TextEncoder, TextDecoder, URL, Blob, ArrayBuffer, Uint8Array, DataView,
-        Event, MouseEvent: Event, console, setTimeout, clearTimeout, setInterval, clearInterval,
+        Event, InputEvent: Event, MouseEvent: Event, console, setTimeout, clearTimeout, setInterval, clearInterval,
         get_storage_key: () => context.chatKey,
         wait_for_main_thread: async () => {}, chatKey: "chat-A"
     });
@@ -38,7 +38,7 @@ function composer(h) {
     const input = { textContent: "unsent draft", isConnected: true, dispatchEvent() {}, querySelector() { return null; } };
     const sent = [];
     const button = { click: () => { sent.push(input.textContent); input.textContent = ""; } };
-    h.context.document.querySelector = (selector) => selector === "#editable-message-text" ? input : button;
+    h.context.document.querySelector = (selector) => selector.startsWith("#editable-message-text") ? input : button;
     return { input, sent };
 }
 
@@ -48,7 +48,7 @@ test("key-exchange sends preserve drafts and do not erase newly typed text", asy
     await h.context.chat_send_message("public-key-packet");
     assert.deepEqual(sent, ["public-key-packet"]);
     assert.equal(input.textContent, "unsent draft");
-    h.context.document.querySelector = (selector) => selector === "#editable-message-text" ? input : {
+    h.context.document.querySelector = (selector) => selector.startsWith("#editable-message-text") ? input : {
         click() { input.textContent = "new draft typed while sending"; }
     };
     await h.context.chat_send_message("encrypted-packet", { preserveDraft: false });
@@ -67,7 +67,7 @@ test("a send-control failure retains the draft even for encrypted-message sends"
     const h = harness();
     const { input } = composer(h);
     h.context.wait_for_main_thread = async () => {
-        h.context.document.querySelector = (selector) => selector === "#editable-message-text" ? input : null;
+        h.context.document.querySelector = (selector) => selector.startsWith("#editable-message-text") ? input : null;
     };
     await assert.rejects(h.context.chat_send_message("packet", { preserveDraft: false }), /no longer available/);
     assert.equal(input.textContent, "unsent draft");
@@ -189,4 +189,17 @@ test("MAIN bridge ignores normal/wrong-name/oversize blobs and suppresses only r
     assert.deepEqual(nativeDownloads, ["ordinary.txt", "example.txt.cgpe", "ordinary.txt"]);
     Object.assign(new Anchor(), { download: "example.txt.cgpe", href: liveURL }).click();
     assert.equal(nativeDownloads.at(-1), "example.txt.cgpe"); // Suppression is one-shot.
+});
+
+test("mobile send waits for a delayed native control and draft clear without duplicate clicks", async () => {
+    const h = harness();
+    const { input } = composer(h);
+    let ready = false, clicks = 0;
+    h.context.document.querySelector = selector => selector.startsWith("#editable-message-text") ? input : ready ? {
+        click() { clicks++; setTimeout(() => { input.textContent = ""; }, 200); }
+    } : null;
+    setTimeout(() => { ready = true; }, 80);
+    await h.context.chat_send_message("encrypted mobile packet", {preserveDraft:false});
+    assert.equal(clicks, 1);
+    assert.equal(input.textContent, "");
 });

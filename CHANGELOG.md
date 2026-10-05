@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased — shared mobile compatibility - 2026-10-05
+
+- Kept the same core in Chrome, Firefox and Android: optional platform hooks
+  adapt downloads, localization, notifications and mobile control placement.
+- Detect the messenger independently of transient editor replacements.
+- Support native text-field drafts and delayed send controls/draft clearing.
+- Preserve failed drafts, validate the chat while waiting and click send once.
+- Correct generic Persian guidance and localize mobile sending errors.
+- Shared Node (35), Chrome/Firefox messenger and Android/desktop checks passed.
+
 ## [1.5.0](docs/releases/v1.5.0.md) - 2026-10-04
 
 ### Added
