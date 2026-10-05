@@ -309,7 +309,7 @@ Object.assign(window.CipherGapEnglish, {
   "CipherGap مرورگر خودش رو داره و ورود Chrome یا Firefox رو وارد نمی‌کنه؛ باید داخل خود برنامه وارد بشین. فقط یه صفحهٔ پیام‌رسان فعاله و اگه پیام‌رسان رو عوض کنین، ممکنه لازم باشه تبادل کلید ناتمام رو از اول انجام بدین. تماس، دوربین و میکروفون هم توی این نسخه پشتیبانی نمی‌شن.": "CipherGap has its own browser and doesn’t import your Chrome or Firefox session, so sign in inside the app. One messenger page is active at a time; switching messengers may mean restarting an unfinished key exchange. Calls, camera and microphone access aren’t supported in this version.",
   "چرا برنامه سازگار نیست یا اعلان نمیاد؟": "Why am I seeing a compatibility warning or no notifications?",
   "برای نصب، اندروید ۸ به بالا لازمه؛ برای رمزنگاری هم WebView باید اجرای جدا رو پشتیبانی کنه. اگه هشدار سازگاری می‌بینین، WebView رو از مسیر رسمی به‌روز کنین. برای اعلان‌ها، تنظیم و مجوزشون رو روشن کنین و برنامه و چت رو باز نگه دارین؛ اعلان پس‌زمینه نداریم.": "Installation needs Android 8 or later; encryption also needs a WebView with isolated execution. If there’s a compatibility warning, update WebView through its official channel. For notifications, enable the setting and permission and keep the app and chat open; there are no background notifications.",
-  "اندروید 0.1.1 آزمایشی · افزونه 1.6.0 · حالا با روبیکا و سروش روی دسکتاپ": "Android 0.1.1 preview · Extension 1.6.0 · Now with Rubika and Soroush on desktop",
+  "اندروید 0.1.2 آزمایشی · افزونه 1.6.1 · حالا با روبیکا و سروش روی دسکتاپ": "Android 0.1.2 preview · Extension 1.6.1 · Now with Rubika and Soroush on desktop",
   "از دستگاه خودتان شروع کنید.": "Start on your own device.",
   "سورس اندروید": "Android source",
   "راهنمای رسمی:": "Official guides:"
@@ -327,3 +327,13 @@ Object.assign(window.CipherGapEnglish, {
   "سروش پلاس": "Soroush Plus",
   "دسکتاپ · ۱.۶": "Desktop · 1.6"
 });
+
+Object.assign(window.CipherGapEnglish, {
+  "ظاهر مرتب‌تر توی بله": "A cleaner Bale composer",
+  "فایل ZIP نسخهٔ جدید رو بگیرین و از حالت فشرده دربیارین.": "Grab the latest ZIP and unzip it.",
+  "بزنین و پوشه‌ای رو انتخاب کنین که فایل": "and choose the folder containing",
+  "توی اون هست.": ".",
+  "فایل ZIP فایرفاکس رو بگیرین و از حالت فشرده دربیارین.": "Grab the Firefox ZIP and unzip it."
+});
+
+Object.assign(window.CipherGapEnglish, {"· ظاهر مرتب‌تر توی بله":"· A cleaner Bale composer"});
