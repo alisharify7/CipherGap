@@ -15,6 +15,7 @@ const CHAT_SHARED_FILE_CRYPTO = globalThis.CipherGapShared.file_crypto;
 const CHAT_SHARED_ADAPTERS = globalThis.CipherGapShared.messenger_adapters;
 const CHAT_UI = globalThis.CipherGapShared.chat_ui;
 const IS_CHAT_HOST = CHAT_DOM.hostnames.includes(window.location.hostname) && CHAT_DOM.supports_url(new URL(window.location.href));
+const CHAT_FLOATING_TOOLBAR = CHAT_DOM.toolbar_encrypt || globalThis.CipherGapHost?.mobile;
 function chat_composer() {
     const composer = CHAT_DOM.composer();
     if (composer) composer.dataset.ciphergapComposer = "true";
@@ -23,8 +24,7 @@ function chat_composer() {
 function chat_read_input(input) { return CHAT_UI.read_editor(input); }
 function chat_write_input(input, text) {
     if (CHAT_DOM.write_input) return CHAT_DOM.write_input(input, text);
-    input.textContent = text;
-    input.dispatchEvent(new Event("input", { bubbles: true }));
+    CHAT_UI.write_editor(input, text);
 }
 function chat_send_control() { return CHAT_DOM.send_control?.() ?? document.querySelector(CHAT_SEND_BUTTON); }
 const CIPHERGAP_INTERNAL_FILE_INPUT = "ciphergapInternalFileInput";
@@ -48,7 +48,7 @@ let chat_scroll_geometry = null;
 
 function reserve_chat_scroll_space(row = document.querySelector(CHAT_MESSAGE_ITEM), force = false) {
     const scroll = CHAT_UI.scroll_container(row), toolbar = document.getElementById("ciphergap-toolbar");
-    if (!scroll || !toolbar || !CHAT_DOM.toolbar_encrypt || (!force && scroll === chat_scroll_container)) return;
+    if (!scroll || !toolbar || !CHAT_FLOATING_TOOLBAR || (!force && scroll === chat_scroll_container)) return;
     const geometry = `${scroll.getBoundingClientRect().bottom}:${toolbar.getBoundingClientRect().top}:${scroll.clientWidth}:${toolbar.hidden}`;
     if (scroll === chat_scroll_container && geometry === chat_scroll_geometry) return;
     chat_scroll_geometry = geometry;
@@ -136,12 +136,14 @@ function inject_chat_security_toolbar() {
     const media = document.createElement("button");media.type = "button";media.id = "ciphergap-media";
     CHAT_UI.button(media, "smile", "Emoji & stickers");media.disabled = true;
     media.addEventListener("click", open_chat_media_picker);
-    toolbar.append(status, files, media, toggle);
-    if (CHAT_DOM.toolbar_encrypt) toolbar.dataset.ciphergapFloating = "true";
+    toolbar.append(status, files);
+    if (!globalThis.CipherGapHost?.mobile) toolbar.append(media);
+    toolbar.append(toggle);
+    if (CHAT_FLOATING_TOOLBAR) toolbar.dataset.ciphergapFloating = "true";
     // Teact updates native children by position. Keep our floating toolbar
     // outside its subtree so opening a file preview cannot corrupt the composer.
-    (CHAT_DOM.toolbar_encrypt ? document.body : footer).append(toolbar);
-    if (CHAT_DOM.toolbar_encrypt) {
+    (CHAT_FLOATING_TOOLBAR ? document.body : footer).append(toolbar);
+    if (CHAT_FLOATING_TOOLBAR) {
         let frame = null;
         const position = () => {frame = null;
             if (!toolbar.isConnected || !footer.isConnected) {chat_toolbar_cleanup?.();toolbar.remove();return;}
@@ -161,7 +163,9 @@ function inject_chat_security_toolbar() {
         const appearance = new MutationObserver(schedule);
         for (const root of [document.documentElement, document.body]) appearance.observe(root, {attributes:true,attributeFilter:["class", "style", "data-theme"]});
         window.addEventListener("resize", schedule);window.addEventListener("scroll", schedule, true);
-        chat_toolbar_cleanup = () => {resize.disconnect();appearance.disconnect();cancelAnimationFrame(frame);window.removeEventListener("resize", schedule);window.removeEventListener("scroll", schedule, true);footer.style.removeProperty("--cg-toolbar-space");if(chat_scroll_container){delete chat_scroll_container.dataset.ciphergapScroll;chat_scroll_container=null;}};
+        window.visualViewport?.addEventListener("resize", schedule);
+        window.visualViewport?.addEventListener("scroll", schedule);
+        chat_toolbar_cleanup = () => {resize.disconnect();appearance.disconnect();cancelAnimationFrame(frame);window.removeEventListener("resize", schedule);window.removeEventListener("scroll", schedule, true);window.visualViewport?.removeEventListener("resize", schedule);window.visualViewport?.removeEventListener("scroll", schedule);footer.style.removeProperty("--cg-toolbar-space");if(chat_scroll_container){delete chat_scroll_container.dataset.ciphergapScroll;chat_scroll_container=null;}};
         schedule();
     }
     // The footer can arrive after the key cache has already resolved.
@@ -663,11 +667,6 @@ async function chat_send_message(text, { storageKey = get_storage_key(), preserv
         throw new Error("The chat input is unavailable.");
     }
 
-    const sendButton = chat_send_control();
-    if (!sendButton && !CHAT_DOM.dynamic_send_control) {
-        throw new Error("The send button is unavailable.");
-    }
-
     if (cg_sending) throw new Error("A message is already being sent. Please try again.");
     const draft = chat_read_input(input);
     let sent = false;
@@ -676,11 +675,23 @@ async function chat_send_message(text, { storageKey = get_storage_key(), preserv
     try {
         chat_write_input(input, text);
         await wait_for_main_thread();
-        if (!cg_cached_enabled || storageKey !== get_storage_key() || !input.isConnected) throw new Error("The active chat changed or CipherGap was paused before sending.");
-        const currentSendButton = chat_send_control();
+        let currentSendButton;
+        // Mobile clients render Send asynchronously (often replacing Record).
+        // Recheck the chat on every wait, and click exactly once.
+        for (let attempt = 0; attempt < 100; attempt++) {
+            if (!cg_cached_enabled || storageKey !== get_storage_key() || !input.isConnected) throw new Error("The active chat changed or CipherGap was paused before sending.");
+            currentSendButton = chat_send_control();
+            if (currentSendButton && !currentSendButton.disabled) break;
+            currentSendButton = null;
+            await new Promise(resolve => setTimeout(resolve, 20));
+        }
         if (!currentSendButton) throw new Error("The send button is no longer available.");
         currentSendButton.click();
-        await new Promise((resolve) => setTimeout(resolve, 150));
+        // Native clients can clear the draft after their send promise settles.
+        for (let attempt = 0; attempt < 150; attempt++) {
+            await new Promise(resolve => setTimeout(resolve, 20));
+            if (storageKey !== get_storage_key() || !input.isConnected || normalize_message_text(chat_read_input(input) ?? "") !== normalize_message_text(text)) break;
+        }
         if (storageKey === get_storage_key() && input.isConnected && normalize_message_text(chat_read_input(input) ?? "") === normalize_message_text(text)) {
             throw new Error("The messenger did not accept the message. Your draft has been retained.");
         }
@@ -755,18 +766,18 @@ function inject_encrypt_button_chat() {
     }
 
     const sendControl = chat_send_control();
-    if (!sendControl && !CHAT_DOM.toolbar_encrypt) {
+    if (!sendControl && !CHAT_FLOATING_TOOLBAR) {
         return;
     }
 
     const sendSlot = sendControl?.closest("button") ?? sendControl;
-    const buttonContainer = CHAT_DOM.toolbar_encrypt ? document.getElementById("ciphergap-toolbar") : sendSlot.parentElement;
+    const buttonContainer = CHAT_FLOATING_TOOLBAR ? document.getElementById("ciphergap-toolbar") : sendSlot.parentElement;
     if (!buttonContainer) {
         return;
     }
 
     // the messenger's inline display:none still hides both controls for an empty draft.
-    if (!CHAT_DOM.toolbar_encrypt) buttonContainer.classList.add("ciphergap-send-controls");
+    if (!CHAT_FLOATING_TOOLBAR) buttonContainer.classList.add("ciphergap-send-controls");
 
     const button = document.createElement("button");
     button.id = "ciphergap-btn";
@@ -820,7 +831,7 @@ function inject_encrypt_button_chat() {
         } catch (error) {
             console.error("[CipherGap] Encrypt failed:", error);
             show_ciphergap_notice(
-                "Message not sent because encryption failed. Please try again.",
+                error.message || "Message not sent because encryption failed. Please try again.",
                 "error",
                 7000
             );
@@ -831,7 +842,7 @@ function inject_encrypt_button_chat() {
             CHAT_UI.set_label(button, "Encrypt");
         }
     });
-    if (CHAT_DOM.toolbar_encrypt) buttonContainer.append(button);
+    if (CHAT_FLOATING_TOOLBAR) buttonContainer.append(button);
     else buttonContainer.insertBefore(button, sendSlot);
 }
 
@@ -2098,7 +2109,9 @@ function start_chat_lifecycle() {
 for (const platform of Object.values(globalThis.CipherGapShared.chat_platforms)) {
     CHAT_SHARED_ADAPTERS.register(platform.name, {
         hostnames: platform.hostnames,
-        is_active: () => platform === CHAT_DOM && IS_CHAT_HOST && Boolean(document.querySelector(CHAT_CHAT_INPUT)) && Boolean(platform.chat_id(new URL(window.location.href))),
+        // Host detection must survive an SPA replacing or temporarily hiding
+        // its editor. Sending checks the current editor separately.
+        is_active: () => platform === CHAT_DOM && IS_CHAT_HOST,
         is_in_chat: (url = new URL(window.location.href)) => platform.supports_url(url) && Boolean(platform.chat_id(url)),
         get_chat_storage_suffix: url => platform.supports_url(url) ? platform.chat_id(url) : null,
         send_message: chat_send_message,

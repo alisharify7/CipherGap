@@ -9,13 +9,15 @@ function render(){
  const lang=language();document.documentElement.lang=lang;document.documentElement.dir=lang==='fa'?'rtl':'ltr';
  const theme=preferences.ciphergap_ui_theme|| (matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');document.documentElement.dataset.theme=theme;
  for(const node of document.querySelectorAll('[data-en]'))node.textContent=node.dataset[lang];
+ document.getElementById('guideButton').setAttribute('aria-label',lang==='fa'?'راهنما':'Guide');
+ document.querySelector('nav').setAttribute('aria-label',lang==='fa'?'بخش‌ها':'Sections');
  document.getElementById('language').value=lang;document.getElementById('theme').value=theme;
  document.getElementById('enabled').checked=preferences.ciphergap_enabled!==false;
  document.getElementById('notifications').checked=Boolean(preferences.android_notifications&&appState.notificationsAllowed);
  document.getElementById('compatibility').hidden=appState.compatible!==false;
  for(const button of document.querySelectorAll('[data-messenger]'))button.disabled=appState.compatible===false;
  document.getElementById('resume').hidden=!appState.chatUrl;
- document.getElementById('version').textContent='Android '+(appState.version||'0.1.0')+' · Preview';
+ document.getElementById('version').textContent='Android '+(appState.version||'0.1.1')+' · Preview';
 }
 async function refresh(){[preferences,appState]=await Promise.all([chrome.storage.local.get(['ciphergap_ui_language','ciphergap_ui_theme','ciphergap_enabled','android_notifications']),host('app_state')]);render();}
 window.navigate=async page=>{for(const s of document.querySelectorAll('.page'))s.hidden=s.id!==page;for(const b of document.querySelectorAll('nav [data-page]'))b.setAttribute('aria-current',b.dataset.page===page?'page':'false');status('');await host('navigate_state',{page});await refresh();window.scrollTo(0,0);};

@@ -64,7 +64,7 @@ public class MainActivity extends Activity {
         for (String id : Arrays.asList("home", "security", "settings")) {
             Button b = new Button(this); b.setTag(id); b.setAllCaps(false);
             b.setOnClickListener(v -> { if (id.equals("home")) showShell("home"); else if (id.equals("settings")) showShell("settings"); else showSecurity(); });
-            bar.addView(b,new LinearLayout.LayoutParams(0,dp(52),1));
+            bar.addView(b,new LinearLayout.LayoutParams(0,dp(60),1));
         }
         root.addView(bar); bar.setVisibility(View.GONE); setContentView(root); updateTheme();
         shell = createWebView(true); content.addView(shell,new FrameLayout.LayoutParams(-1,-1));
@@ -80,7 +80,19 @@ public class MainActivity extends Activity {
         int background = Color.parseColor(dark ? "#18191b" : "#ffffff");
         root.setBackgroundColor(background); bar.setBackgroundColor(background);
         String[] en={"Home","Chat security","Settings"}, persian={"خانه","امنیت گفتگو","تنظیمات"};
-        for (int i=0;i<bar.getChildCount();i++) { Button b=(Button)bar.getChildAt(i); b.setText(fa()?persian[i]:en[i]);b.setTextSize(13);b.setElevation(0);b.setStateListAnimator(null);b.setBackgroundColor(background); b.setTextColor(Color.parseColor(dark?"#9eb1ff":"#3e63dd")); }
+        int[] icons={R.drawable.ic_home,R.drawable.ic_security,R.drawable.ic_settings};
+        int foreground=Color.parseColor(dark?"#9eb1ff":"#3e63dd");
+        for (int i=0;i<bar.getChildCount();i++) {
+            Button b=(Button)bar.getChildAt(i);String label=fa()?persian[i]:en[i];
+            b.setText(label);b.setTextSize(10);b.setContentDescription(label);b.setTooltipText(label);
+            b.setElevation(0);b.setStateListAnimator(null);b.setPadding(dp(6),dp(5),dp(6),dp(5));
+            android.graphics.drawable.Drawable icon=getDrawable(icons[i]);icon.setTint(foreground);
+            b.setCompoundDrawablesWithIntrinsicBounds(null,icon,null,null);b.setCompoundDrawablePadding(dp(3));
+            android.graphics.drawable.GradientDrawable shape=new android.graphics.drawable.GradientDrawable();
+            shape.setColor(background);shape.setCornerRadius(dp(16));
+            b.setBackground(new android.graphics.drawable.RippleDrawable(android.content.res.ColorStateList.valueOf(Color.parseColor(dark?"#293657":"#edf2fe")),shape,null));
+            b.setTextColor(foreground);
+        }
         bar.setLayoutDirection(fa()?View.LAYOUT_DIRECTION_RTL:View.LAYOUT_DIRECTION_LTR);
         getWindow().setStatusBarColor(background); getWindow().setNavigationBarColor(background);
         if(Build.VERSION.SDK_INT>=30 && getWindow().getInsetsController()!=null) {
@@ -160,7 +172,9 @@ public class MainActivity extends Activity {
     void showSecurity() {
         if(chat==null || chatProxy==null){showShell("home");Toast.makeText(this,tr("Open a messenger first.","ابتدا یک پیام‌رسان را باز کنید."),Toast.LENGTH_SHORT).show();return;}
         if(security==null){security=createWebView(true);content.addView(security,new FrameLayout.LayoutParams(-1,-1));}
-        bar.setVisibility(View.VISIBLE);shell.setVisibility(View.GONE);chat.setVisibility(View.GONE);security.setVisibility(View.VISIBLE);security.loadUrl(LOCAL+"/assets/extension/popup/popup.html");
+        // Keep the live messenger sized and running behind the security sheet.
+        // Native send/input handlers must remain available during key exchange.
+        bar.setVisibility(View.VISIBLE);shell.setVisibility(View.GONE);chat.setVisibility(View.VISIBLE);security.setVisibility(View.VISIBLE);security.bringToFront();security.loadUrl(LOCAL+"/assets/extension/popup/popup.html");
     }
     void receive(WebView view,WebMessageCompat message,JavaScriptReplyProxy reply,boolean local,Uri origin) {
         String id="";

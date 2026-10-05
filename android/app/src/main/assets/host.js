@@ -55,6 +55,7 @@
         }
     };
     globalThis.CipherGapHost = {
+        mobile: true,
         trustedUI: location.origin === 'https://appassets.androidplatform.net',
         request,
         messageObserved: event => request('notify', {event}).catch(() => {}),

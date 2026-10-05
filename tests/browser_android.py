@@ -127,13 +127,30 @@ def bale_fixture():
     extra="""window.addMessage=(text,incoming=true)=>{const row=document.createElement('div');row.dataset.sid=String(++window.messageCounter);row.dataset.date=String(Date.now());row.setAttribute('aria-label','message-item');const p=document.createElement('p');p.textContent=text;if(incoming){const icon=document.createElement('span');icon.setAttribute('aria-label','LeftBubble-icon');row.append(icon);}row.append(p);document.getElementById('message_list_scroller_id').append(row);return row.dataset.sid;};window.messageCounter=100;window.addAttachment=(bytes,name)=>{const id=addMessage(''),r=document.querySelector('[data-sid="'+id+'"]');r.replaceChildren();const icon=document.createElement('span');icon.setAttribute('aria-label','LeftBubble-icon');const outer=document.createElement('div'),a=document.createElement('a');a.innerHTML='<div><div><img alt="file"></div></div><div><p></p></div>';a.querySelector('p').textContent=name+'.cgpe';a.onclick=()=>{const link=document.createElement('a');link.href=URL.createObjectURL(new Blob([new Uint8Array(bytes)]));link.download=name+'.cgpe';link.click();};outer.append(a);r.append(icon,outer);return id;};"""
     return fixture.replace('</script>',extra+'</script>').replace('<head>','<head><meta name="viewport" content="width=device-width,initial-scale=1">')
 
+def mobile_fixture(platform):
+    fixture=bale_fixture() if platform=='bale' else html(platform)
+    if platform=='bale':
+        fixture=fixture.replace('<div id="editable-message-text" contenteditable="true"></div>','<textarea id="editable-message-text" aria-label="Message"></textarea>')
+        fixture=fixture.replace("document.getElementById('editable-message-text').textContent","document.getElementById('editable-message-text').value")
+    css="""<meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;font:15px/1.6 system-ui;background:#f6f8fc;color:#182238}#messages,#message_list_scroller_id{height:calc(100dvh - 100px);overflow:auto;padding:12px}#chat_footer{display:flex;align-items:center;gap:8px;position:fixed;bottom:0;left:0;right:0;padding:12px;background:white}#chat_footer input[type=file]{display:none}#chat_footer textarea{min-width:0;flex:1;min-height:48px;border:1px solid #dce3ef;border-radius:12px;font:inherit;padding:8px}#chat_footer button{padding:12px}#MiddleColumn>[style],#column-center>[style]{position:fixed!important;bottom:0;left:0;right:0;min-height:70px;padding:12px;background:white}[contenteditable=true]{border:1px solid #dce3ef;border-radius:12px;padding:8px;min-height:40px}#messages>div,#message_list_scroller_id>div{margin-block:12px;max-width:90%}</style>"""
+    return fixture.replace('<head>','<head>'+css)
+
+def tap_dom(phone,selector):
+    phone.evaluate('document.querySelector('+json.dumps(selector)+').scrollIntoView({block:"nearest"})')
+    rect=wait(lambda:phone.evaluate('(()=>{const e=document.querySelector('+json.dumps(selector)+');if(!e)return null;const r=e.getBoundingClientRect();return r.width&&r.height?[r.x+r.width/2,r.y+r.height/2]:null})()'))
+    # Trusted input into the actual WebView, rather than a DOM click handler.
+    phone.call('Input.dispatchTouchEvent',{'type':'touchStart','touchPoints':[{'x':rect[0],'y':rect[1]}]})
+    phone.call('Input.dispatchTouchEvent',{'type':'touchEnd','touchPoints':[]})
+
 def main():
     assert adb('shell','getprop','ro.kernel.qemu').strip()=='1','Use a test emulator, never a physical account device'
     OUT.mkdir(parents=True,exist_ok=True)
     sample=OUT/'cg-android-upload.txt';sample.write_bytes('Android document picker — سلام\n'.encode()+bytes(range(256)))
     adb('push',str(sample),'/sdcard/Download/'+sample.name)
     adb('shell','rm','-f','/sdcard/Download/cg-android-test-picture.png')
+    adb('shell','am','force-stop','com.google.android.permissioncontroller')
     adb('shell','am','force-stop',APP)
+    adb('shell','pm','clear',APP)
     adb('shell','pm','revoke',APP,'android.permission.POST_NOTIFICATIONS')
     adb('shell','pm','clear-permission-flags',APP,'android.permission.POST_NOTIFICATIONS','user-set','user-fixed')
     adb('shell','am','start','-W','-n',APP+'/.MainActivity')
@@ -144,6 +161,7 @@ def main():
     shell.evaluate('chrome.storage.local.set({ciphergap_ui_language:"en",ciphergap_enabled:true})')
     state=shell.evaluate('CipherGapHost.request("app_state")')
     assert state['compatible'],state
+    shell.evaluate('CipherGapHost.request("notifications",{enabled:false})')
     shell.evaluate('navigate("settings")')
     shell.evaluate('document.getElementById("notifications").click()')
     tap_resource('permission_deny_button')
@@ -173,13 +191,14 @@ def main():
             kernel=desktop.new_page();kernel.goto('chrome-extension://'+worker.url.split('/')[2]+'/popup/popup.html')
             kernel.evaluate("""async()=>{for(const f of ['encoding','crypto','file_crypto','dh_crypto','stickers'])await new Promise((r,j)=>{const s=document.createElement('script');s.src='../share/'+f+'.js';s.onload=r;s.onerror=j;document.head.append(s)})}""")
             for platform,base in [('bale','https://web.bale.ai/'),('eitaa','https://web.eitaa.com/'),('telegram','https://web.telegram.org/a/')]:
-                fixture=bale_fixture() if platform=='bale' else html(platform).replace('<head>','<head><meta name="viewport" content="width=device-width,initial-scale=1">')
+                fixture=mobile_fixture(platform)
                 android_url=base+('chat?uid=601' if platform=='bale' else '#601')
                 desktop_url=base+('chat?uid=701' if platform=='bale' else '#701')
                 shell.evaluate('CipherGapHost.request("open_messenger",{url:'+json.dumps(android_url)+'})')
                 target=wait(lambda:next((t for t in targets() if base.split('/')[2] in t['url']),None))
                 phone=CDP(target);phone.navigate_fixture(android_url,fixture)
-                desktop.route(base+'**',lambda route,request,body=fixture:route.fulfill(body=body,content_type='text/html'))
+                peer_fixture=bale_fixture() if platform=='bale' else html(platform)
+                desktop.route(base+'**',lambda route,request,body=peer_fixture:route.fulfill(body=body,content_type='text/html'))
                 peer=desktop.new_page();peer.goto(desktop_url);peer.wait_for_selector('#ciphergap-toolbar')
                 tab=worker.evaluate('base=>chrome.tabs.query({url:base+"*"}).then(t=>t.at(-1).id)',base)
                 ctx=shell.evaluate('chrome.tabs.sendMessage(1,{action:"get_chat_context"})')
@@ -188,7 +207,17 @@ def main():
                 def peeraction(message):return worker.evaluate('([id,m])=>chrome.tabs.sendMessage(id,m)',[tab,dict(message,expectedStorageKey=peerctx['storageKey'])])
                 # Main-world scripts cannot obtain the key API or Android privileged bridge.
                 assert phone.evaluate('({bridge:typeof cgNative,storage:typeof globalThis.chrome?.storage,core:typeof CipherGapShared})')=={'bridge':'undefined','storage':'undefined','core':'undefined'}
-                started=action({'action':'start_key_exchange'});assert started['ok'],started
+                # Regression: an SPA can replace its editor without becoming an unsupported messenger.
+                assert phone.evaluate('(()=>{const e=document.querySelector(CipherGapShared.chat_platforms[CipherGapShared.messenger_adapters.resolve_context().messenger].input_selector),p=e.parentElement,n=e.nextSibling;e.remove();const active=!!CipherGapShared.messenger_adapters.get_active();p.insertBefore(e,n);return active})()',isolated=True)
+                # Start from the actual local security screen, as a user does.
+                shell.evaluate('CipherGapHost.request("open_security")')
+                popup=CDP(wait(lambda:next((t for t in targets() if 'popup.html' in t['url']),None)))
+                wait(lambda:popup.evaluate('document.getElementById("securityCard")?.dataset.view')=='no-key')
+                tap_dom(popup,'#exchangeBtn')
+                wait(lambda:phone.evaluate('testSent.some(s=>s.startsWith("start exchange key:"))'))
+                status=shell.evaluate('chrome.storage.local.get('+json.dumps('exchange_status_'+ctx['storageKey'])+')')['exchange_status_'+ctx['storageKey']]
+                started={'ok':True,'nonce':status['nonce']}
+                adb('shell','input','keyevent','4');popup.close()
                 request=wait(lambda:phone.evaluate('testSent.at(-1)'));peer.evaluate('s=>addMessage(s)',request)
                 peer.locator('[data-ciphergap-exchange-action=accept]').click()
                 peer.wait_for_function('testSent.some(s=>s.startsWith("start exchange ack:"))')
@@ -203,7 +232,10 @@ def main():
                 time.sleep(.6)  # Native SAS send restores the draft before another send.
                 editor='[contenteditable=true][enterkeyhint]' if platform=='eitaa' else '#editable-message-text'
                 text='Android ↔ desktop — سلام 👨‍👩‍👧‍👦 👍🏽'
-                phone.evaluate('(()=>{const e=document.querySelector('+json.dumps(editor)+');e.textContent='+json.dumps(text)+';e.dispatchEvent(new Event("input",{bubbles:true}));document.getElementById("ciphergap-btn").click()})()')
+                phone.evaluate('(()=>{const e=document.querySelector('+json.dumps(editor)+');if(e.tagName==="TEXTAREA")e.value='+json.dumps(text)+';else{e.textContent="Android ↔ desktop — سلام ";for(const emoji of ["👨‍👩‍👧‍👦","👍🏽"]){const img=document.createElement("img");img.alt=emoji;img.src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==";e.append(img," ")}}e.dispatchEvent(new Event("input",{bubbles:true}))})()')
+                wait(lambda:phone.evaluate('(()=>{const a=document.getElementById("ciphergap-toolbar").getBoundingClientRect(),b=document.querySelector("[data-ciphergap-composer]").getBoundingClientRect();return a.bottom<=b.top && a.left>=0 && a.right<=innerWidth+1})()'))
+                assert phone.evaluate('document.getElementById("ciphergap-media")===null')
+                tap_dom(phone,'#ciphergap-btn')
                 packet=wait(lambda:phone.evaluate('testSent.at(-1)?.startsWith("CGP|") ? testSent.at(-1):null'))
                 ident=peer.evaluate('s=>addMessage(s)',packet);peer.locator('.ciphergap-decrypt-button').last.click();peer.locator('.ciphergap-plaintext').last.wait_for()
                 assert peer.locator('.ciphergap-plaintext').last.inner_text()==text
@@ -225,15 +257,12 @@ def main():
                 with peer.expect_download() as downloaded:peer.locator('.ciphergap-file-viewer__download').click()
                 assert Path(downloaded.value.path()).read_bytes()==sample.read_bytes()
                 peer.locator('.ciphergap-file-viewer header button').click()
-                # Built-in stickers use the same authenticated attachment path.
-                phone.evaluate('document.getElementById("ciphergap-media").click();document.getElementById("ciphergap-media-tab-1").click()')
-                before=phone.evaluate('received.length')
-                phone.evaluate('document.querySelector("[aria-label^=\\\"Send sticker:\\\"]").click()')
-                sticker=wait(lambda:phone.evaluate('received.length>'+str(before)+'?received.at(-1):null'))
-                assert sticker['name'].endswith('.cgst.cgpe')
-                sticker_id=peer.evaluate('a=>addAttachment(a.bytes,a.name.slice(0,-5))',sticker)
-                peer.locator('.ciphergap-file-decrypt-button').last.click()
-                peer.wait_for_function('Boolean(document.querySelector(".ciphergap-sticker-inline img")?.naturalWidth)')
+                # The mobile custom picker is removed; desktop stickers still decrypt inline.
+                sticker=kernel.evaluate('async key=>{const packed=await CipherGapShared.stickers.pack(new File([Uint8Array.from(atob("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScLbtAAAAABJRU5ErkJggg=="),c=>c.charCodeAt(0))],"native-test.png",{type:"image/png"}));const file=await CipherGapShared.file_crypto.encrypt_file(packed,key);return {name:file.name,bytes:Array.from(new Uint8Array(await file.arrayBuffer()))}}',other)
+                phone.evaluate('addAttachment('+json.dumps(sticker['bytes'])+','+json.dumps(sticker['name'][:-5])+')')
+                wait(lambda:phone.evaluate('Boolean(document.querySelector(".ciphergap-file-decrypt-button"))'))
+                phone.evaluate('Array.from(document.querySelectorAll(".ciphergap-file-decrypt-button")).at(-1).click()')
+                wait(lambda:phone.evaluate('Boolean(document.querySelector(".ciphergap-sticker-inline img")?.naturalWidth)'))
                 # Authenticated image, sound, video and passive-only unknown file handling.
                 for name,mime,raw,kind in media_fixtures(ROOT):
                     name='cg-android-test-'+name

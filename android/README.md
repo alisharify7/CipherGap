@@ -121,3 +121,16 @@ to [its source](https://github.com/alisharify7/CipherGap/tree/android) and
 همان چت، رمزگشایی خودکار و حذف کلید را نمایش می‌دهد. اعلان فقط هنگام باز بودن
 برنامه و اجرای صفحه است. پاک کردن داده‌های مرورگر، ورودها و کلیدهای محلی را
 حذف می‌کند و تأیید می‌خواهد. راهنمای کامل دو‌زبانه داخل برنامه موجود است.
+
+## Android 0.1.1 controls
+
+Use **Chat security** (shield) to exchange and verify a key. In the chat, the blue
+CipherGap send icon encrypts your draft; the messenger’s own send icon remains
+ordinary. The file icon chooses a secure attachment and pause controls this chat.
+The secure row is separate from the native text editor, including with the keyboard
+open. The app navigation provides Home, Chat security and Settings with icons.
+
+Keyboard/native picker emoji are part of the encrypted text. There is no custom
+Android emoji/sticker picker. Native messenger stickers bypass the text/file
+composer and are **not** automatically encrypted. Encrypted desktop stickers can
+still be decrypted and viewed on Android; send a secure image file when needed.

@@ -69,6 +69,7 @@
     }
   }
   function read_editor(element) {
+    if (/^(TEXTAREA|INPUT)$/.test(element.tagName)) return element.value;
     if (!element.querySelector("img[alt]"))
       return element.innerText ?? element.textContent;
     function text(node) {
@@ -91,6 +92,14 @@
     }
     return text(element);
   }
+  function write_editor(element, text) {
+    if (/^(TEXTAREA|INPUT)$/.test(element.tagName)) {
+      // Call the native setter so React's value tracker sees the input event.
+      const prototype = element.tagName === "TEXTAREA" ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+      Object.getOwnPropertyDescriptor(prototype, "value").set.call(element, text);
+    } else element.textContent = text;
+    element.dispatchEvent(new InputEvent("input", {bubbles:true,inputType:text ? "insertText" : "deleteContentBackward",data:text || null}));
+  }
   function scroll_container(element) {
     for (let node=element?.parentElement;node && node!==document.body;node=node.parentElement) {
       if (/^(auto|scroll)$/.test(getComputedStyle(node).overflowY)) return node;
@@ -104,6 +113,7 @@
     theme,
     layout,
     read_editor,
+    write_editor,
     scroll_container,
   });
 })(globalThis.CipherGapShared);

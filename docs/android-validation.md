@@ -1,3 +1,31 @@
+# Android 0.1.1 validation — 2026-10-05
+
+The 0.1.1 APK passed assembleDebug/lintDebug on the toolchain below. The full
+Android check passed all three messenger fixtures, starting exchanges through
+the actual local security screen and sending through trusted WebView touch input.
+Bale’s regression uses a native textarea; Eitaa/Telegram include image-backed
+native emoji. Removing and restoring the editor preserves messenger detection.
+The secure row remains above the composer within the viewport; its custom media
+picker is absent. Encrypted desktop stickers still decode inline on Android.
+
+Native file picking/saving, exact downloaded bytes, media playback, corruption,
+expiry, pause, isolated key access, protected storage, keyboard/Back, persisted
+sessions/keys, notification denial/grant/generic delivery/deduplication and
+confirmed clearing all passed. Launcher and security screens were visually
+reviewed in English/light and Persian/dark. The updated source passes 35 Node
+checks, both package checks and Chrome/Firefox messenger integrations.
+
+Separate live checks used a disposable copy of the existing Your Chrome profile,
+a mobile WebView user agent, a 393 × 780 viewport and the mobile presentation hooks
+in Chromium. Encrypted text and Unicode emoji were sent/decrypted in the authorized
+Eitaa/Telegram Saved Messages chats. The check exposed delayed Send/draft updates;
+after fixing the shared sender, both succeeded with no composer overlap. These
+self-chat messages remain in the accounts. The disposable profile and its test
+keys were deleted; the original browser profile and keys were not changed.
+Bale required login in that isolated profile. **No live Android account delivery
+or physical-phone compatibility is claimed.** The emulator/provider limitations
+below still apply. Native messenger stickers are not encrypted automatically.
+
 # Android 0.1.0 validation — 2026-10-05
 
 ## Environment and scope

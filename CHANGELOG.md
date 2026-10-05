@@ -1,5 +1,18 @@
 # Changelog
 
+## [Android 0.1.1 preview](docs/releases/android-v0.1.1.md) - 2026-10-05
+
+- Fixed messenger detection while a mobile SPA rebuilds its composer.
+- Fixed native text-field drafts and delayed send-control/draft updates; no
+  duplicate send retries, and failed sends preserve the original draft.
+- Moved Android encryption controls out of the native typing area, with touch
+  icons and keyboard viewport repositioning for all three messengers.
+- Refined the launcher, navigation, bilingual guide and generic Persian copy.
+- Removed Android’s custom emoji/sticker picker. Native emoji encrypt as text;
+  native messenger stickers remain ordinary. Incoming encrypted stickers work.
+- Added actual security-screen/touch/textarea regressions and retained desktop
+  Chrome/Firefox compatibility.
+
 ## [Android 0.1.0 preview](docs/releases/android-v0.1.0.md) - 2026-10-05
 
 - Added an Android messenger browser for Bale, Eitaa and Telegram Web A, with a
