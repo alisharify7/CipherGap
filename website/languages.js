@@ -1,5 +1,5 @@
 window.CipherGapEnglish = {
-  "· پیام‌های مرتب‌تر، شکلک و استیکر رمز‌شده": "· Neater chats, encrypted emoji & stickers",
+  "· روبیکا و سروش هم رسیدن!": "· Rubika and Soroush are here!",
   "گاهی یه استیکر بهتر از کلی حرفه.": "Sometimes a sticker says it best (desktop).",
   "از دکمهٔ": "Use",
   "توی چت، شکلک رو به متن اضافه کنین و با": "in your chat to add emoji to your draft, then use",
@@ -205,13 +205,13 @@ window.CipherGapEnglish = {
   "همون چت همیشگی.": "Same chat as always.",
   "یه کم خصوصی‌تر.": "A little more private.",
   "یک حرف شخصی یا فایلی که قرار است بین شما بماند. CipherGap آن را پیش از ارسال در مرورگر رمزنگاری می‌کند؛ دوستتان با افزونه و کلید مشترک آن را می‌خواند.": "A personal message. A file meant for one person. CipherGap encrypts it in your browser before you send it. Your friend opens it with the extension and your shared key.",
-  "فعلاً بله، ایتا و تلگرام وب A آماده‌ان. بقیه هم توی راهن.": "Bale, Eitaa and Telegram Web A are ready. More messengers are on the way.",
+  "بله، ایتا و تلگرام وب A آماده‌ان؛ روبیکا و سروش پلاس هم با افزونهٔ دسکتاپ ۱.۶ اضافه شدن. واتساپ هنوز توی راهه.": "Bale, Eitaa and Telegram Web A are ready. Rubika and Soroush Plus join them with desktop extension 1.6. WhatsApp is still on the way.",
   "در دست توسعه": "In development",
   "برای حرف‌ها و فایل‌هایی که": "For the messages and files",
   "می‌خواین خصوصی بمونن.": "you’d rather keep private.",
   "افزونه را نصب کنید، کلید را تأیید کنید و گفتگو را ادامه دهید.": "Install together, check your key, and get back to the conversation.",
   "نسخهٔ ۱.۲.۱ · برای بله وب · کروم و فایرفاکس": "Version 1.2.1 · Bale Web · Chrome & Firefox",
-  "فعلاً بله وب، ایتا وب و تلگرام وب A آماده‌ان؛ روبیکا و واتساپ هنوز در دست توسعه‌ان. توی ایتا و تلگرام، چتی باز کنین که شناسهٔ عددی داره. تلگرام وب K هنوز پشتیبانی نمی‌شه.": "Bale Web, Eitaa Web and Telegram Web A are ready. Rubika and WhatsApp are still in development. In Eitaa and Telegram, open a chat with a numeric ID; Telegram Web K isn’t supported yet.",
+  "بله وب، ایتا وب و تلگرام وب A روی اندروید و دسکتاپ کار می‌کنن. روبیکا و سروش پلاس هم با افزونهٔ دسکتاپ ۱.۶ آماده‌ان؛ نسخهٔ اندرویدشون هنوز آماده نیست. توی ایتا، تلگرام و سروش، چت با شناسهٔ عددی باز کنین؛ روبیکا مسیر #c= رو داره. واتساپ و تلگرام وب K هنوز پشتیبانی نمی‌شن.": "Bale Web, Eitaa Web and Telegram Web A work on Android and desktop. Rubika and Soroush Plus are ready with desktop extension 1.6; their Android support isn’t ready yet. Eitaa, Telegram and Soroush use numeric chat IDs; Rubika uses #c=. WhatsApp and Telegram Web K aren’t supported yet.",
   "دوستم CipherGap نداره؛ چی می‌بینه؟": "My friend hasn’t installed CipherGap. What will they see?",
   "زیر پیام رمز‌شده، راهنمای نصب و لینک‌های GitHub و همین وب‌سایت را می‌بیند. بعد از نصب نسخهٔ ۱.۲.۱ یا جدیدتر و تنظیم کلید مشترک، پیام باز می‌شود و راهنما از نمایش گفتگو کنار می‌رود. با توقف افزونه، راهنما دوباره دیده می‌شود.": "They’ll see a short installation guide with GitHub and website links beneath the encrypted text. With version 1.2.1 or later and your shared key, they can open the message. The guide is hidden while CipherGap is enabled and appears again when paused.",
   "اول مرورگرتان را انتخاب کنید": "Choose your browser first",
@@ -225,7 +225,7 @@ window.CipherGapEnglish = {
   "وقت تبادل کلید تموم شد؛ حالا چی؟": "Our key exchange timed out. What should we do?",
   "درخواست و کد تأیید بعد از ۱۵ دقیقه منقضی می‌شن؛ تایمر به صفر می‌رسه و کارت خاکستری می‌شه. یه درخواست تازه بفرستین و کد جدید رو مقایسه کنین. باز کردن دوبارهٔ صفحه، وقت درخواست قبلی رو تمدید نمی‌کنه و منقضی شدن درخواست هم کلیدهای قبلی رو پاک نمی‌کنه.": "Requests and verification codes expire after 15 minutes. The timer reaches zero and the card turns grey. Send a new request and compare the new code. Reopening the page won’t extend the old request, and an expired request won’t delete your existing keys.",
   "نسخهٔ ۱.۴.۰ · بله، ایتا و تلگرام وب A · کروم و فایرفاکس": "Version 1.4.0 · Bale, Eitaa & Telegram Web A · Chrome & Firefox",
-  "زیر پیام رمز‌شده، راهنمای نصب و لینک GitHub و همین سایت رو می‌بینه. بعد از نصب افزونهٔ ۱.۴.۰ به بالا یا برنامهٔ اندروید و تنظیم کلید مشترک، پیام باز می‌شه و راهنما دیگه توی چت نمایش داده نمی‌شه. اگه CipherGap رو متوقف کنین، راهنما دوباره دیده می‌شه.": "They’ll see an installation note and links to GitHub and this site below the encrypted message. With extension version 1.4.0 or later, or the Android app, and your shared key set up, the message opens and the note is hidden. Pausing CipherGap makes the note visible again.",
+  "زیر پیام رمز‌شده، راهنمای نصب و لینک GitHub و همین سایت رو می‌بینه. بعد از نصب نسخهٔ مناسب همین پیام‌رسان و تنظیم کلید مشترک، پیام باز می‌شه و راهنما دیگه توی چت نمایش داده نمی‌شه. برای روبیکا و سروش، افزونهٔ ۱.۶ به بالا لازمه. اگه CipherGap رو متوقف کنین، راهنما دوباره دیده می‌شه.": "They’ll see an installation note and links to GitHub and this site. Once they’ve installed the version for your messenger and set up your shared key, the message opens and the note is hidden. Rubika and Soroush need extension 1.6 or later. Pausing CipherGap shows the note again.",
   "بزنین. دوست‌تون روی": ". Your friend taps",
   "از وقتی درخواست فرستاده می‌شه، ۱۵ دقیقه وقت دارین؛ تایمر کنار پیام رو ببینین. کد شش‌رقمی رو توی یه تماس مطمئن یا حضوری با هم مقایسه کنین. اگه یکی بود، هر دوتون": "You’ve got 15 minutes from when the request is sent; the timer is right beside the message. Compare the six-digit code in a trusted call or in person. If it matches, both of you choose",
 };
@@ -237,7 +237,7 @@ Object.assign(window.CipherGapEnglish, {
   "از همین دستگاه شروع کنین": "Start with the device you’re on",
   "قدم‌به‌قدم بریم جلو.": "Let’s take it step by step.",
   "شما و دوست‌تون.": "You and your friend.",
-  "شما با گوشی هستین و دوست‌تون با لپ‌تاپ؟ مشکلی نیست! هر کدومتون نسخهٔ مناسب دستگاه خودتون رو نصب کنین، بعد توی همون چت یه کلید مشترک بسازین.": "On your phone while your friend’s on a laptop? That works! Each of you can install the version for your device, then set up a shared key in the same chat.",
+  "توی بله، ایتا و تلگرام، شما با گوشی باشین و دوست‌تون با لپ‌تاپ، مشکلی نیست! نسخهٔ مناسب‌تون رو نصب کنین و توی همون چت یه کلید مشترک بسازین. برای روبیکا و سروش، فعلاً هر دوتون از افزونهٔ دسکتاپ ۱.۶ استفاده کنین.": "On Bale, Eitaa and Telegram, you can be on your phone while your friend uses a laptop. Install your version and set up a shared key in the same chat. For Rubika and Soroush, you’ll both need desktop extension 1.6 for now.",
   "نسخهٔ مناسب‌تون رو نصب کنین": "Install your version",
   "وارد حساب بشین و کلید رو تأیید کنین": "Sign in and verify your key",
   "پیام، فایل و تنظیمات": "Messages, files & settings",
@@ -309,7 +309,7 @@ Object.assign(window.CipherGapEnglish, {
   "CipherGap مرورگر خودش رو داره و ورود Chrome یا Firefox رو وارد نمی‌کنه؛ باید داخل خود برنامه وارد بشین. فقط یه صفحهٔ پیام‌رسان فعاله و اگه پیام‌رسان رو عوض کنین، ممکنه لازم باشه تبادل کلید ناتمام رو از اول انجام بدین. تماس، دوربین و میکروفون هم توی این نسخه پشتیبانی نمی‌شن.": "CipherGap has its own browser and doesn’t import your Chrome or Firefox session, so sign in inside the app. One messenger page is active at a time; switching messengers may mean restarting an unfinished key exchange. Calls, camera and microphone access aren’t supported in this version.",
   "چرا برنامه سازگار نیست یا اعلان نمیاد؟": "Why am I seeing a compatibility warning or no notifications?",
   "برای نصب، اندروید ۸ به بالا لازمه؛ برای رمزنگاری هم WebView باید اجرای جدا رو پشتیبانی کنه. اگه هشدار سازگاری می‌بینین، WebView رو از مسیر رسمی به‌روز کنین. برای اعلان‌ها، تنظیم و مجوزشون رو روشن کنین و برنامه و چت رو باز نگه دارین؛ اعلان پس‌زمینه نداریم.": "Installation needs Android 8 or later; encryption also needs a WebView with isolated execution. If there’s a compatibility warning, update WebView through its official channel. For notifications, enable the setting and permission and keep the app and chat open; there are no background notifications.",
-  "اندروید 0.1.1 آزمایشی · افزونه 1.5.0 · بله، ایتا و تلگرام وب A": "Android 0.1.1 preview · Extension 1.5.0 · Bale, Eitaa & Telegram Web A",
+  "اندروید 0.1.1 آزمایشی · افزونه 1.6.0 · حالا با روبیکا و سروش روی دسکتاپ": "Android 0.1.1 preview · Extension 1.6.0 · Now with Rubika and Soroush on desktop",
   "از دستگاه خودتان شروع کنید.": "Start on your own device.",
   "سورس اندروید": "Android source",
   "راهنمای رسمی:": "Official guides:"
@@ -322,3 +322,8 @@ Object.assign(window.CipherGapEnglish, {"گاهی یه استیکر بهتر ا�
 Object.assign(window.CipherGapEnglish, {"توی اندروید، شکلک رو از کیبورد یا منوی خود پیام‌رسان انتخاب کنین و با آیکون آبی CipherGap بفرستین. انتخابگر جداگانهٔ استیکر فقط توی افزونهٔ کامپیوتره؛ استیکرهای خود پیام‌رسان با CipherGap رمز نمی‌شن.":"On Android, pick emoji from your keyboard or messenger’s menu and send them with the blue CipherGap icon. The separate sticker picker is only in the desktop extension; your messenger’s own stickers aren’t encrypted by CipherGap."});
 
 Object.assign(window.CipherGapEnglish, {"از همین دستگاه شروع کنین.": "Start with the device you’re on."});
+
+Object.assign(window.CipherGapEnglish, {
+  "سروش پلاس": "Soroush Plus",
+  "دسکتاپ · ۱.۶": "Desktop · 1.6"
+});

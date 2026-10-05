@@ -1,5 +1,10 @@
 # Changelog
 
+## Website desktop messengers - 2026-10-05
+
+- Added Rubika and Soroush Plus links and logos for desktop extension 1.6.
+- Kept Android 0.1.1 support boundaries explicit in the guide and FAQs.
+
 ## Website copy - 2026-10-05
 
 - Made Persian and English introductions, setup steps and FAQs more conversational.
