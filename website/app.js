@@ -61,13 +61,14 @@ function selectTab(tab, focus = false) {
         item.tabIndex = selected ? 0 : -1;
         document.getElementById(item.getAttribute("aria-controls")).hidden = !selected;
     }
-    try { localStorage.setItem("ciphergap-browser", tab.id === "tab-firefox" ? "firefox" : "chrome"); } catch {}
+    try { localStorage.setItem("ciphergap-browser", tab.id.replace("tab-", "")); } catch {}
     if (focus) tab.focus();
 }
 tabs.forEach((tab, index) => {
     tab.addEventListener("click", () => selectTab(tab));
     tab.addEventListener("keydown", (event) => {
-        const offset = { ArrowRight: 1, ArrowLeft: -1, Home: -index, End: tabs.length - 1 - index }[event.key];
+        const direction = document.documentElement.dir === "rtl" ? -1 : 1;
+        const offset = { ArrowRight: direction, ArrowLeft: -direction, Home: -index, End: tabs.length - 1 - index }[event.key];
         if (offset === undefined) return;
         event.preventDefault();
         selectTab(tabs[(index + offset + tabs.length) % tabs.length], true);
@@ -75,7 +76,11 @@ tabs.forEach((tab, index) => {
 });
 let savedBrowser;
 try { savedBrowser = localStorage.getItem("ciphergap-browser"); } catch {}
-selectTab(document.getElementById(savedBrowser === "firefox" || (!savedBrowser && navigator.userAgent.includes("Firefox/")) ? "tab-firefox" : "tab-chrome"));
+const deviceBrowser = /Android/i.test(navigator.userAgent) ? "android"
+    : /Firefox\//.test(navigator.userAgent) ? "firefox"
+    : /Edg\//.test(navigator.userAgent) ? "chromium" : "chrome";
+selectTab(tabs.find(tab => tab.id === `tab-${savedBrowser}`)
+    || document.getElementById(`tab-${deviceBrowser}`));
 const status = document.getElementById("copy-status");
 let statusTimer;
 document.querySelectorAll("[data-copy]").forEach((button) => {

@@ -46,3 +46,29 @@ html[lang=en] .hero-actions .button [aria-hidden],html[lang=en] .start-section .
 @media(max-width:720px){.browser-choice-intro{padding:22px 18px 0}.tab-list{padding:14px 18px}.tab-list button{font-size:11px;padding:12px 8px}}
 
 .sticker-guide{padding:16px 18px;border:1px solid var(--cg-border);border-radius:14px;background:var(--cg-soft);line-height:1.8}.sticker-guide strong{display:block;margin-bottom:6px;color:var(--cg-text)}
+
+/* A device-specific guide, with one shared path into chat security. */
+.install-layout{grid-template-columns:.82fr 1.18fr;gap:64px}
+.install-intro h2{font-size:40px}.install-intro>p:not(.eyebrow){font-size:14px;max-width:370px}
+.setup-route{list-style:none;padding:0;margin:28px 0;display:grid;gap:14px}
+.setup-route li{display:flex;align-items:center;gap:12px;font-size:13px}
+.setup-route span{display:grid;place-items:center;width:32px;height:32px;border-radius:10px;color:var(--purple);background:#fff9;font:600 11px Inter,sans-serif}
+.setup-route a:hover{color:var(--purple)}.install-note{font-size:12px;line-height:1.9;max-width:none;margin-top:28px}
+.install-card{padding:0 28px 26px}.browser-choice-intro{padding:26px 0 0}.tab-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));padding:20px 0;margin-bottom:8px;direction:inherit;gap:10px}
+.tab-list button{text-align:start;min-height:76px;padding:14px 16px;border-width:2px;border-color:var(--line);font-family:inherit}
+.tab-list bdi{display:block;font:600 14px Inter,sans-serif}.tab-list button>span{display:block;font-size:11px;font-weight:400;margin-top:5px;color:var(--muted)}
+.platform-summary{display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-size:11px;color:var(--muted);margin-block:12px}
+.platform-badge{color:var(--purple);background:var(--lavender);padding:5px 9px;border-radius:7px;font-weight:600}
+.panel-kicker{font-size:12px;line-height:1.9;margin-bottom:24px}.install-steps h3{font-size:14px}.install-steps p{font-size:13px;line-height:1.9}.install-steps li{gap:13px}
+.install-steps li>span{background:var(--lavender);border-radius:50%;width:28px;height:28px;font-size:12px}
+.download-link{font-size:12px}.apk-download{margin-top:12px;font-size:13px;padding:11px 16px}.secondary-download{display:flex;font-size:11px;margin-top:10px}
+.platform-help{margin-top:24px;border:1px solid var(--line);border-radius:12px;padding:14px;background:#f8f9fc;font-size:12px;line-height:1.9}.platform-help summary{cursor:pointer;font-weight:600;color:var(--ink)}.platform-help p{margin-top:12px;color:var(--muted)}
+.installation-next{border-top:1px solid var(--line);margin-top:28px;padding-top:20px;display:flex;align-items:flex-start;flex-direction:column;gap:12px;font-size:12px}.installation-next>span{font-weight:600;color:var(--ink)}.installation-next .button{font-size:13px;padding:12px 16px}.installation-next>a:last-child{color:var(--purple)}
+.install-references{margin-top:20px;font-size:10px;color:var(--muted)}.install-references a{text-decoration:underline;text-underline-offset:3px}
+.start-chat{border:1px solid var(--line);border-radius:18px;padding:26px;margin-bottom:40px;background:#fff}.start-chat h3{font-size:18px}.start-chat p{font-size:13px;line-height:1.9;color:var(--muted);max-width:790px;margin-top:10px}
+.messenger-links{display:flex;flex-wrap:wrap;gap:10px;margin-block:20px}.messenger-links a{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:10px;padding:10px 14px;font-size:13px}.messenger-links a:hover{background:var(--lavender);border-color:var(--purple)}.messenger-links a span{color:var(--muted)}.start-chat .chat-location{border-top:1px solid var(--line);padding-top:16px;font-size:12px;max-width:none}
+.everyday-section{padding-top:0}.everyday-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.everyday-grid article{border:1px solid var(--line);border-radius:16px;padding:26px;background:#fff}.helper-icon{display:grid;place-items:center;width:32px;height:32px;border-radius:10px;background:var(--lavender);color:var(--purple);margin-bottom:14px;font-size:18px}.everyday-grid h3{font-size:16px;margin-bottom:10px}.everyday-grid p,.everyday-note{color:var(--muted);font-size:13px;line-height:2}.everyday-note{margin-top:20px;padding-inline:4px}.site-footer>div{flex-wrap:wrap}
+@media(max-width:1000px){.install-layout{gap:32px}.install-intro h2{font-size:34px}}
+@media(max-width:720px){.install-layout{grid-template-columns:1fr;gap:28px}.install-card{padding:0 18px 22px}.browser-choice-intro{padding:22px 0 0}.tab-list{padding:18px 0}.tab-list button{padding:12px;min-height:74px}.install-intro h2{font-size:32px}.everyday-grid{grid-template-columns:1fr}.start-chat{padding:20px}.messenger-links{gap:8px}.messenger-links a{padding:9px 10px;font-size:12px}.everyday-grid article{padding:22px}.platform-summary{font-size:10px}.installation-next .button{width:100%}.guide-steps .security-tip{padding-inline-start:12px;border-inline-start:2px solid #c5cfed;border-right:0}}
+html[lang=en] .installation-next .button [aria-hidden]{transform:scaleX(-1)}
+@media(min-width:721px){.install-intro{position:sticky;top:112px}}
