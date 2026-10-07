@@ -1,4 +1,8 @@
 window.CipherGapEnglish = {
+  "حمایت از CipherGap": "Support CipherGap",
+  "با حمایت داوطلبانهٔ شما، توسعه و نگهداری CipherGap ادامه پیدا می‌کنه. استفاده از برنامه رایگانه.": "Your optional support helps maintain and improve CipherGap. The app remains free to use.",
+  "حمایت مالی": "Support development",
+
   "· روبیکا و سروش هم رسیدن!": "· Rubika and Soroush are here!",
   "گاهی یه استیکر بهتر از کلی حرفه.": "Sometimes a sticker says it best (desktop).",
   "از دکمهٔ": "Use",

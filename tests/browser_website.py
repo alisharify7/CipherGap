@@ -40,6 +40,7 @@ with sync_playwright() as p:
         assert page.evaluate('document.fonts.check("14px Inter") && document.fonts.check("14px Vazirmatn")')
         if lang=='en':
             assert page.evaluate('''()=>{const w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);let n;while(n=w.nextNode())if(!n.parentElement.closest('script,style,option')&&/[\\u0600-\\u06ff]/.test(n.nodeValue))return false;return true}''')
+    assert page.locator('a[href="https://www.coffeete.ir/alisharify7"]').count()==2
     apk=page.locator('.apk-download').get_attribute('href')
     assert apk.startswith('https://github.com/alisharify7/CipherGap/releases/download/android-') and apk.endswith('.apk')
     android=browser.new_context(user_agent='Mozilla/5.0 (Linux; Android 16) Chrome/147.0.0.0 Mobile Safari/537.36', viewport={'width':390,'height':844})
