@@ -1,0 +1,50 @@
+name: Validate and synchronize Firefox
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: sync-firefox
+  cancel-in-progress: false
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Validate shared behavior and both packages
+        run: |
+          node --test tests/*.test.js
+          python3 tools/build_extension.py --target chrome
+          python3 tools/build_extension.py --target firefox
+          python3 -m unittest discover -s tests -p '*_test.py'
+          mkdir -p /tmp/ciphergap-firefox
+          unzip -q dist/ciphergap-*-firefox.zip -d /tmp/ciphergap-firefox
+          npx --yes web-ext@10.7.0 lint --source-dir /tmp/ciphergap-firefox --warnings-as-errors
+      - name: Copy shared source and regenerate the Firefox manifest
+        run: |
+          git config user.name 'ali sharify'
+          git config user.email 'alisharifyofficial@gmail.com'
+          source_sha=$(git rev-parse --short origin/main)
+          git fetch origin firefox
+          git checkout -B firefox origin/firefox
+          # Workflow files belong to main; copy product source without asking
+          # the automation token to create workflows on another branch.
+          git restore --source=origin/main --staged --worktree -- . ':(exclude).github'
+          python3 tools/build_extension.py --target firefox --in-place
+          git add CipherGap/manifest.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Synchronize Firefox with main $source_sha"
+          fi
+          git push origin firefox
+      - uses: actions/upload-artifact@v4
+        with:
+          name: CipherGap-browser-packages
+          path: dist/*.zip

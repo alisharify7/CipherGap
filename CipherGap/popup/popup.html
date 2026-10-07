@@ -12,6 +12,10 @@
 <script src="../share/translations.js"></script>
 <script src="../share/i18n.js"></script>
 <script src="../share/protocol.js"></script>
+<script src="../share/encoding.js"></script>
+<script src="../share/key_transfer.js"></script>
+<script src="../share/vendor/qrcode.js"></script>
+<script src="../share/vendor/jsQR.js"></script>
 <script src="./popup.js" type="module"></script>
 </head>
 <body>
@@ -54,10 +58,11 @@
                 Checking
             </span>
 </section><nav aria-label="CipherGap sections" class="navigation" role="tablist">
-<button aria-controls="page-security" aria-selected="true" data-page="security" id="nav-security" role="tab" tabindex="0" type="button"><span aria-hidden="true">◇</span>Security</button>
-<button aria-controls="page-files" aria-selected="false" data-page="files" id="nav-files" role="tab" tabindex="-1" type="button"><span aria-hidden="true">↗</span>Files</button>
-<button aria-controls="page-settings" aria-selected="false" data-page="settings" id="nav-settings" role="tab" tabindex="-1" type="button"><span aria-hidden="true">⚙</span>Settings</button>
-<button aria-controls="page-help" aria-selected="false" data-page="help" id="nav-help" role="tab" tabindex="-1" type="button"><span aria-hidden="true">?</span>Guide</button>
+<button aria-controls="page-security" aria-selected="true" data-page="security" id="nav-security" role="tab" tabindex="0" type="button"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 5 8 9 8 9s8-4 8-9V6z"/></svg><span>Security</span></button>
+<button aria-controls="page-files" aria-selected="false" data-page="files" id="nav-files" role="tab" tabindex="-1" type="button"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M6 2h8l4 4v16H6z M14 2v5h5 M9 12h6 M9 16h6"/></svg><span>Files</span></button>
+<button aria-controls="page-transfer" aria-selected="false" data-page="transfer" id="nav-transfer" role="tab" tabindex="-1" type="button"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 7h16m-4-4 4 4-4 4 M20 17H4m4-4-4 4 4 4"/></svg><span>Transfer</span></button>
+<button aria-controls="page-settings" aria-selected="false" data-page="settings" id="nav-settings" role="tab" tabindex="-1" type="button"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16M8 3v6M16 9v6M10 15v6"/></svg><span>Settings</span></button>
+<button aria-controls="page-help" aria-selected="false" data-page="help" id="nav-help" role="tab" tabindex="-1" type="button"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9 9a3 3 0 0 1 6 0c0 2-3 2-3 4 M12 16v1"/></svg><span>About</span></button>
 </nav>
 <p id="pauseNotice" role="status" hidden class="pause-notice">CipherGap is paused. Enable it in Settings to continue.</p>
 <section aria-labelledby="nav-security" class="page" id="page-security" role="tabpanel"><section aria-labelledby="securityHeading" class="glass-card security-card" data-view="loading" id="securityCard">
@@ -218,10 +223,25 @@
 <button class="secondary-btn full-width-btn" disabled="" id="saveBtn" type="submit">Save manual key</button>
 </form>
 </div>
-</details></section><section aria-labelledby="nav-help" class="page" hidden="" id="page-help" role="tabpanel"><div class="page-heading"><span class="eyebrow">A LITTLE HELP</span><h2>Private, step by step.</h2><p>Both people need CipherGap in the same supported web messenger.</p></div><ol class="guide-steps"><li><span>01</span><div><h3>Connect with your partner</h3><p>Start from Security. Your partner accepts in the chat. Requests and verification codes expire after 15 minutes.</p></div></li><li><span>02</span><div><h3>Compare the six digits</h3><p>Compare over a trusted call or in person, then verify on both sides. A code in the chat alone does not verify identity.</p></div></li><li><span>03</span><div><h3>Send something private</h3><p>Use Encrypt for text or Secure files for attachments. The messenger’s ordinary send button sends ordinary text.</p></div></li></ol><details class="glass-card disclosure-card about-card" id="aboutDetails" open="">
+</details></section><section aria-labelledby="nav-transfer" class="page" hidden id="page-transfer" role="tabpanel">
+<div class="page-heading"><span class="eyebrow">TAKE YOUR KEYS WITH YOU</span><h2>Transfer &amp; backup</h2><p>Move your settings to another device, or share one key with your partner.</p></div>
+<section class="glass-card transfer-card"><h3>Encrypted backup</h3><p class="supporting-text">Full backups contain all saved chat keys and preferences. Chat backups contain only this conversation. Keep the password separately.</p>
+<label class="input-label" for="backupPassword">Backup password (at least 10 characters)</label><input class="input" id="backupPassword" type="password" autocomplete="new-password" minlength="10" maxlength="1024" dir="auto">
+<div class="button-row"><button class="primary-btn" id="exportAllBtn" type="button">Export everything</button><button class="secondary-btn" id="exportChatBtn" type="button" disabled>Export this chat</button></div>
+</section>
+<section class="glass-card transfer-card"><h3>Import a backup</h3><p class="supporting-text">Review before importing. Existing unrelated chats are kept. Active exchanges must finish first.</p>
+<label class="input-label" for="importTarget">Import destination</label><select class="input" id="importTarget"><option value="restore">Restore to original chats (my device)</option><option value="current">Use key in current chat (partner)</option></select>
+<button class="secondary-btn full-width-btn" id="importBackupBtn" type="button">Choose encrypted backup</button><input type="file" id="backupFileInput" accept=".ciphergap,.json,application/json" hidden>
+</section>
+<section class="glass-card transfer-card"><h3>Share a key with QR</h3><p class="supporting-text">Anyone who scans this QR gets your chat key. Show it privately. Imported shared keys remain unverified.</p>
+<div class="button-row"><button class="secondary-btn" id="shareQrBtn" type="button" disabled>Show key QR</button><button class="secondary-btn" id="scanQrBtn" type="button" disabled>Scan with camera</button></div>
+<button class="tertiary-btn full-width-btn" id="readQrImageBtn" type="button" disabled>Read QR image</button><input type="file" accept="image/png,image/jpeg,image/webp" id="qrImageInput" hidden>
+<details><summary>Paste scanned key</summary><label class="sr-only" for="qrTextInput">Scanned CipherGap key</label><textarea class="input" id="qrTextInput" dir="ltr" translate="no" spellcheck="false" placeholder="ciphergap-key:1:…"></textarea><button class="secondary-btn full-width-btn" id="importQrTextBtn" type="button" disabled>Import into current chat</button></details>
+</section>
+</section><section aria-labelledby="nav-help" class="page" hidden="" id="page-help" role="tabpanel"><div class="page-heading"><span class="eyebrow">A LITTLE HELP</span><h2>Private, step by step.</h2><p>Both people need CipherGap in the same supported web messenger.</p></div><ol class="guide-steps"><li><span>01</span><div><h3>Connect with your partner</h3><p>Start from Security. Your partner accepts in the chat. Requests and verification codes expire after 15 minutes.</p></div></li><li><span>02</span><div><h3>Compare the six digits</h3><p>Compare over a trusted call or in person, then verify on both sides. A code in the chat alone does not verify identity.</p></div></li><li><span>03</span><div><h3>Send something private</h3><p>Use Encrypt for text or Secure files for attachments. The messenger’s ordinary send button sends ordinary text.</p></div></li></ol><details class="glass-card disclosure-card about-card" id="aboutDetails" open="">
 <summary>About &amp; compatibility</summary>
 <div class="disclosure-content about-content">
-<div class="compatibility-list" id="compatibilityList"></div>
+<nav class="project-links" aria-label="CipherGap links"><a href="https://alisharify7.github.io/CipherGap/" target="_blank" rel="noopener noreferrer">Website</a><a href="https://github.com/alisharify7/CipherGap" target="_blank" rel="noopener noreferrer">GitHub repository</a></nav><div class="compatibility-list" id="compatibilityList"></div>
 <p class="roadmap-copy" id="roadmapCopy"></p>
 <div class="about-meta">
 <span aria-label="CipherGap version" class="version" id="versionNumber">v—</span>
@@ -234,7 +254,7 @@
 </details></section><div aria-atomic="true" aria-live="polite" class="status" data-empty="true" data-tone="neutral" id="status" role="status">
 <span aria-hidden="true" class="status-icon" id="statusIcon">•</span>
 <span id="statusText"></span>
-</div><footer class="app-footer"><span><i aria-hidden="true"></i>On-device encryption</span><span>No CipherGap server</span></footer></main>
+</div><footer class="app-footer"><span><i aria-hidden="true"></i>On-device encryption</span><a href="https://www.coffeete.ir/alisharify7" target="_blank" rel="noopener noreferrer">Support CipherGap</a></footer></main>
 <dialog aria-describedby="confirmationMessage" aria-labelledby="confirmationTitle" class="confirmation-dialog" id="confirmationDialog">
 <form method="dialog">
 <h2 id="confirmationTitle">Confirm action</h2>
@@ -245,5 +265,7 @@
 </div>
 </form>
 </dialog>
+<dialog id="qrDialog" class="confirmation-dialog qr-dialog" aria-labelledby="qrTitle"><h2 id="qrTitle">Chat key QR</h2><p>Anyone who scans this QR gets your chat key.</p><canvas id="keyQrCanvas" role="img" aria-label="QR containing the chat key"></canvas><button class="secondary-btn" id="saveQrBtn" type="button">Save QR image</button><form method="dialog"><button class="tertiary-btn full-width-btn">Close</button></form></dialog>
+<dialog id="scannerDialog" class="confirmation-dialog qr-dialog" aria-labelledby="scannerTitle"><h2 id="scannerTitle">Scan your partner’s key</h2><video id="qrVideo" autoplay playsinline muted></video><p id="scannerStatus" role="status">Point the camera at a CipherGap key QR.</p><form method="dialog"><button class="secondary-btn full-width-btn">Close</button></form></dialog>
 </body>
 </html>

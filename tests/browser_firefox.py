@@ -135,6 +135,22 @@ try:
  script('document.getElementById("nav-files").click()')
  assert script('return document.getElementById("autoFilesToggle").checked')
  print('PASS actual Firefox popup, bound tab context and saved per-chat settings',flush=True)
+ # Exercise the new portable backup and real QR pixels in Firefox's extension realm.
+ expected=check(async_js('return CipherGapShared.key_transfer.snapshot(await browser.storage.local.get(null)).data;'))
+ script('document.getElementById("nav-transfer").click();document.getElementById("backupPassword").value="Firefox backup password";document.getElementById("exportAllBtn").click();')
+ backup=folder/'ciphergap-backup.ciphergap'
+ poll(lambda:backup.is_file() and backup.stat().st_size>0,lambda x:x)
+ restored=check(async_js('return (await CipherGapShared.key_transfer.open(arguments[0],"Firefox backup password")).data;',[backup.read_text()]))
+ assert restored==expected
+ script('document.getElementById("shareQrBtn").click()')
+ poll(lambda:script('return document.getElementById("confirmationDialog").open'),lambda x:x)
+ m.find_element(By.ID,'confirmationActionBtn').click()
+ poll(lambda:script('return document.getElementById("qrDialog").open'),lambda x:x)
+ scanned=script('const c=document.getElementById("keyQrCanvas"),p=c.getContext("2d").getImageData(0,0,c.width,c.height);return CipherGapShared.key_transfer.read_key(jsQR(p.data,p.width,p.height).data);')
+ assert scanned==expected[keys[0]]
+ script('document.getElementById("qrDialog").close()')
+ assert script('return document.getElementById("keyQrCanvas").width')==0
+ print('PASS Firefox native backup download, exact restored keys/settings/trust and decoded QR pixels',flush=True)
 finally:
  m.quit(in_app=False);m.cleanup();del m;gc.collect()
  shutil.rmtree(folder,ignore_errors=True)

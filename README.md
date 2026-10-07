@@ -14,7 +14,7 @@ Messages are encrypted locally in your browser before being sent, ensuring that 
 * AES-256-GCM message and attachment encryption in the browser
 * Per-chat keys and optional automatic message decryption
 * An installation guide for recipients without CipherGap, hidden while the extension is enabled
-* Separate Security, Files, Settings and Guide pages with light/dark themes
+* Separate Security, Files, Settings and About (with the guide) pages with light/dark themes
 * Compact chat controls with icons, native light/dark surfaces and per-chat pause
 * Encrypted Unicode emoji and static/animated stickers, shown inside the message
 * Decrypt and preview images, play audio/video, or download the original file
@@ -23,10 +23,13 @@ Messages are encrypted locally in your browser before being sent, ensuring that 
 * Persistent peer-fingerprint change warnings (TOFU)
 * In-chat accept/decline controls, a countdown and a 15-minute exchange deadline
 * Manifest V3 with no external servers or cloud processing
+* Password-encrypted full/chat backups and offline key QR generation/scanning
+
+[Support CipherGap](https://www.coffeete.ir/alisharify7)
 
 [Security interface](docs/images/security.png) · [File interface](docs/images/files.png)
 
-[Changelog](CHANGELOG.md) · [Release notes for v1.6.1](docs/releases/v1.6.1.md)
+[Changelog](CHANGELOG.md) · [Release notes for v1.7.0](docs/releases/v1.7.0.md)
 
 ## Installation
 
@@ -77,6 +80,39 @@ decrypt newly received attachments while that conversation is open. Previously
 received files require a click; opening a chat does not download its history.
 The original filename is retained. If direct download is unavailable, download
 the `.cgpe` through the messenger and use **Choose downloaded file instead**.
+
+## Transfer keys and settings
+
+Open **Transfer** in the popup. Enter a separate backup password of at least
+10 characters, then choose **Export everything** or **Export this chat**.
+The `.ciphergap` file is encrypted locally with PBKDF2-SHA256 (250,000 iterations,
+a random 16-byte salt) and AES-256-GCM. Keep the password separately; CipherGap
+cannot recover it. No backup or key is sent to a server.
+
+On your other device, enter the same password and choose **Import a backup**.
+**Restore to original chats (my device)** restores saved keys, chat preferences,
+partner trust/fingerprints, language, theme and the global enabled setting.
+Existing unrelated conversations are retained. You must sign into the same
+messenger accounts separately: backups contain no messenger sessions or history.
+Pending exchanges, replay nonces and previously downloaded-file markers are
+runtime state and are not transferred.
+
+To give your partner one key, export a chat backup and select **Use key in
+current chat (partner)** on their device. This maps only the key to their current
+conversation; their chat ID can differ from yours and your trust record is not
+copied. Every import previews the number of chats and replaced keys and requires
+confirmation. Active key exchanges must finish or be declined first.
+
+**Show key QR** shares the exact UTF-8 key as `ciphergap-key:1:<Base64>`.
+Anyone who sees it can obtain the key. Show it privately. The recipient opens
+the destination chat and uses **Scan with camera**, **Read QR image**, or
+**Paste scanned key**, then reviews the import. Shared keys remain unverified.
+QR generation and scanning work offline; camera access stops on close/hide.
+
+The shared transfer format works in Chrome/Firefox and Android **0.1.3+**.
+Older APKs do not include this screen. Build the updated Android branch or use
+its tested debug APK; messenger accounts and WebView compatibility remain
+separate prerequisites. Future format readers must retain version 1 support.
 
 ## Emoji and stickers
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.7.0](docs/releases/v1.7.0.md) - 2026-10-07
+
+- Added encrypted full/chat backups, reviewed imports and exact UTF-8 key transfer.
+- Added offline key QR generation, image reading and camera scanning.
+- Clarified five popup tabs with shared Persian/English and light/dark controls.
+- Added the optional Coffeete support link.
+
+
 ## [Android 0.1.2 preview](docs/releases/android-v0.1.2.md) - 2026-10-06
 
 - Packaged the shared 1.6.1 core with Bale composer alignment.
@@ -21,6 +29,16 @@
 - Deferred Soroush message controls until its native send commit completes.
 - Resolved live attachment-menu items after rendering, including untranslated native labels.
 - Added Chromium and Firefox native DOM regressions for key exchange, expiry, emoji, files, media and pause.
+
+## Unreleased — shared mobile compatibility - 2026-10-05
+
+- Kept the same core in Chrome, Firefox and Android: optional platform hooks
+  adapt downloads, localization, notifications and mobile control placement.
+- Detect the messenger independently of transient editor replacements.
+- Support native text-field drafts and delayed send controls/draft clearing.
+- Preserve failed drafts, validate the chat while waiting and click send once.
+- Correct generic Persian guidance and localize mobile sending errors.
+- Shared Node (35), Chrome/Firefox messenger and Android/desktop checks passed.
 
 ## [Android 0.1.1 preview](docs/releases/android-v0.1.1.md) - 2026-10-05
 
