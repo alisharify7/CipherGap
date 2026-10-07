@@ -114,7 +114,7 @@ export function setup_transfer(ui) {
         try {
             const acquired = await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"}},audio:false});
             if (!scanner.open) { acquired.getTracks().forEach(track => track.stop()); return; }
-            stream = acquired; video.srcObject = stream; await video.play();
+            stream = acquired; video.srcObject = stream; await video.play(); ui.status("", "neutral");
             const scan = () => {
                 if (!scanner.open) return;
                 const packet = video.videoWidth && decode_image(video,video.videoWidth,video.videoHeight);
