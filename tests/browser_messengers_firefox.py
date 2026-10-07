@@ -59,13 +59,15 @@ try:
  async_js("for(const file of ['encoding','crypto','file_crypto','dh_crypto','stickers'])await new Promise((resolve,reject)=>{const s=document.createElement('script');s.src='../share/'+file+'.js';s.onload=resolve;s.onerror=reject;document.head.append(s)});return true;")
  for platform,base in platforms:
   handles=[]
-  for uid in [601,602]:
+  chat_ids=["333000","@mralizohdi"] if platform=="eitaa" else ["601","602"]
+  for uid in chat_ids:
    m.switch_to_window(kernel);before=set(m.window_handles);async_js('return (await browser.tabs.create({url:arguments[0],active:false})).id;',[base+('#c=u'+str(uid) if platform=='rubika' else '#'+str(uid))]);handle=next(h for h in m.window_handles if h not in before);handles.append(handle);m.switch_to_window(handle);poll(lambda:js('return location.href;'),lambda s:bool(s) and s.startswith(base));time.sleep(1)
    poll(lambda:js('return document.getElementById("ciphergap-toolbar")?.textContent;'),lambda s:s and 'Set up security' in s)
   m.switch_to_window(kernel);tabs=async_js('return (await browser.tabs.query({url:arguments[0]+"*"})).map(t=>t.id);',[base])
   contexts=[async_js('return browser.tabs.sendMessage(arguments[0],{action:"get_chat_context"});',[t]) for t in tabs]
   print("CONTEXT",platform,contexts,flush=True)
   assert len(tabs)==2 and all(c['ok'] and c['messenger']==platform for c in contexts),contexts
+  if platform=="eitaa":assert [c["storageKey"] for c in contexts]==["web.eitaa.com_"+uid for uid in chat_ids],contexts
   def action(i,message):
    m.switch_to_window(kernel)
    value=async_js('return browser.tabs.sendMessage(arguments[0],arguments[1]);',[tabs[i],dict(message,expectedStorageKey=contexts[i]['storageKey'])]);assert value['ok'],value;return value
