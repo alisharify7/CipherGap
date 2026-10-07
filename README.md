@@ -32,6 +32,15 @@ The **About** tab includes the website, GitHub repository and compatibility guid
 
 ## Installation
 
+### Downloads — desktop 1.7.0 / Android 0.1.3
+
+- [Chrome / Chromium / Edge / Brave ZIP](https://github.com/alisharify7/CipherGap/releases/download/v1.7.0/ciphergap-1.7.0-chrome.zip)
+- [Firefox desktop ZIP](https://github.com/alisharify7/CipherGap/releases/download/v1.7.0/ciphergap-1.7.0-firefox.zip) — unsigned; temporary installation.
+- [Android APK](https://github.com/alisharify7/CipherGap/releases/download/android-v0.1.3/ciphergap-android-0.1.3.apk) — signed release build; Android 8+ and a compatible WebView required.
+- [Desktop SHA-256 checksums](https://github.com/alisharify7/CipherGap/releases/download/v1.7.0/SHA256SUMS) · [Android SHA-256 checksums](https://github.com/alisharify7/CipherGap/releases/download/android-v0.1.3/SHA256SUMS)
+
+Follow the [installation guide](https://alisharify7.github.io/CipherGap/#installation).
+
 ### Manual Installation
 
 ```bash
@@ -109,8 +118,8 @@ the destination chat and uses **Scan with camera**, **Read QR image**, or
 QR generation and scanning work offline; camera access stops on close/hide.
 
 The shared transfer format works in Chrome/Firefox and Android **0.1.3+**.
-Older APKs do not include this screen. Build the updated Android branch or use
-its tested debug APK; messenger accounts and WebView compatibility remain
+Older APKs do not include this screen. Download the Android release above;
+messenger accounts and WebView compatibility remain
 separate prerequisites. Future format readers must retain version 1 support.
 
 ## Emoji and stickers
