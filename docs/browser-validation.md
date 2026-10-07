@@ -1,3 +1,16 @@
+# Eitaa scrolling — unreleased, 2026-10-07
+
+`python3 tests/browser_eitaa_scroll.py` loads the real extension in an isolated
+Chromium profile using the sanitized Eitaa DOM fixture. On the previous runtime,
+300 ordinary channel messages caused 1,200 timestamp metadata attribute writes.
+The updated runtime leaves these rows untouched, preserves the reader's scroll
+position and detects a row that later acquires encrypted text. Scrolling native
+chat history also leaves the stationary floating toolbar untouched.
+
+All 35 Node checks and the existing Chromium Eitaa/Telegram exchange, encrypted
+text, emoji, sticker, file, pause and expiry workflows pass. These are fixture
+checks; scrolling in a logged-in live Eitaa channel has not been verified.
+
 # Bale toolbar — 1.6.1, 2026-10-06
 
 Bale now mounts its security and encrypted-send controls outside the native
