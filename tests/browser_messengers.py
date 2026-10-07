@@ -16,11 +16,13 @@ try:
   for platform,base in [('eitaa','https://web.eitaa.com/'),('telegram','https://web.telegram.org/a/')]:
    pages=[];errors=[]
    ctx.route(base+'**',lambda route,request,p=platform:route.fulfill(body=html(p),content_type='text/html'))
-   for uid in [601,602]:
+   chat_ids=["333000","@mralizohdi"] if platform=="eitaa" else ["601","602"]
+   for uid in chat_ids:
     page=ctx.new_page();page.on('pageerror',lambda e:errors.append(str(e)));page.goto(base+'#'+str(uid));page.wait_for_selector('#ciphergap-toolbar');pages.append(page)
    tabs=worker.evaluate('base=>chrome.tabs.query({url:base+"*"}).then(t=>t.map(x=>x.id))',base)
    contexts=[worker.evaluate('id=>chrome.tabs.sendMessage(id,{action:"get_chat_context"})',t) for t in tabs]
    assert all(c['ok'] and c['messenger']==platform for c in contexts),contexts
+   assert [c["storageKey"] for c in contexts]==[base.split("/")[2]+"_"+uid for uid in chat_ids],contexts
    def action(i,message):
     return worker.evaluate('([id,message])=>chrome.tabs.sendMessage(id,message)',[tabs[i],dict(message,expectedStorageKey=contexts[i]['storageKey'])])
    editor='[contenteditable=true][enterkeyhint]' if platform=='eitaa' else '#editable-message-text'
@@ -131,7 +133,7 @@ try:
    chooser.value.set_files({'name':'do-not-send.txt','mimeType':'text/plain','buffer':b'private after navigation'})
    pages[0].wait_for_function('document.getElementById("ciphergap-live-notice")?.textContent.includes("active chat changed")')
    assert pages[0].evaluate('received.length')==3
-   pages[0].evaluate('location.hash="#601"')
+   pages[0].evaluate('id=>location.hash="#"+id',chat_ids[0])
    try:pages[0].wait_for_selector('#ciphergap-secure-files:not([disabled])',timeout=5000)
    except Exception:
     print('CHAT RETURN',pages[0].evaluate('({url:location.href,toolbar:document.getElementById("ciphergap-toolbar")?.textContent,notice:document.getElementById("ciphergap-live-notice")?.textContent})'),action(0,{'action':'get_chat_context'}),errors,flush=True)
