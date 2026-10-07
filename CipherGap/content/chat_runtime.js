@@ -47,8 +47,10 @@ let chat_scroll_container = null;
 let chat_scroll_geometry = null;
 
 function reserve_chat_scroll_space(row = document.querySelector(CHAT_MESSAGE_ITEM), force = false) {
-    const scroll = CHAT_UI.scroll_container(row), toolbar = document.getElementById("ciphergap-toolbar");
-    if (!scroll || !toolbar || !CHAT_FLOATING_TOOLBAR || (!force && scroll === chat_scroll_container)) return;
+    const toolbar = document.getElementById("ciphergap-toolbar");
+    if (!toolbar || !CHAT_FLOATING_TOOLBAR || (!force && chat_scroll_container?.contains(row))) return;
+    const scroll = CHAT_UI.scroll_container(row);
+    if (!scroll || (!force && scroll === chat_scroll_container)) return;
     const geometry = `${scroll.getBoundingClientRect().bottom}:${toolbar.getBoundingClientRect().top}:${scroll.clientWidth}:${toolbar.hidden}`;
     if (scroll === chat_scroll_container && geometry === chat_scroll_geometry) return;
     chat_scroll_geometry = geometry;
@@ -159,7 +161,11 @@ function inject_chat_security_toolbar() {
             toolbar.dataset.compact = String(toolbar.clientWidth < 510);
             reserve_chat_scroll_space(undefined, true);
         };
-        const schedule = () => {if (!frame) frame = requestAnimationFrame(position);};
+        const schedule = (event) => {
+            // Scrolling the message history does not move the composer anchor.
+            if (event?.type === "scroll" && event.target === chat_scroll_container) return;
+            if (!frame) frame = requestAnimationFrame(position);
+        };
         const resize = new ResizeObserver(schedule);resize.observe(toolbar);resize.observe(footer);resize.observe(anchor);
         const appearance = new MutationObserver(schedule);
         for (const root of [document.documentElement, document.body]) appearance.observe(root, {attributes:true,attributeFilter:["class", "style", "data-theme"]});
@@ -1748,8 +1754,20 @@ function process_chat_message(
             });
         }
     }
-    render_chat_quote_previews(messageElement);
     reserve_chat_scroll_space(messageElement);
+    // Most channel rows are ordinary messages. Do not clone their subtrees or
+    // mark native timestamps: virtualized history must remain native-owned.
+    const content = normalize_message_text(messageElement.textContent ?? "");
+    if (
+        !Object.values(globalThis.CipherGapShared.formats.message.codecs).some(
+            format => content.includes(`${format.prefix}${format.separator}`)
+        ) &&
+        !CHAT_SHARED_PROTOCOL.contains_exchange_marker(content) &&
+        !CHAT_SHARED_FILE_CRYPTO.contains_cgpe_filename(content) &&
+        !messageElement.querySelector('[data-ciphergap-ui], [data-ciphergap-quote-raw], [data-ciphergap-protocol-raw]')
+    ) return;
+
+    render_chat_quote_previews(messageElement);
     // Check for encrypted file attachments (.cgpe)
     process_cgpe_file_message(messageElement);
 

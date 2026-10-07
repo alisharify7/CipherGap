@@ -1,5 +1,5 @@
 // popup.js
-
+import { setup_transfer } from "./transfer.js";
 
 const EXCHANGE_WAIT_TIMEOUT_MS = globalThis.CipherGapShared.timeouts
     .popup_exchange_wait_ms;
@@ -76,7 +76,8 @@ function select_page(name, focus = false) {
 document.querySelectorAll('[role="tab"]').forEach((tab, index, tabs) => {
     tab.addEventListener("click", () => select_page(tab.dataset.page));
     tab.addEventListener("keydown", (event) => {
-        const offset = { ArrowRight: 1, ArrowLeft: -1, Home: -index, End: tabs.length - 1 - index }[event.key];
+        const direction = document.documentElement.dir === "rtl" ? -1 : 1;
+        const offset = { ArrowRight: direction, ArrowLeft: -direction, Home: -index, End: tabs.length - 1 - index }[event.key];
         if (offset === undefined) return;
         event.preventDefault();
         select_page(tabs[(index + offset + tabs.length) % tabs.length].dataset.page, true);
@@ -175,6 +176,7 @@ function handle_theme_toggle() {
 
     try {
         localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
+        chrome.storage.local.set({[THEME_STORAGE_KEY]:nextTheme}).catch(() => {});
     } catch (error) {
         console.warn("[CipherGap] Could not save the selected theme:", error);
     }
@@ -679,6 +681,9 @@ function render_action_availability() {
         !currentSecretKey ||
         exchangeActive ||
         is_button_busy(clearKeyBtn);
+    document.getElementById("exportChatBtn").disabled = !can_manage_chat() || !currentSecretKey;
+    document.getElementById("shareQrBtn").disabled = !can_manage_chat() || !currentSecretKey;
+    for (const id of ["scanQrBtn", "readQrImageBtn", "importQrTextBtn"]) document.getElementById(id).disabled = !can_manage_chat();
 }
 
 function render_disclosures() {
@@ -1877,6 +1882,16 @@ chooseFilesBtn.addEventListener("click", async () => {
 });
 themeToggle.addEventListener("click", handle_theme_toggle);
 
+setup_transfer({
+    context: () => ({storageKey, key:currentSecretKey, ready:can_manage_chat()}),
+    confirm: show_confirmation,
+    status: set_status,
+    checkContext: () => send_tab_message({action:"get_chat_context"}),
+    refresh: async () => { await load_enabled_state(); await refresh_popup_state(); await load_auto_decrypt(); render_popup(); }
+});
+chrome.storage.local.get(THEME_STORAGE_KEY).then(state => {
+    if (["light","dark"].includes(state[THEME_STORAGE_KEY])) { localStorage.setItem(THEME_STORAGE_KEY, state[THEME_STORAGE_KEY]); followsSystemTheme = false; apply_theme(state[THEME_STORAGE_KEY]); }
+}).catch(() => {});
 initialize_theme();
 init();
 
@@ -1895,4 +1910,5 @@ for (const [id, global] of [["enabledToggle", true], ["chatEnabledToggle", false
 chrome.storage.onChanged.addListener((changes, area) => {
     const keys = globalThis.CipherGapShared.storage_keys;
     if (area === "local" && (changes[keys.enabled] || (storageKey && changes[keys.chat_enabled(storageKey)]))) load_enabled_state().catch(error => set_status(error.message, "error"));
+    if (area === "local" && changes[THEME_STORAGE_KEY]?.newValue) { followsSystemTheme = false; apply_theme(changes[THEME_STORAGE_KEY].newValue); localStorage.setItem(THEME_STORAGE_KEY, changes[THEME_STORAGE_KEY].newValue); }
 });
