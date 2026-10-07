@@ -91,10 +91,11 @@ with sync_playwright() as p:
                     assert manifest['background'].get('scripts') and not manifest['background'].get('service_worker')
                 else:assert manifest['background'].get('service_worker')
             else:
-                assert digest==provenance['apk_sha256']
+                if '-debug' in name:assert digest==provenance['apk_sha256']
+                else:assert downloads['android_build'].startswith('signed release APK')
                 assert 'assets/extension/share/key_transfer.js' in archive.namelist()
     apk=page.locator('.apk-download').get_attribute('href')
-    assert apk=='website/downloads/ciphergap-android-0.1.3-debug.apk'
+    assert apk=='website/downloads/ciphergap-android-0.1.3.apk'
     android=browser.new_context(user_agent='Mozilla/5.0 (Linux; Android 16) Chrome/147.0.0.0 Mobile Safari/537.36', viewport={'width':390,'height':844})
     mobile=android.new_page();mobile.goto(url)
     assert mobile.locator('#tab-android').get_attribute('aria-selected')=='true'

@@ -1,28 +1,36 @@
 # CipherGap website
 
-A static Persian/English product site with Chrome and Firefox installation steps, key verification, message/file tutorials, pause controls and troubleshooting. Only Bale is active; the other messenger integrations are labeled In development. Official service marks are bundled locally, with their sources in `messengers/README.md`.
+Static Persian/English installation site, hosted from the `website` branch root
+at https://alisharify7.github.io/CipherGap/ through GitHub Pages.
+Persian is the default; language, browser choice and direction are saved locally.
+Fonts and screenshots are bundled.
 
-English is the default for new visitors. Select فارسی / English in the header. Language is saved locally, direction changes between RTL/LTR, and fonts are bundled: Vazirmatn for Persian, Inter for English. Neither language needs a font CDN; OFL licenses are in `website/fonts/`.
+## Downloads
 
-## GitHub Pages
+Desktop 1.7.0 provides Chrome/Chromium/Edge/Brave and Firefox packages.
+Android 0.1.3 provides a production-signed release APK with debugging disabled.
+The website mirrors the exact GitHub release assets and links to both releases.
+`downloads/provenance.json` records source commits, release URLs, the production
+signing certificate and file hashes; `downloads/checksums.txt` covers all files.
+The older debug APK is retained only to let users of old debug builds update,
+export an encrypted backup, then migrate to the production signing identity.
+No private signing key or password belongs in website assets.
 
-The site is currently hosted directly from `website` / root using GitHub Pages. The custom `.github/workflows/pages.yml` is prepared locally; the initial push is blocked because the configured GitHub token lacks workflow scope. After deploying that workflow, switch Pages source to **GitHub Actions**. It publishes on website pushes or Run workflow, assembling only public static assets before upload and deployment with the official Pages actions.
+Desktop supports Bale, Eitaa, Telegram Web A, Rubika and Soroush Plus.
+Android supports Bale, Eitaa and Telegram Web A and needs Android 8+ plus a
+compatible isolated-world WebView. The page explains installation, key exchange,
+backup/QR transfer, debug-to-release migration and current limitations.
+Screenshot provenance describes the builds actually used for those captures;
+the capture APK hash can differ from a later release with the same UI.
 
-Expected URL: https://alisharify7.github.io/CipherGap/
+## Checks
 
-https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages
+Start a local server with `python3 -m http.server 8769`, then run:
 
-## Local preview and checks
+```sh
+python3 tests/browser_website.py http://127.0.0.1:8769/
+```
 
-From the repository root: `python3 -m http.server 8787`
-
-Run `python3 website/verify.py` with Python Playwright installed and Chrome available. It checks both languages, persisted preference, local fonts, responsive widths 320–1440px, Pages subpath assets, mobile navigation, keyboard tabs, FAQ, clipboard success and denied permissions. Screenshots are saved in this directory.
-
-Version 1.3.0 uses shared Indigo/Slate tokens from `CipherGap/share/theme.css`,
-browser-first install tabs with saved preference, and guides for inline exchange
-consent, absolute 15-minute expiry and media preview/download. English remains
-the default; Persian and browser choice persist locally. The Pages workflow
-must package `website/messengers`, `website/fonts`, shared theme CSS and product
-screenshots as well as the page. The workflow is prepared locally; pushing it
-still requires credentials with workflow permission. Branch-based Pages hosting
-continues to publish the website in the meantime.
+The check covers EN/FA, 320/390/1440 px, all install tabs, keyboard navigation,
+clipboard, persistence, fonts, device detection, screenshot dialogs, FAQ, local
+links and downloaded file hashes. It also accepts the live Pages URL.
