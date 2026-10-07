@@ -169,3 +169,32 @@ html[dir="rtl"] .toggle-switch, html[dir="rtl"] code { direction: ltr; }
 html[dir="rtl"] .app { text-align: right; }
 
 .pause-notice { flex-shrink: 0; margin: 0; padding: 8px 12px; border-radius: 9px; color: var(--warning); background: var(--warning-soft); font-size: 11px; }
+
+/* Clear destinations, fixed navigation and a scrollable work area. */
+.topbar { gap: 10px; }
+.brand { flex: 1; min-width: 0; }
+.navigation { grid-template-columns: repeat(5,minmax(0,1fr)); gap: 3px; padding: 5px; border: 1px solid var(--border); flex-shrink: 0; }
+.navigation button { flex-direction: column; gap: 5px; min-height: 59px; padding: 7px 2px; border: 1px solid transparent; font-size: 10px; }
+.navigation button span { font-size: inherit; line-height: 1.5; }
+.navigation svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.navigation [aria-selected="true"] { border-color: var(--border); background: var(--surface); color: var(--primary); }
+.navigation button:hover:not([aria-selected="true"]) { background: var(--surface-hover); }
+.app { gap: 11px; }
+.topbar,.chat-context-strip,.app-footer { flex-shrink: 0; }
+.transfer-card { display: grid; gap: 11px; }
+.transfer-card h3 { font-size: 15px; }
+.transfer-card .supporting-text { margin: 0; }
+.transfer-card .button-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.transfer-card .button-row button { flex: 1; }
+.transfer-card select { white-space: normal; width: 100%; font: inherit; }
+.transfer-card textarea { min-height: 85px; resize: vertical; }
+.transfer-card details { border-top: 1px solid var(--border); padding-top: 10px; }
+.transfer-card details textarea { margin-block: 10px; }
+.qr-dialog { text-align: center; max-height: calc(100vh - 28px); overflow: auto; }
+.qr-dialog canvas { display: block; width: min(100%,240px); height: auto; margin: 16px auto; background: white; image-rendering: pixelated; }
+.qr-dialog video { width: 100%; min-height: 140px; max-height: 240px; margin-block: 12px; background: #111; border-radius: 10px; }
+.app-footer a { font-weight: 650; text-decoration: none; }
+html[dir="rtl"] .file-hero { text-align: right; }
+
+.project-links { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+.project-links a { padding: 9px 12px; border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-size: 12px; }

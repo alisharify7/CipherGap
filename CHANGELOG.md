@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.7.0](docs/releases/v1.7.0.md) - 2026-10-07
+
+- Added encrypted full/chat backups, reviewed imports and exact UTF-8 key transfer.
+- Added offline key QR generation, image reading and camera scanning.
+- Clarified five popup tabs with shared Persian/English and light/dark controls.
+- Added the optional Coffeete support link.
+
+
 ## [1.6.1](docs/releases/v1.6.1.md) - 2026-10-06
 
 - Moved Bale desktop controls out of the native composer into an aligned floating toolbar.
