@@ -1,3 +1,26 @@
+# Portable transfer — 1.7.0, 2026-10-07
+
+All 36 Node checks passed, including password/tamper rejection, bounded import
+validation, exact Unicode keys, full/chat restore, partner trust separation and
+real QR pixel decoding. The actual Chromium popup passed encrypted downloads,
+wrong-password and cancelled imports without state changes, current-chat mapping,
+QR image and synthetic camera scanning, stream cleanup, paused export, five tabs,
+RTL keyboard navigation, EN/FA and light/dark layouts. Website/GitHub links are
+available in About and the optional support link is in the footer.
+
+Firefox ESR 153.4.0 passed its messenger/text/media workflows, the actual popup,
+native encrypted-backup download and exact restore, and QR pixel decoding. The
+Chromium Bale, Eitaa, Telegram, Rubika and Soroush Plus fixture workflows passed,
+as did the Eitaa channel scrolling regression and deterministic package checks.
+The website passed EN/FA and 320/390/1440 px checks with the support links.
+
+Run `node --test tests/*.test.js`, `python3 tests/browser_transfer.py` and
+`PYTHONPATH=/path/to/marionette-driver python3 tests/browser_firefox.py`.
+Profiles/DOMs are isolated fixtures; these results do not claim live two-account
+or physical-camera delivery. See the Android branch's validation record for the
+real WebView transfer checks. The QR contains the unencrypted shared key; the UI
+requires acknowledgement before showing it, and recipients remain unverified.
+
 # Eitaa scrolling — unreleased, 2026-10-07
 
 `python3 tests/browser_eitaa_scroll.py` loads the real extension in an isolated

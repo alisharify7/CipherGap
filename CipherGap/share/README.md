@@ -14,6 +14,7 @@ are migrated incrementally.
 - `namespace.js` creates the shared facade.
 - `config.js` owns protocol versions, markers, algorithms, sizes, timeouts, and
   storage-key factories plus the popup's supported-messenger metadata.
+- `key_transfer.js` owns versioned encrypted backups, portable settings validation and exact UTF-8 shared-key QR packets. It is loaded only by the trusted popup, including Android.
 - `encoding.js` owns UTF-8, Base64, byte concatenation, and hexadecimal helpers.
 - `protocol.js` builds and parses CGP, exchange start/ACK, and SAS messages. It
   also owns strict validation and display formatting for protocol identifiers.
@@ -146,3 +147,22 @@ breaks Teact’s positional updates. Rubika uses directive attributes such as
 on keyup, and activates only the sending ripple (never the voice-recording one).
 Floating toolbars can provide `toolbar_anchor` to follow the actual text surface
 rather than the wider row containing the separate native send button.
+
+## Portable key transfer
+
+Version 1 backups carry `{format:"ciphergap-backup",version:1,scope:"all"|"chat",
+createdAt,data,chat?}` inside an authenticated encrypted envelope. Only the
+configured messenger storage IDs and documented key/preference fields are
+accepted; runtime exchanges/nonces/download markers are excluded. The envelope
+is `{format:"ciphergap-encrypted-backup",version:1,kdf:"PBKDF2-SHA256",
+iterations:250000,salt,iv,data}` with Base64 byte fields. Its AES-GCM AAD is
+`ciphergap-backup:1`; salt/IV sizes are fixed at 16/12 bytes. Import files are
+limited to 1 MiB; decoded snapshots to 750,000 bytes. Passwords are exact strings
+of 10–1024 characters. JSON field names and cryptographic parameters are not
+localized. QR packets are `ciphergap-key:1:<Base64 UTF-8 key>` and have no chat ID
+or partner trust. Version/validation failures must never write storage.
+
+Storage writes merge only the reviewed snapshot. Keys missing a trust record
+are explicitly unverified. Transferring to a partner's current chat never copies
+source preferences, peer fingerprints or verified status. UI rechecks the chat
+and storage state after confirmation. No alternate cryptography exists on Android.
