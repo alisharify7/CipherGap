@@ -1,6 +1,6 @@
 /* Keep the mobile composer entirely native; secure controls sit on their own row. */
 #ciphergap-toolbar{gap:6px;padding:6px 8px;border-radius:16px;max-width:calc(100vw - 16px);box-shadow:0 4px 18px #13234512;font-family:Inter,Vazirmatn,system-ui,sans-serif}
-#ciphergap-toolbar button{min-width:44px;min-height:44px;border-radius:12px;padding:8px}
+#ciphergap-toolbar button{min-width:44px;min-block-size:44px!important;border-radius:12px;padding:8px}
 #ciphergap-toolbar svg{width:20px;height:20px}
 #ciphergap-toolbar #ciphergap-btn{width:46px;flex:0 0 46px;background:#3e63dd!important;color:#fff!important;border-radius:13px!important}
 #ciphergap-toolbar .ciphergap-status-copy strong{font-size:11px}#ciphergap-toolbar .ciphergap-status-copy small{font-size:10px;max-width:130px}

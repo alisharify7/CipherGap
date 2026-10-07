@@ -1,5 +1,14 @@
 # Changelog
 
+## [Android 0.1.4](docs/releases/android-v0.1.4.md) - 2026-10-08
+
+- Enable Rubika and Soroush Plus on Android using the existing shared adapters.
+- Derive Android launcher URLs, native origins and injection paths from the extension manifest.
+- Restore the shared emoji/sticker picker on Android, including native textarea emoji insertion.
+- Wait for native draft clearing even when the messenger normalizes whitespace.
+- Fix Android CSS bundling so shared dialog/theme styles and touch targets are applied.
+- Synchronize and build the Android core when main changes; retain a single shared feature implementation.
+
 ## [Android 0.1.3 preview](docs/releases/android-v0.1.3.md) - 2026-10-07
 
 - Reused shared 1.7.0 encrypted backups, key QR transfer and About/support links.

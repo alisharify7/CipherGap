@@ -1,3 +1,46 @@
+# Android 0.1.4 feature parity validation — 2026-10-08
+
+`assembleDebug`, `lintDebug`, `assembleRelease` and `lintRelease` passed. Android
+0.1.4 uses version code 6 and the existing production signing certificate.
+`tests/verify_android_release.py` passed signature, non-debuggable manifest,
+version/API values and all packaged shared-core hashes. Every `CipherGap/`
+source file matches the main worktree byte for byte. The Node suite passes
+38 checks, including native whitespace normalization during delayed sends.
+Both package checks pass, including exact CSS joining and host/path/iframe guards.
+
+`tests/browser_android.py` passed on the disposable API 36 emulator with Cromite
+WebView 147.0.7727.56 for **Bale, Eitaa, Telegram Web A, Rubika and Soroush Plus**:
+
+- Exchanges started from the actual security screen, matching keys and SAS,
+  with Android chat-card acceptance/replacement also checked for Rubika/Soroush.
+- Encrypted Persian/Unicode text in both directions, touch emoji insertion,
+  built-in encrypted stickers, custom stickers selected through Android's
+  native picker and exact custom-sticker bytes decoded by desktop.
+- Native encrypted-file upload, exact desktop downloads, authenticated image,
+  audio/video playback, corruption rejection, expiry, pause and page-world isolation.
+- Shared picker styles/box sizing, 44px secure-send touch target and phone widths;
+  English/light and Persian/dark launcher, guide and security screens.
+- Protected storage, keyboard/Back, persisted keys and persistent HTTPS cookie,
+  confirmed deletion, notification permission and incoming-only generic delivery
+  without history/outgoing/duplicates or background delivery.
+
+The **signed release APK** was installed and checked by
+`tests/browser_android_transfer.py`: exact desktop/Android backups, both-way text,
+native saving, QR generation/image import, unverified partner trust, camera
+permission denial/grant and cleanup, denied messenger camera and EN/FA layouts
+all passed. Its actual launcher reports `0.1.4`, `debug: false` and five supported
+messengers. The engineering emulator permits CDP checks for the release build;
+physical phones, live messenger-account delivery and a physical-camera scan
+remain untested.
+
+Desktop Chromium Rubika/Soroush checks also passed exchanges, expiry, encrypted
+text/files, exact downloads, mobile/desktop alignment, isolation and pause.
+The main-branch Android synchronization workflow is prepared to copy/test/build
+future shared-core changes before updating the Android branch; it was validated
+locally as YAML, without running a remote CI job in this session.
+
+The signed APK and checksum are distributed in the [Android 0.1.4 release](https://github.com/alisharify7/CipherGap/releases/tag/android-v0.1.4).
+
 # Android 0.1.3 signed release validation — 2026-10-07
 
 `assembleRelease` and `lintRelease` passed, with zero lint errors and one

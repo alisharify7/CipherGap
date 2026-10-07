@@ -24,11 +24,11 @@ debug = [line for line in manifest.splitlines() if 'android:debuggable' in line]
 assert not debug or all(line.strip().endswith('0x0') for line in debug), debug
 badging = subprocess.check_output([str(tools / 'aapt'), 'dump', 'badging', str(apk)], text=True)
 assert "name='com.ciphergap.mobile'" in badging
-assert "versionName='0.1.3'" in badging and "versionCode='5'" in badging
+assert "versionName='0.1.4'" in badging and "versionCode='6'" in badging
 assert "targetSdkVersion:'36'" in badging
 with zipfile.ZipFile(apk) as archive:
     sources = json.loads(archive.read('assets/core-sources.json'))
     for name, digest in sources.items():
         assert hashlib.sha256((root / name).read_bytes()).hexdigest() == digest, name
     assert b"appState.debug?' \xc2\xb7 Debug':' \xc2\xb7 Release'" in archive.read('assets/shell.js')
-print('PASS release APK: production certificate, debugging disabled, API 36, version 0.1.3/code 5, current shared core')
+print('PASS release APK: production certificate, debugging disabled, API 36, version 0.1.4/code 6, current shared core')

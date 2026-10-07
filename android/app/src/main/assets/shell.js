@@ -1,6 +1,16 @@
 'use strict';
 const host=CipherGapHost.request;
-const urls={bale:'https://web.bale.ai/',eitaa:'https://web.eitaa.com/',telegram:'https://web.telegram.org/a/'};
+const urls={};
+for(const messenger of [...Object.values(CipherGapShared.messengers.definitions),...CipherGapShared.messengers.roadmap]){
+ const match=CIPHERGAP_MANIFEST.host_permissions.find(pattern=>messenger.hostnames?.includes(new URL(pattern).hostname));
+ const button=document.createElement('button'),image=document.createElement('img'),copy=document.createElement('span'),name=document.createElement('strong'),hint=document.createElement('small');
+ image.src='messengers/'+messenger.id+(['bale','rubika'].includes(messenger.id)?'.png':'.svg');image.alt='';
+ name.dataset.en=messenger.display_name;name.dataset.fa=CipherGapShared.fa[messenger.display_name]||messenger.display_name;
+ hint.dataset.en=match?'Open web messenger':'In development';hint.dataset.fa=match?'باز کردن نسخهٔ وب':'در دست توسعه';
+ if(match){urls[messenger.id]=match.slice(0,-1);button.dataset.messenger=messenger.id;}
+ else{button.disabled=true;button.className='coming-soon';}
+ copy.append(name,hint);button.append(image,copy);document.querySelector('.messengers').append(button);
+}
 const links={source:'https://github.com/alisharify7/CipherGap/tree/android',website:'https://alisharify7.github.io/CipherGap/',releases:'https://github.com/alisharify7/CipherGap/releases'};
 let preferences={},appState={};
 function language(){return preferences.ciphergap_ui_language==='fa'?'fa':'en';}

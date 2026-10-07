@@ -19,7 +19,8 @@ import org.json.*;
 
 public class MainActivity extends Activity {
     static final String LOCAL = "https://appassets.androidplatform.net";
-    static final Set<String> ORIGINS = new HashSet<>(Arrays.asList("https://web.bale.ai", "https://web.eitaa.com", "https://web.telegram.org"));
+    final Set<String> ORIGINS = new HashSet<>();
+    final Map<String, String> messengerPaths = new HashMap<>();
     static final int PICK_FILE = 10, SAVE_FILE = 11, NOTIFICATIONS = 12, QR_CAMERA = 13;
     static final long MAX_BYTES = 101L * 1024 * 1024;
     WebView shell, chat, security;
@@ -50,6 +51,14 @@ public class MainActivity extends Activity {
             try { data.put("ciphergap_ui_language", Locale.getDefault().getLanguage().equals("fa") ? "fa" : "en"); store.write(data); }
             catch (Exception e) { finish(); return; }
         }
+        try {
+            JSONArray matches = new JSONObject(asset("extension/manifest.json")).getJSONArray("host_permissions");
+            for (int i=0;i<matches.length();i++) {
+                String match=matches.getString(i);Uri uri=Uri.parse(match);
+                if (!"https".equals(uri.getScheme()) || uri.getHost()==null || uri.getHost().contains("*") || uri.getUserInfo()!=null || uri.getPort()!=-1 || !uri.getPath().endsWith("/*")) throw new IllegalArgumentException("Invalid messenger match.");
+                String origin="https://"+uri.getHost();ORIGINS.add(origin);messengerPaths.put(origin,uri.getPath().substring(0,uri.getPath().length()-1));
+            }
+        } catch (Exception e) { throw new IllegalStateException("Bundled messenger list unavailable",e); }
         assets = new WebViewAssetLoader.Builder().addPathHandler("/assets/", new WebViewAssetLoader.AssetsPathHandler(this)).build();
         if (!WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) {
             new AlertDialog.Builder(this).setMessage(tr("Update Android System WebView, then reopen CipherGap.","Android System WebView را به‌روزرسانی کنید و برنامه را دوباره باز کنید.")).setPositiveButton(tr("Close","بستن"),(d,w)->finish()).show();return;
@@ -164,10 +173,11 @@ public class MainActivity extends Activity {
         }
         return view;
     }
-    static boolean messengerUrl(String url) {
+    boolean messengerUrl(String url) {
         if(url==null)return false;Uri u=Uri.parse(url);
         if(!"https".equals(u.getScheme()) || u.getUserInfo()!=null || (u.getPort()!=-1&&u.getPort()!=443))return false;
-        return "web.bale.ai".equals(u.getHost()) || "web.eitaa.com".equals(u.getHost()) || "web.telegram.org".equals(u.getHost()) && u.getPath()!=null && u.getPath().startsWith("/a/");
+        String path=messengerPaths.get("https://"+u.getHost());
+        return path!=null && u.getPath()!=null && u.getPath().startsWith(path);
     }
     void openExternal(Uri uri) { try{startActivity(new Intent(Intent.ACTION_VIEW,uri));}catch(ActivityNotFoundException e){Toast.makeText(this,tr("No browser is available.","مرورگری در دسترس نیست."),Toast.LENGTH_SHORT).show();} }
     void showShell(String page) {closeKeyScanner();bar.setVisibility(View.GONE);shell.setVisibility(View.VISIBLE);if(chat!=null)chat.setVisibility(View.GONE);if(security!=null)security.setVisibility(View.GONE);shell.evaluateJavascript("window.navigate && navigate("+JSONObject.quote(page)+")",null); }

@@ -18,12 +18,24 @@ import urllib.request
 import xml.etree.ElementTree as ET
 from websockets.sync.client import connect
 from playwright.sync_api import sync_playwright
-from messenger_fixtures import html
+from messenger_fixtures import html as original_html
+from new_messenger_fixtures import html as new_html
 from browser_fixtures import media_fixtures
 
 ROOT = Path(__file__).resolve().parents[1]
 APP = 'com.ciphergap.mobile'
 ADB = os.environ.get('CIPHERGAP_ADB', str(Path(os.environ.get('ANDROID_HOME','')) / 'platform-tools/adb'))
+MESSENGERS = [('bale','https://web.bale.ai/'),('eitaa','https://web.eitaa.com/'),('rubika','https://web.rubika.ir/'),('splus','https://web.splus.ir/'),('telegram','https://web.telegram.org/a/')]
+
+def html(platform):
+    return new_html(platform) if platform in ('rubika','splus') else original_html(platform)
+
+def chat_url(platform,base,ident):
+    return base+('chat?uid='+str(ident) if platform=='bale' else '#c=u'+str(ident) if platform=='rubika' else '#'+str(ident))
+
+def row_selector(platform,ident):
+    return {'bale':'[data-sid="'+ident+'"]','eitaa':'[data-mid="'+ident+'"]','telegram':'#message-'+ident,'splus':'#message'+ident,'rubika':'[data-msg-id="'+ident+'"] [rb-message-item]'}[platform]
+
 PORT = 9223
 OUT = ROOT / 'dist/android-validation'
 
@@ -97,6 +109,7 @@ class CDP:
 
 def tap_text(text):
     def find():
+        adb('shell','rm','-f','/sdcard/cg-ui.xml')
         adb('shell','uiautomator','dump','/sdcard/cg-ui.xml')
         root=ET.fromstring(adb('shell','cat','/sdcard/cg-ui.xml'))
         for node in root.iter('node'):
@@ -107,6 +120,7 @@ def tap_text(text):
 
 def tap_resource(suffix):
     def find():
+        adb('shell','rm','-f','/sdcard/cg-ui.xml')
         adb('shell','uiautomator','dump','/sdcard/cg-ui.xml')
         root=ET.fromstring(adb('shell','cat','/sdcard/cg-ui.xml'))
         for node in root.iter('node'):
@@ -136,17 +150,28 @@ def mobile_fixture(platform):
     return fixture.replace('<head>','<head>'+css)
 
 def tap_dom(phone,selector):
-    phone.evaluate('document.querySelector('+json.dumps(selector)+').scrollIntoView({block:"nearest"})')
-    rect=wait(lambda:phone.evaluate('(()=>{const e=document.querySelector('+json.dumps(selector)+');if(!e)return null;const r=e.getBoundingClientRect();return r.width&&r.height?[r.x+r.width/2,r.y+r.height/2]:null})()'))
-    # Trusted input into the actual WebView, rather than a DOM click handler.
-    phone.call('Input.dispatchTouchEvent',{'type':'touchStart','touchPoints':[{'x':rect[0],'y':rect[1]}]})
-    phone.call('Input.dispatchTouchEvent',{'type':'touchEnd','touchPoints':[]})
+    encoded=json.dumps(selector)
+    phone.evaluate('window.cgTapDone=false;window.cgTapListener=()=>window.cgTapDone=true;document.querySelector('+encoded+').addEventListener("click",cgTapListener,{once:true});document.querySelector('+encoded+').scrollIntoView({block:"nearest"})')
+    # IME/dialog transitions can move the compositor between touch down/up.
+    # Retry only when the requested control received no click, avoiding double sends.
+    for attempt in range(3):
+        time.sleep(.3)
+        rect=wait(lambda:phone.evaluate('(()=>{const e=document.querySelector('+encoded+');if(!e)return null;const r=e.getBoundingClientRect();return r.width&&r.height?[r.x+r.width/2,r.y+r.height/2]:null})()'))
+        phone.call('Input.dispatchTouchEvent',{'type':'touchStart','touchPoints':[{'x':rect[0],'y':rect[1]}]})
+        phone.call('Input.dispatchTouchEvent',{'type':'touchEnd','touchPoints':[]})
+        time.sleep(.3)
+        if phone.evaluate('cgTapDone'):return
+    phone.evaluate('document.querySelector('+encoded+').removeEventListener("click",cgTapListener)')
+    raise AssertionError('Native touch did not activate '+selector)
 
 def main():
     assert adb('shell','getprop','ro.kernel.qemu').strip()=='1','Use a test emulator, never a physical account device'
     OUT.mkdir(parents=True,exist_ok=True)
     sample=OUT/'cg-android-upload.txt';sample.write_bytes('Android document picker — سلام\n'.encode()+bytes(range(256)))
     adb('push',str(sample),'/sdcard/Download/'+sample.name)
+    custom_sticker=OUT/'cg-android-custom-sticker.png'
+    custom_sticker.write_bytes(base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScLbtAAAAABJRU5ErkJggg=='))
+    adb('push',str(custom_sticker),'/sdcard/Download/'+custom_sticker.name)
     adb('shell','rm','-f','/sdcard/Download/cg-android-test-picture.png')
     adb('shell','am','force-stop','com.google.android.permissioncontroller')
     adb('shell','am','force-stop',APP)
@@ -161,6 +186,9 @@ def main():
     shell.evaluate('chrome.storage.local.set({ciphergap_ui_language:"en",ciphergap_enabled:true})')
     state=shell.evaluate('CipherGapHost.request("app_state")')
     assert state['compatible'],state
+    assert set(shell.evaluate('Array.from(document.querySelectorAll("[data-messenger]"),b=>b.dataset.messenger)'))=={name for name,_ in MESSENGERS}
+    for url in ['https://web.telegram.org/k/','http://web.rubika.ir/','https://web.rubika.ir.evil.test/','https://web.splus.ir:444/','https://user@web.splus.ir/']:
+        assert shell.evaluate('CipherGapHost.request("open_messenger",{url:'+json.dumps(url)+'}).then(()=>false,()=>true)'),url
     shell.evaluate('CipherGapHost.request("notifications",{enabled:false})')
     shell.evaluate('navigate("settings")')
     shell.evaluate('document.getElementById("notifications").click()')
@@ -190,11 +218,12 @@ def main():
             worker=desktop.service_workers[0] if desktop.service_workers else desktop.wait_for_event('serviceworker')
             kernel=desktop.new_page();kernel.goto('chrome-extension://'+worker.url.split('/')[2]+'/popup/popup.html')
             kernel.evaluate("""async()=>{for(const f of ['encoding','crypto','file_crypto','dh_crypto','stickers'])await new Promise((r,j)=>{const s=document.createElement('script');s.src='../share/'+f+'.js';s.onload=r;s.onerror=j;document.head.append(s)})}""")
-            for platform,base in [('bale','https://web.bale.ai/'),('eitaa','https://web.eitaa.com/'),('telegram','https://web.telegram.org/a/')]:
+            for platform,base in MESSENGERS:
                 fixture=mobile_fixture(platform)
-                android_url=base+('chat?uid=601' if platform=='bale' else '#601')
-                desktop_url=base+('chat?uid=701' if platform=='bale' else '#701')
-                shell.evaluate('CipherGapHost.request("open_messenger",{url:'+json.dumps(android_url)+'})')
+                android_url=chat_url(platform,base,601)
+                desktop_url=chat_url(platform,base,701)
+                shell.evaluate('document.querySelector("[data-messenger='+platform+']").click()')
+                wait(lambda:shell.evaluate('CipherGapHost.request("app_state")').get('chatUrl','').startswith(base))
                 target=wait(lambda:next((t for t in targets() if base.split('/')[2] in t['url']),None))
                 phone=CDP(target);phone.navigate_fixture(android_url,fixture)
                 peer_fixture=bale_fixture() if platform=='bale' else html(platform)
@@ -230,11 +259,11 @@ def main():
                 assert action({'action':'mark_key_verified','nonce':started['nonce']})['ok']
                 assert peeraction({'action':'mark_key_verified','nonce':started['nonce']})['ok']
                 time.sleep(.6)  # Native SAS send restores the draft before another send.
-                editor='[contenteditable=true][enterkeyhint]' if platform=='eitaa' else '#editable-message-text'
+                editor='#editable-message-text' if platform=='bale' else '[contenteditable=true]'
                 text='Android ↔ desktop — سلام 👨‍👩‍👧‍👦 👍🏽'
                 phone.evaluate('(()=>{const e=document.querySelector('+json.dumps(editor)+');if(e.tagName==="TEXTAREA")e.value='+json.dumps(text)+';else{e.textContent="Android ↔ desktop — سلام ";for(const emoji of ["👨‍👩‍👧‍👦","👍🏽"]){const img=document.createElement("img");img.alt=emoji;img.src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==";e.append(img," ")}}e.dispatchEvent(new Event("input",{bubbles:true}))})()')
-                wait(lambda:phone.evaluate('(()=>{const a=document.getElementById("ciphergap-toolbar").getBoundingClientRect(),b=document.querySelector("#editable-message-text, [contenteditable=true][enterkeyhint]").getBoundingClientRect();return a.bottom<=b.top && a.left>=0 && a.right<=innerWidth+1})()'))
-                assert phone.evaluate('document.getElementById("ciphergap-media")===null')
+                wait(lambda:phone.evaluate('(()=>{const a=document.getElementById("ciphergap-toolbar").getBoundingClientRect(),b=document.querySelector("#editable-message-text, [contenteditable=true]").getBoundingClientRect();return a.bottom<=b.top && a.left>=0 && a.right<=innerWidth+1})()'))
+                assert phone.evaluate('document.getElementById("ciphergap-media")?.disabled') is False
                 tap_dom(phone,'#ciphergap-btn')
                 packet=wait(lambda:phone.evaluate('testSent.at(-1)?.startsWith("CGP|") ? testSent.at(-1):null'))
                 ident=peer.evaluate('s=>addMessage(s)',packet);peer.locator('.ciphergap-decrypt-button').last.click();peer.locator('.ciphergap-plaintext').last.wait_for()
@@ -257,7 +286,35 @@ def main():
                 with peer.expect_download() as downloaded:peer.locator('.ciphergap-file-viewer__download').click()
                 assert Path(downloaded.value.path()).read_bytes()==sample.read_bytes()
                 peer.locator('.ciphergap-file-viewer header button').click()
-                # The mobile custom picker is removed; desktop stickers still decrypt inline.
+                # The same touch picker sends built-in stickers and inserts emoji.
+                tap_dom(phone,'#ciphergap-media')
+                wait(lambda:phone.evaluate('Boolean(document.querySelector(".ciphergap-media-picker[open]"))'))
+                assert phone.evaluate('document.querySelector(".ciphergap-media-picker").getBoundingClientRect().right<=innerWidth')
+                assert phone.evaluate('getComputedStyle(document.querySelector(".ciphergap-media-picker")).boxSizing')=="border-box"
+                assert phone.evaluate('document.getElementById("ciphergap-btn").getBoundingClientRect().height')>=44
+                tap_dom(phone,'.ciphergap-media-picker__grid button')
+                wait(lambda:phone.evaluate('document.querySelector('+json.dumps(editor)+').value || document.querySelector('+json.dumps(editor)+').textContent').endswith('😀'))
+                before_emoji=phone.evaluate('testSent.length')
+                tap_dom(phone,'#ciphergap-btn')
+                emoji_packet=wait(lambda:phone.evaluate('testSent.length>'+str(before_emoji)+' && testSent.at(-1)?.startsWith("CGP|") ? testSent.at(-1):null'))
+                decoded=kernel.evaluate('async([packet,key])=>CipherGapShared.crypto.decrypt_message(CipherGapShared.protocol.parse_ciphergap_packet(packet).data,key)',[emoji_packet,other])
+                assert decoded=='😀',decoded
+                before_upload=phone.evaluate('received.length')
+                tap_dom(phone,'#ciphergap-media');tap_dom(phone,'#ciphergap-media-tab-1')
+                phone.screenshot(platform+'-picker.png')
+                tap_dom(phone,'.ciphergap-media-picker__grid button')
+                sent_sticker=wait(lambda:phone.evaluate('received.length>'+str(before_upload)+' ? received.at(-1):null'))
+                assert sent_sticker['name'].endswith('.cgst.cgpe')
+                peer.evaluate('a=>addAttachment(a.bytes,a.name.slice(0,-5))',sent_sticker)
+                peer.locator('.ciphergap-file-decrypt-button').last.click()
+                peer.wait_for_function('Boolean(document.querySelector(".ciphergap-sticker-inline img")?.naturalWidth)')
+                before_upload=phone.evaluate('received.length')
+                tap_dom(phone,'#ciphergap-media');tap_dom(phone,'#ciphergap-media-tab-1');tap_dom(phone,'.ciphergap-media-picker__import')
+                pick_uploaded_file(custom_sticker.name)
+                custom=wait(lambda:phone.evaluate('received.length>'+str(before_upload)+' ? received.at(-1):null'))
+                unpacked=kernel.evaluate('async([upload,key])=>{const f=await CipherGapShared.file_crypto.decrypt_cgpe(new Uint8Array(upload.bytes).buffer,key);const s=CipherGapShared.stickers.unpack(f);return {name:s.name,bytes:Array.from(new Uint8Array(s.data))}}',[custom,other])
+                assert unpacked['name']==custom_sticker.name and bytes(unpacked['bytes'])==custom_sticker.read_bytes()
+                # Desktop stickers still decrypt inline on Android.
                 sticker=kernel.evaluate('async key=>{const packed=await CipherGapShared.stickers.pack(new File([Uint8Array.from(atob("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScLbtAAAAABJRU5ErkJggg=="),c=>c.charCodeAt(0))],"native-test.png",{type:"image/png"}));const file=await CipherGapShared.file_crypto.encrypt_file(packed,key);return {name:file.name,bytes:Array.from(new Uint8Array(await file.arrayBuffer()))}}',other)
                 phone.evaluate('addAttachment('+json.dumps(sticker['bytes'])+','+json.dumps(sticker['name'][:-5])+')')
                 wait(lambda:phone.evaluate('Boolean(document.querySelector(".ciphergap-file-decrypt-button"))'))
@@ -268,8 +325,7 @@ def main():
                     name='cg-android-test-'+name
                     upload=kernel.evaluate('async([bytes,name,mime,key])=>{const file=await CipherGapShared.file_crypto.encrypt_file(new File([new Uint8Array(bytes)],name,{type:mime}),key);return Array.from(new Uint8Array(await file.arrayBuffer()))}',[list(raw),name,mime,other])
                     attachment_id=phone.evaluate('addAttachment('+json.dumps(upload)+','+json.dumps(name)+')')
-                    row_selector={'bale':'[data-sid="'+attachment_id+'"]','eitaa':'[data-mid="'+attachment_id+'"]','telegram':'#message-'+attachment_id}[platform]
-                    button_selector=row_selector+' .ciphergap-file-decrypt-button'
+                    button_selector=row_selector(platform,attachment_id)+' .ciphergap-file-decrypt-button'
                     wait(lambda:phone.evaluate('Boolean(document.querySelector('+json.dumps(button_selector)+'))'))
                     phone.evaluate('document.querySelector('+json.dumps(button_selector)+').click()')
                     wait(lambda:phone.evaluate('Boolean(document.querySelector("dialog[data-ciphergap-ui=file-viewer][open]"))'))
@@ -287,7 +343,7 @@ def main():
                 # Corrupt ciphertext must fail before any preview opens.
                 damaged=upload.copy();damaged[-1]^=1
                 damaged_id=phone.evaluate('addAttachment('+json.dumps(damaged)+','+json.dumps(name)+')')
-                damaged_selector={'bale':'[data-sid="'+damaged_id+'"]','eitaa':'[data-mid="'+damaged_id+'"]','telegram':'#message-'+damaged_id}[platform]+' .ciphergap-file-decrypt-button'
+                damaged_selector=row_selector(platform,damaged_id)+' .ciphergap-file-decrypt-button'
                 wait(lambda:phone.evaluate('Boolean(document.querySelector('+json.dumps(damaged_selector)+'))'))
                 phone.evaluate('document.querySelector('+json.dumps(damaged_selector)+').click()')
                 wait(lambda:phone.evaluate('document.querySelector('+json.dumps(damaged_selector)+').textContent.includes("Try again")'))
@@ -297,7 +353,7 @@ def main():
                 expired_id=phone.evaluate('addMessage('+json.dumps(expired)+')')
                 wait(lambda:phone.evaluate('Array.from(document.querySelectorAll(".ciphergap-chat-card__timer")).some(e=>e.textContent.includes("00:00"))'))
                 assert action({'action':'respond_key_exchange','nonce':started['nonce'],'accept':True})['ok'] is False
-                if platform=='bale':
+                if platform in ('bale','rubika','splus'):
                     # Reverse the roles and accept on Android's chat card.
                     before=phone.evaluate('testSent.length')
                     reverse_exchange=peeraction({'action':'start_key_exchange'});assert reverse_exchange['ok']
@@ -324,7 +380,7 @@ def main():
                 wait(lambda:phone.evaluate('document.querySelectorAll(".ciphergap-plaintext").length')==0)
                 phone.evaluate('document.getElementById("ciphergap-chat-toggle").click()')
                 phone.close();peer.close()
-                print('PASS Android / desktop '+platform+': ECDH, SAS, text, Unicode emoji, native file authentication, media, pause, isolation',flush=True)
+                print('PASS Android / desktop '+platform+': ECDH, SAS, text, emoji/sticker picker, native file authentication, media, pause, isolation',flush=True)
             desktop.close()
     finally:shutil.rmtree(profile,ignore_errors=True)
     # Inspect only synthetic test secrets: the persisted native blob must be encrypted.
@@ -346,15 +402,15 @@ def notification_checks(invitation):
         return sorted(r.split(': Notification(')[0] for r in rows if 'GROUP_SUMMARY' not in r)
     shell=CDP(next(t for t in targets() if t['url'].endswith('/index.html')))
     shell.evaluate('chrome.storage.local.set({ciphergap_ui_language:"en",ciphergap_enabled:true});CipherGapHost.request("notifications",{enabled:true})')
-    for platform,base in [('bale','https://web.bale.ai/'),('eitaa','https://web.eitaa.com/'),('telegram','https://web.telegram.org/a/')]:
-        url=base+('chat?uid=601' if platform=='bale' else '#601')
+    for platform,base in MESSENGERS:
+        url=chat_url(platform,base,601)
         shell.evaluate('CipherGapHost.request("open_messenger",{url:'+json.dumps(url)+'})')
         phone=CDP(wait(lambda:next((t for t in targets() if base.split('/')[2] in t['url']),None)))
         phone.navigate_fixture(url,bale_fixture() if platform=='bale' else html(platform));time.sleep(1.1)
         initial=records();ident=phone.evaluate('addMessage("private notification probe")')
         wait(lambda:len(records())==len(initial)+1);time.sleep(.8);current=records()
-        selector={'bale':'[data-sid="'+ident+'"]','eitaa':'[data-mid="'+ident+'"]','telegram':'#message-'+ident}[platform]
-        phone.evaluate('(()=>{const e=document.querySelector('+json.dumps(selector)+');e.after(e.cloneNode(true));addMessage("outgoing",false);const id=addMessage("history");const r=document.getElementById("message-"+id)||document.querySelector("[data-sid=\\""+id+"\\"],[data-mid=\\""+id+"\\"]");r.dataset.date="1";r.dataset.timestamp="1";if(r.dataset.messageId)r.dataset.messageId="1";})()')
+        selector=row_selector(platform,ident)
+        phone.evaluate('(()=>{const e=document.querySelector('+json.dumps(selector)+');e.after(e.cloneNode(true));addMessage("outgoing",false);const id=addMessage("history");const r=document.getElementById("message-"+id)||document.getElementById("message"+id)||document.querySelector("[data-sid=\\""+id+"\\"],[data-mid=\\""+id+"\\"]");if(r){r.dataset.date="1";r.dataset.timestamp="1";}if(r?.dataset.messageId)r.dataset.messageId="1";if(!r){const group=document.querySelector("[data-msg-id=\\""+id+"\\"]");group.dataset.msgId="1";}})()')
         time.sleep(.3);assert records()==current
         phone.evaluate('addMessage('+json.dumps(invitation)+')');wait(lambda:len(records())==len(current)+1)
         dump=adb('shell','dumpsys','notification','--noredact')
@@ -401,7 +457,7 @@ def native_checks(shell,key,secret):
     wait(lambda:security.evaluate('!document.getElementById("autoDecryptToggle").checked && !document.getElementById("autoDecryptToggle").disabled'))
     # Android Back returns from security to the existing conversation.
     adb('shell','input','keyevent','4');time.sleep(.3)
-    phone.evaluate('document.cookie="cg_session_probe=persisted;Secure;SameSite=Strict;path=/"')
+    phone.evaluate('document.cookie="cg_session_probe=persisted;Secure;SameSite=Strict;Max-Age=3600;path=/"')
     phone.evaluate('document.getElementById("editable-message-text").scrollIntoView()')
     # Real touch opens the Android keyboard, instead of synthesizing a JS focus.
     tap_dom(phone,'#editable-message-text')

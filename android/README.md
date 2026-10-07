@@ -1,14 +1,19 @@
 # CipherGap Android
 
-An installable browser for Bale, Eitaa and Telegram Web A using the desktop
-extension's encryption core. It does not modify native messenger apps.
-Rubika and WhatsApp are shown as in development.
+An installable browser for Bale, Eitaa, Telegram Web A, Rubika and Soroush Plus
+using the desktop extension's source unchanged. Text, ECDH/SAS, file/media,
+automatic receiving, encrypted stickers, pause, backups and key QR use the same
+UI and implementation on desktop and Android. WhatsApp remains in development.
+It does not modify native messenger apps.
+
+Android **0.1.4** (version code 6) includes all five messengers and the shared
+emoji/sticker picker. Download the signed release below or build it yourself.
 
 ## Install and use
 
-1. Download [ciphergap-android-0.1.3.apk](https://github.com/alisharify7/CipherGap/releases/download/android-v0.1.3/ciphergap-android-0.1.3.apk)
-   from the [Android 0.1.3 release](https://github.com/alisharify7/CipherGap/releases/tag/android-v0.1.3).
-   [SHA-256 checksums](https://github.com/alisharify7/CipherGap/releases/download/android-v0.1.3/SHA256SUMS) are included.
+1. Download [ciphergap-android-0.1.4.apk](https://github.com/alisharify7/CipherGap/releases/download/android-v0.1.4/ciphergap-android-0.1.4.apk)
+   from the [Android 0.1.4 release](https://github.com/alisharify7/CipherGap/releases/tag/android-v0.1.4).
+   [SHA-256 checksums](https://github.com/alisharify7/CipherGap/releases/download/android-v0.1.4/SHA256SUMS) are included.
 2. Allow installation from your browser/Files app for this installation, install
    the APK, then disable that permission again.
 3. Choose a messenger and sign in **on its own website**.
@@ -133,8 +138,10 @@ physical devices, connects through local ADB forwarding, and uses sanitized
 fixtures rather than real accounts. Screenshots go to `dist/android-validation/`.
 See `docs/android-validation.md` for actual results.
 
-Merge future `origin/main` changes into `android`, rebuild and rerun compatibility
-checks. There is no second cipher implementation to synchronize. The app links
+The main branch’s `sync-android.yml` workflow copies `CipherGap/` and shared Node
+checks into `android`, validates package parity, then builds/lints the app before
+updating the branch. Rebuild and rerun WebView compatibility checks for a release.
+There is no second cipher implementation to synchronize. The app links
 to [its source](https://github.com/alisharify7/CipherGap/tree/android) and
 [the website](https://alisharify7.github.io/CipherGap/).
 
@@ -152,7 +159,7 @@ to [its source](https://github.com/alisharify7/CipherGap/tree/android) and
 برنامه و اجرای صفحه است. پاک کردن داده‌های مرورگر، ورودها و کلیدهای محلی را
 حذف می‌کند و تأیید می‌خواهد. راهنمای کامل دو‌زبانه داخل برنامه موجود است.
 
-## Android 0.1.1 controls
+## Chat controls (0.1.4)
 
 Use **Chat security** (shield) to exchange and verify a key. In the chat, the blue
 CipherGap send icon encrypts your draft; the messenger’s own send icon remains
@@ -160,7 +167,9 @@ ordinary. The file icon chooses a secure attachment and pause controls this chat
 The secure row is separate from the native text editor, including with the keyboard
 open. The app navigation provides Home, Chat security and Settings with icons.
 
-Keyboard/native picker emoji are part of the encrypted text. There is no custom
-Android emoji/sticker picker. Native messenger stickers bypass the text/file
-composer and are **not** automatically encrypted. Encrypted desktop stickers can
-still be decrypted and viewed on Android; send a secure image file when needed.
+Keyboard/native picker emoji are part of the encrypted text. Use **Emoji & stickers**
+in CipherGap’s toolbar to insert emoji or send built-in/custom encrypted stickers
+(up to 5 MB, including animated GIF/WebM). The native file picker supplies custom
+stickers; only the encrypted `.cgst.cgpe` reaches the messenger upload handler.
+The receiver opens it inline, with preview and download just like desktop.
+Native messenger sticker menus still send ordinary stickers.

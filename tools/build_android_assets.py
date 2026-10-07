@@ -19,18 +19,20 @@ def build(output):
     for group in manifest['content_scripts']:
         (main if group.get('world') == 'MAIN' else isolated).extend(group.get('js', []))
         css.extend(group.get('css', []))
-    def joined(names):
-        return '\n;\n'.join((ROOT / 'CipherGap' / name).read_text() for name in names)
-    (output / 'page.js').write_text(joined(main))
+    def joined(names, separator='\n;\n'):
+        return separator.join((ROOT / 'CipherGap' / name).read_text() for name in names)
+    prefixes = [match[:-1] for match in manifest['host_permissions']]
+    guard = 'window === window.top && ' + json.dumps(prefixes) + '.some(prefix => (location.origin + location.pathname).startsWith(prefix))'
+    (output / 'page.js').write_text('if (' + guard + ') {\n' + joined(main) + '\n}')
     shim = (mobile / 'host.js').read_text()
     bootstrap = (mobile / 'content_host.js').read_text()
-    bundle = 'if (window === window.top && (location.hostname !== "web.telegram.org" || location.pathname.startsWith("/a/"))) {\n'
+    bundle = 'if (' + guard + ') {\n'
     bundle += 'globalThis.CIPHERGAP_MANIFEST=' + json.dumps(manifest) + ';\n'
-    bundle += 'const CIPHERGAP_STYLES=' + json.dumps(joined(css)) + ';\n'
+    bundle += 'const CIPHERGAP_STYLES=' + json.dumps(joined(css, "\n")) + ';\n'
     bundle += 'const CIPHERGAP_MOBILE_STYLES=' + json.dumps((mobile / 'content_mobile.css').read_text()) + ';\n' + shim
     bundle += '\n' + joined(isolated) + '\n' + bootstrap + '\n}'
     (output / 'content.js').write_text(bundle)
-    (output / 'content.css').write_text(joined(css))
+    (output / 'content.css').write_text(joined(css, '\n'))
     popup = (ROOT / 'CipherGap/popup/popup.html').read_text().replace(
         '<script src="../share/namespace.js">',
         '<script src="/assets/popup_host.js"></script><link href="/assets/mobile.css" rel="stylesheet"/><script src="../share/namespace.js">')

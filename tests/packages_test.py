@@ -2,6 +2,7 @@
 import importlib.util
 import hashlib
 import json
+import subprocess
 from pathlib import Path
 import tempfile
 import unittest
@@ -32,7 +33,21 @@ class BrowserPackages(unittest.TestCase):
                 bundle = (output / ("page.js" if group.get("world") == "MAIN" else "content.js")).read_text()
                 for name in group.get("js", []):
                     self.assertIn((root / "CipherGap" / name).read_text(), bundle, name)
+            styles = [name for group in manifest["content_scripts"] for name in group.get("css", [])]
+            self.assertEqual((output / "content.css").read_text(), "\n".join((root / "CipherGap" / name).read_text() for name in styles))
             self.assertIn("popup_host.js", (output / "extension/popup/popup.html").read_text())
+            # Both execution worlds must honor the same hosts/paths as desktop.
+            for bundle_name in ("page.js", "content.js"):
+                guard = (output / bundle_name).read_text().splitlines()[0][4:-3]
+                urls = {match[:-1] + "?chat=601": True for match in manifest["host_permissions"]}
+                urls.update({"https://web.telegram.org/k/": False, "https://web.rubika.ir.evil.test/": False,
+                             "http://web.splus.ir/": False, "https://web.splus.ir:444/": False})
+                script = "const vm=require('node:vm');const guard=" + json.dumps(guard) + ";"
+                script += "for(const [url,expected] of Object.entries(" + json.dumps(urls) + ")){"
+                script += "const window={};window.top=window;const context={window,location:new URL(url)};"
+                script += "if(vm.runInNewContext(guard,context)!==expected)throw Error(url);"
+                script += "window.top={};if(vm.runInNewContext(guard,context))throw Error('iframe');}"
+                subprocess.run(["node", "-e", script], check=True)
 
     def test_common_source_and_platform_manifests(self):
         with tempfile.TemporaryDirectory() as folder:
