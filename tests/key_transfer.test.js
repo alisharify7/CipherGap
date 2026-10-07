@@ -13,7 +13,9 @@ function core() {
 test("portable encrypted backups and QR preserve exact keys, validate imports and separate peer trust", async () => {
     const source = core(), destination = core(), t = source.key_transfer;
     const id = "web.eitaa.com_-601", second = "web.bale.ai_602", key = "کلید فارسی 👨‍👩‍👧‍👦 + / = 123";
+    const username = "web.eitaa.com_@mralizohdi";
     const state = {
+        [username]:"username chat key",
         [id]:key, [second]:"another key", [id+"__auto_decrypt"]:true, [id+"__auto_files"]:false,
         [id+"__enabled"]:false, ciphergap_enabled:false, ciphergap_ui_language:"fa", ciphergap_ui_theme:"dark",
         ["key_trust_"+id]:{state:"verified",source:"exchange",fingerprint:"1234abcd",at:123,verifiedAt:124},
@@ -23,12 +25,13 @@ test("portable encrypted backups and QR preserve exact keys, validate imports an
     };
     const full = t.snapshot(state);
     assert.equal(full.data[id],key);
-    assert.equal(Object.keys(full.data).length,10);
+    assert.equal(Object.keys(full.data).length,11);
     assert.equal(full.data["exchange_status_"+id],undefined);
     const text = await t.seal(full,"long secret password");
     assert.ok(!text.includes(key) && !text.includes(id));
     const restored = await destination.key_transfer.open(text,"long secret password");
     const plan = destination.key_transfer.plan_import(restored);
+    assert.equal(plan.values[username],"username chat key");
     assert.equal(plan.values[id],key); assert.equal(plan.values["key_trust_"+id].state,"verified");
     assert.equal(plan.values.ciphergap_ui_language,"fa"); assert.equal(plan.values[id+"__enabled"],false);
     await assert.rejects(t.open(text,"different password"),/Wrong password/);

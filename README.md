@@ -61,7 +61,7 @@ install, package and sign the extension through Firefox Add-ons (AMO).
 
 ## Usage
 
-1. Open a conversation in [Bale Web](https://web.bale.ai/), [Eitaa Web](https://web.eitaa.com/), [Telegram Web A](https://web.telegram.org/a/), [Rubika Web](https://web.rubika.ir/) or [Soroush Plus Web](https://web.splus.ir/). Eitaa, Telegram and Soroush use numeric chat IDs in the URL hash; Rubika uses its opaque `#c=<chat-id>` route.
+1. Open a conversation in [Bale Web](https://web.bale.ai/), [Eitaa Web](https://web.eitaa.com/), [Telegram Web A](https://web.telegram.org/a/), [Rubika Web](https://web.rubika.ir/) or [Soroush Plus Web](https://web.splus.ir/). Eitaa accepts numeric IDs (`#333000`) and usernames (`#@mralizohdi`) in the URL hash. Telegram and Soroush use numeric chat IDs; Rubika uses its opaque `#c=<chat-id>` route.
 2. Open CipherGap's **Security** page and choose **Set up secure chat**.
 3. The other participant clicks **Accept request** on the request in the chat. Replacing an existing key requires an additional confirmation.
 4. Within 15 minutes of sending the request, compare the six-digit code over a trusted channel, then mark the key verified on both sides. Request expiry does not delete existing chat keys.

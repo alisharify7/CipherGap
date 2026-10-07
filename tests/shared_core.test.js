@@ -92,6 +92,24 @@ test("messenger adapters resolve an explicit reusable chat context", () => {
     );
 });
 
+test("Eitaa accepts numeric and username chat URLs without confusing invalid fragments", () => {
+    const context = vm.createContext({URL});
+    for (const file of ["share/namespace.js", "share/config.js", "content/eitaa.js"]) {
+        vm.runInContext(fs.readFileSync(path.join(extensionRoot,file),"utf8"), context);
+    }
+    const chat_id = context.CipherGapShared.chat_platforms.eitaa.chat_id;
+    for (const id of ["333000", "-333000", "@mralizohdi", "@other_user123"]) {
+        for (const suffix of ["", "/17", "?message=17"]) {
+            const url = new URL("https://web.eitaa.com/#"+id+suffix);
+            assert.equal(chat_id(url),id);
+            assert.equal(context.CipherGapShared.storage_keys.chat(url.hostname,chat_id(url)),"web.eitaa.com_"+id);
+        }
+    }
+    for (const fragment of ["", "@", "333000abc", "@name-with-dash", "@name%20other", "settings"]) {
+        assert.equal(chat_id(new URL("https://web.eitaa.com/#"+fragment)),null);
+    }
+});
+
 test("CGP v1 adds an installation notice while parsing the original payload", () => {
     const protocol = globalThis.CipherGapShared.protocol;
     const packet = protocol.build_ciphergap_packet("payload|with|pipes", 1700000000);
