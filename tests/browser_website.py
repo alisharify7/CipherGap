@@ -95,7 +95,7 @@ with sync_playwright() as p:
                 else:assert downloads['android_build'].startswith('signed release APK')
                 assert 'assets/extension/share/key_transfer.js' in archive.namelist()
     apk=page.locator('.apk-download').get_attribute('href')
-    assert apk=='website/downloads/ciphergap-android-0.1.3.apk'
+    assert apk=='website/downloads/ciphergap-android-0.1.4.apk'
     android=browser.new_context(user_agent='Mozilla/5.0 (Linux; Android 16) Chrome/147.0.0.0 Mobile Safari/537.36', viewport={'width':390,'height':844})
     mobile=android.new_page();mobile.goto(url)
     assert mobile.locator('#tab-android').get_attribute('aria-selected')=='true'

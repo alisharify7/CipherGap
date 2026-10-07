@@ -8,7 +8,7 @@ Fonts and screenshots are bundled.
 ## Downloads
 
 Desktop 1.7.0 provides Chrome/Chromium/Edge/Brave and Firefox packages.
-Android 0.1.3 provides a production-signed release APK with debugging disabled.
+Android 0.1.4 provides a production-signed release APK with debugging disabled.
 The website mirrors the exact GitHub release assets and links to both releases.
 `downloads/provenance.json` records source commits, release URLs, the production
 signing certificate and file hashes; `downloads/checksums.txt` covers all files.
@@ -17,7 +17,7 @@ export an encrypted backup, then migrate to the production signing identity.
 No private signing key or password belongs in website assets.
 
 Desktop supports Bale, Eitaa, Telegram Web A, Rubika and Soroush Plus.
-Android supports Bale, Eitaa and Telegram Web A and needs Android 8+ plus a
+Android supports the same five messengers and needs Android 8+ plus a
 compatible isolated-world WebView. The page explains installation, key exchange,
 backup/QR transfer, debug-to-release migration and current limitations.
 Screenshot provenance describes the builds actually used for those captures;

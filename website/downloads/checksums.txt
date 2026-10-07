@@ -1,4 +1,4 @@
 50b41ddef337c1e3eb901aeeb88f9c0bafebe24b0376ff43558745ad44dcc1b1  ciphergap-1.7.0-chrome.zip
 002ca877c82b48a5c1f1822085c3cb608e0165c80ebd7fa8fbd0edf96aeef7cf  ciphergap-1.7.0-firefox.zip
 eca8421001cfbbd06fd925522d006d98f83d6676cc6f19d91d99f26fc44cb088  ciphergap-android-0.1.3-debug.apk
-4719a0c6af97e91f5fc35114c32e0913188cfc6c8707e618eb6b3dfa1a9aff14  ciphergap-android-0.1.3.apk
+aa3b8379680f2d0b7dfe246e31e43c706166c17c4f4a6e68ce8b91fef85148d3  ciphergap-android-0.1.4.apk
