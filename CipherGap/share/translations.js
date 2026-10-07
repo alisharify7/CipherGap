@@ -94,6 +94,8 @@ globalThis.CipherGapShared.fa = Object.freeze({
   "This request is already being processed.": "این درخواست در حال پردازش است.",
 
   "Exchange again to verify": "برای تأیید دوباره تبادل کنید",
+  "Eitaa": "ایتا",
+  "Telegram Web A": "تلگرام وب A",
   "Rubika": "روبیکا",
   "Soroush Plus": "سروش پلاس",
   "Coming soon: Rubika and WhatsApp": "در برنامهٔ توسعه: روبیکا و واتساپ",

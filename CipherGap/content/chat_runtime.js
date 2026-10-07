@@ -138,9 +138,7 @@ function inject_chat_security_toolbar() {
     const media = document.createElement("button");media.type = "button";media.id = "ciphergap-media";
     CHAT_UI.button(media, "smile", "Emoji & stickers");media.disabled = true;
     media.addEventListener("click", open_chat_media_picker);
-    toolbar.append(status, files);
-    if (!globalThis.CipherGapHost?.mobile) toolbar.append(media);
-    toolbar.append(toggle);
+    toolbar.append(status, files, media, toggle);
     if (CHAT_FLOATING_TOOLBAR) toolbar.dataset.ciphergapFloating = "true";
     // Teact updates native children by position. Keep our floating toolbar
     // outside its subtree so opening a file preview cannot corrupt the composer.
@@ -213,16 +211,22 @@ function open_chat_media_picker() {
     const storageKey = get_storage_key(), secretKey = cg_cached_key;
     const input = document.querySelector(CHAT_CHAT_INPUT);
     if (!input || !cg_cached_enabled || !secretKey) return;
+    const textInput = input.tagName === "TEXTAREA" || input.tagName === "INPUT";
+    const start = input.selectionStart, end = input.selectionEnd;
     const selection = window.getSelection();
     const range = selection.rangeCount && input.contains(selection.getRangeAt(0).commonAncestorContainer) ? selection.getRangeAt(0).cloneRange() : null;
     const valid = () => storageKey === get_storage_key() && cg_cached_enabled && secretKey === cg_cached_key && input.isConnected;
     globalThis.CipherGapShared.stickers.open_picker({theme:CHAT_UI.theme(input),
         insertEmoji(emoji) {
             if (!valid()) return;
-            input.focus();const caret = range ?? document.createRange();
-            if (!range) {caret.selectNodeContents(input);caret.collapse(false);}
-            caret.deleteContents();const text = document.createTextNode(emoji);caret.insertNode(text);caret.setStartAfter(text);caret.collapse(true);
-            selection.removeAllRanges();selection.addRange(caret);
+            input.focus();
+            if (textInput) input.setRangeText(emoji, start, end, "end");
+            else {
+                const caret = range ?? document.createRange();
+                if (!range) {caret.selectNodeContents(input);caret.collapse(false);}
+                caret.deleteContents();const text = document.createTextNode(emoji);caret.insertNode(text);caret.setStartAfter(text);caret.collapse(true);
+                selection.removeAllRanges();selection.addRange(caret);
+            }
             input.dispatchEvent(new InputEvent("input", {bubbles:true,inputType:"insertText",data:emoji}));
             return input;
         },
@@ -676,6 +680,10 @@ async function chat_send_message(text, { storageKey = get_storage_key(), preserv
 
     if (cg_sending) throw new Error("A message is already being sent. Please try again.");
     const draft = chat_read_input(input);
+    // Native contenteditables may render line breaks as spaces before clearing.
+    const normalizedDraft = value => normalize_message_text(String(value ?? "").replace(/\s+/g, " "));
+    const pendingText = normalizedDraft(text);
+    const hasPendingText = () => normalizedDraft(chat_read_input(input)) === pendingText;
     let sent = false;
     // Block the sanitizer while we fill the input and click send.
     cg_sending = true;
@@ -697,15 +705,15 @@ async function chat_send_message(text, { storageKey = get_storage_key(), preserv
         // Native clients can clear the draft after their send promise settles.
         for (let attempt = 0; attempt < 150; attempt++) {
             await new Promise(resolve => setTimeout(resolve, 20));
-            if (storageKey !== get_storage_key() || !input.isConnected || normalize_message_text(chat_read_input(input) ?? "") !== normalize_message_text(text)) break;
+            if (storageKey !== get_storage_key() || !input.isConnected || !hasPendingText()) break;
         }
-        if (storageKey === get_storage_key() && input.isConnected && normalize_message_text(chat_read_input(input) ?? "") === normalize_message_text(text)) {
+        if (storageKey === get_storage_key() && input.isConnected && hasPendingText()) {
             throw new Error("The messenger did not accept the message. Your draft has been retained.");
         }
         sent = true;
     } finally {
         // Do not erase a newly typed draft or touch another chat after navigation.
-        if (storageKey === get_storage_key() && input.isConnected && (!chat_read_input(input) || chat_read_input(input) === text)) {
+        if (storageKey === get_storage_key() && input.isConnected && (!chat_read_input(input) || hasPendingText())) {
             chat_write_input(input, preserveDraft || !sent ? draft : "");
         }
         cg_sending = false;
