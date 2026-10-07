@@ -35,9 +35,14 @@ remain untested.
 
 Desktop Chromium Rubika/Soroush checks also passed exchanges, expiry, encrypted
 text/files, exact downloads, mobile/desktop alignment, isolation and pause.
-The main-branch Android synchronization workflow is prepared to copy/test/build
-future shared-core changes before updating the Android branch; it was validated
-locally as YAML, without running a remote CI job in this session.
+The main-branch Android synchronization workflow copies/tests/builds future
+shared-core changes before updating the Android branch. Its [remote CI run](https://github.com/alisharify7/CipherGap/actions/runs/37688417257)
+passed Node/package checks, Android debug build/lint and APK artifact upload.
+SDK setup explicitly installs current platform/build-tools packages after the
+first run exposed the action's obsolete default `tools` package.
+The signed APK and checksum were downloaded from the public release and matched
+the locally verified bytes. The website deployment and live EN/FA browser checks
+also passed, including download hashes.
 
 The signed APK and checksum are distributed in the [Android 0.1.4 release](https://github.com/alisharify7/CipherGap/releases/tag/android-v0.1.4).
 
