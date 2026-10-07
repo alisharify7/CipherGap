@@ -19,7 +19,7 @@
     shared.chat_platforms.eitaa = {
         name: "eitaa", hostnames: shared.messengers.definitions.eitaa.hostnames,
         supports_url: () => true,
-        chat_id: url => /^#(-?\d+)(?:[/?]|$)/.exec(url.hash)?.[1] ?? null,
+        chat_id: url => /^#(-?\d+|@[A-Za-z0-9_]+)(?:[/?]|$)/.exec(url.hash)?.[1] ?? null,
         input_selector: '#column-center [contenteditable="true"][enterkeyhint]',
         scroller_selector: "#column-center",
         message_selector: 'div[data-mid][data-peer-id][data-timestamp]',

@@ -1,3 +1,16 @@
+# Eitaa numeric/username URLs — 1.7.0, 2026-10-07
+
+Eitaa's shared chat parser now accepts both `#333000` and `#@mralizohdi`,
+including existing message/query suffixes. Numeric storage keys remain unchanged;
+username conversations have their own `web.eitaa.com_@username` key. Invalid
+fragments are rejected. The portable backup check also restores a username key.
+
+All 37 Node checks and the Eitaa scrolling regression passed. Actual Chromium
+and Firefox ESR 153.4.0 extension fixtures use the two supplied URL forms as peer
+contexts and pass ECDH/SAS, encrypted text/emoji/stickers, file/media workflows,
+exact downloads, pause and navigation guards. Telegram regressions also pass.
+These are isolated DOM fixtures, not messages sent to the supplied live accounts.
+
 # Portable transfer — 1.7.0, 2026-10-07
 
 All 36 Node checks passed, including password/tamper rejection, bounded import

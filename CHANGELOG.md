@@ -2,6 +2,7 @@
 
 ## [1.7.0](docs/releases/v1.7.0.md) - 2026-10-07
 
+- Fixed Eitaa chat detection for both numeric IDs and `@username` URL hashes.
 - Added encrypted full/chat backups, reviewed imports and exact UTF-8 key transfer.
 - Added offline key QR generation, image reading and camera scanning.
 - Clarified five popup tabs with shared Persian/English and light/dark controls.
