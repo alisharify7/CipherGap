@@ -2,7 +2,7 @@
 
 <img src="CipherGap/assets/ciphergap.svg" width="80" height="80" alt="CipherGap logo"/>
 
-**CipherGap** is an open-source Chrome and Firefox extension for private messaging. **Bale Web, Eitaa Web, Telegram Web A, Rubika Web and Soroush Plus Web** are supported on desktop. WhatsApp remains in development. The published Android preview currently supports Bale, Eitaa and Telegram Web A. Telegram Web K is not supported.
+**CipherGap** is an open-source Chrome and Firefox extension for private messaging. **Bale Web, Eitaa Web, Telegram Web A, Rubika Web and Soroush Plus Web** are supported on desktop. WhatsApp remains in development. Android 0.1.4 supports the same five messengers and the same encryption, exchange, file, sticker and transfer features. Source and build instructions are on the [Android branch](https://github.com/alisharify7/CipherGap/tree/android). Telegram Web K is not supported.
 
 Messages are encrypted locally in your browser before being sent, ensuring that only users with the shared secret can read the original content.
 
@@ -32,12 +32,12 @@ The **About** tab includes the website, GitHub repository and compatibility guid
 
 ## Installation
 
-### Downloads — desktop 1.7.0 / Android 0.1.3
+### Downloads — desktop 1.7.0 / Android 0.1.4
 
 - [Chrome / Chromium / Edge / Brave ZIP](https://github.com/alisharify7/CipherGap/releases/download/v1.7.0/ciphergap-1.7.0-chrome.zip)
 - [Firefox desktop ZIP](https://github.com/alisharify7/CipherGap/releases/download/v1.7.0/ciphergap-1.7.0-firefox.zip) — unsigned; temporary installation.
-- [Android APK](https://github.com/alisharify7/CipherGap/releases/download/android-v0.1.3/ciphergap-android-0.1.3.apk) — signed release build; Android 8+ and a compatible WebView required.
-- [Desktop SHA-256 checksums](https://github.com/alisharify7/CipherGap/releases/download/v1.7.0/SHA256SUMS) · [Android SHA-256 checksums](https://github.com/alisharify7/CipherGap/releases/download/android-v0.1.3/SHA256SUMS)
+- [Android APK](https://github.com/alisharify7/CipherGap/releases/download/android-v0.1.4/ciphergap-android-0.1.4.apk) — signed release build; Android 8+ and a compatible WebView required.
+- [Desktop SHA-256 checksums](https://github.com/alisharify7/CipherGap/releases/download/v1.7.0/SHA256SUMS) · [Android SHA-256 checksums](https://github.com/alisharify7/CipherGap/releases/download/android-v0.1.4/SHA256SUMS)
 
 Follow the [installation guide](https://alisharify7.github.io/CipherGap/#installation).
 
@@ -160,7 +160,7 @@ Under **Settings**, turn **CipherGap enabled** off to pause all chats, or **Enab
 
 Messenger-independent code lives in `CipherGap/share/`. It is the single source
 of truth for message and key-exchange formats, AES/ECDH utilities, the CGPE file
-container, storage-key names, adapter registration, media viewer, sticker envelope/picker, shared chat presentation, exchange cards and theme tokens. The shared chat lifecycle, file handoff, message rendering and UI mounting live in `CipherGap/content/chat_runtime.js`. Small `bale.js`, `eitaa.js` and `telegram.js` modules supply native selectors, input/send behavior and attachment controls.
+container, storage-key names, adapter registration, media viewer, sticker envelope/picker, shared chat presentation, exchange cards and theme tokens. The shared chat lifecycle, file handoff, message rendering and UI mounting live in `CipherGap/content/chat_runtime.js`. Small `bale.js`, `eitaa.js`, `telegram.js`, `rubika.js` and `splus.js` modules supply native selectors, input/send behavior and attachment controls.
 
 Integrations use stable IDs, roles, message/document data attributes and structural attachment children. They do not select messenger CSS classes. Native layout identifies incoming/outgoing rows. Telegram’s native editor receives input events; its send control is resolved only after the draft appears.
 The small MAIN-world bridge observes native Blob downloads, handles Eitaa’s bounded Service Worker download path, and transfers only
@@ -190,6 +190,10 @@ Telegram, Rubika and Soroush expose no machine-readable sending timestamp. Autom
 
 Run the regression checks with `node --test tests/*.test.js`.
 Both browser packages share every source file except the generated manifest.
+The Android build packages those same source files; its launcher, allowed origins
+and path restrictions come from the shared registry and manifest. Main changes
+are automatically copied to the Android core, tested and built by
+[the Android synchronization workflow](.github/workflows/sync-android.yml).
 [Firefox builds and automatic branch synchronization](docs/firefox.md) includes
 package and isolated browser checks.
 See [the browser validation record](docs/browser-validation.md) for the tested

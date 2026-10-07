@@ -203,3 +203,18 @@ test("mobile send waits for a delayed native control and draft clear without dup
     assert.equal(clicks, 1);
     assert.equal(input.textContent, "");
 });
+
+
+test("native whitespace normalization does not finish a send before the draft clears", async () => {
+    const h = harness();
+    const { input } = composer(h);
+    Object.defineProperty(input, "innerText", { get() { return this.textContent.replace(/\s+/g, " "); } });
+    h.context.document.querySelector = selector => selector.startsWith("#editable-message-text") ? input : {
+        click() { setTimeout(() => { input.textContent = ""; }, 80); }
+    };
+    const sending = h.context.chat_send_message("encrypted\n\npacket", {preserveDraft:false});
+    await new Promise(resolve => setTimeout(resolve, 30));
+    assert.equal(vm.runInContext("cg_sending", h.context), true);
+    await sending;
+    assert.equal(input.textContent, "");
+});

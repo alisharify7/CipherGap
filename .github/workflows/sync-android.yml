@@ -1,0 +1,51 @@
+name: Validate and synchronize Android core
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: sync-android
+  cancel-in-progress: false
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - name: Copy shared source from main
+        run: |
+          source_sha=$(git rev-parse --short origin/main)
+          git fetch origin android
+          git checkout -B android origin/android
+          git restore --source=origin/main --staged --worktree -- CipherGap tools/build_extension.py 'tests/*.test.js'
+          echo "SOURCE_SHA=$source_sha" >> "$GITHUB_ENV"
+      - name: Validate shared behavior, packages and Android build
+        run: |
+          node --test tests/*.test.js
+          python3 -m unittest discover -s tests -p '*_test.py'
+          sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
+          ./android/gradlew -p android assembleDebug lintDebug
+      - name: Save validated Android core
+        run: |
+          git config user.name 'ali sharify'
+          git config user.email 'alisharifyofficial@gmail.com'
+          if ! git diff --cached --quiet; then
+            git commit -m "Synchronize Android core with main $SOURCE_SHA"
+          fi
+          git push origin android
+      - uses: actions/upload-artifact@v4
+        with:
+          name: CipherGap-Android-debug
+          path: android/app/build/outputs/apk/debug/app-debug.apk
