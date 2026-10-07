@@ -32,8 +32,10 @@ The signing certificate is public in `android/ciphergap-release-cert.pem`;
 the private signing key and password must stay outside the repository.
 
 Older preview APKs used the Android debug certificate and cannot update directly
-to this signature. **Before uninstalling a debug build**, use Transfer to export
-a password-encrypted full backup. Install the release, sign in to your messenger
+to this signature. If your old app has no Transfer tab, first update it with the
+[backup-enabled 0.1.3 debug migration APK](https://alisharify7.github.io/CipherGap/website/downloads/ciphergap-android-0.1.3-debug.apk),
+which retains the old debug certificate. **Before uninstalling a debug build**,
+use Transfer to export a password-encrypted full backup. Install the release, sign in to your messenger
 accounts again and restore the backup. Uninstalling without a backup deletes
 local keys. Future releases signed with this production identity update normally.
 

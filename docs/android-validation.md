@@ -1,3 +1,30 @@
+# Android 0.1.3 signed release validation — 2026-10-07
+
+`assembleRelease` and `lintRelease` passed, with zero lint errors and one
+OldTargetApi advisory. The release targets API 36, supports installation from
+API 26 and uses version code 5. `tests/verify_android_release.py` verifies the
+APK signature against the committed public certificate, a non-debuggable
+manifest, its version/SDK values and every packaged shared-core source hash.
+Production certificate SHA-256:
+`62eec94b261348313fd379124c7e118ac126878eff5062cfae00ba0edeae9718`.
+Private signing material is not committed or uploaded.
+
+The actual signed APK installed and launched on the disposable API 36 emulator;
+the launcher displayed `Android 0.1.3 · Release`, and Android denied `run-as`
+because the app is not debuggable. The full desktop/Android transfer check also
+passed on that APK: exact backups/keys/trust, both-way encrypted text, native
+file saving, QR export/import, camera permission/cleanup and EN/FA layout.
+
+The emulator runs an Android engineering image (`ro.debuggable=1`), on which
+[Chromium forces WebView debugging](https://github.com/chromium/chromium/blob/133.0.6943.137/android_webview/glue/java/src/com/android/webview/chromium/SharedStatics.java).
+That permits these isolated fixture checks even for a release APK. The app
+requests WebView debugging only when `BuildConfig.DEBUG` is true; it is false
+in this release. Physical-phone/provider behavior remains a separate check.
+
+Direct downloads use the production signing identity. Older debug builds need
+the backup/uninstall/restore migration described in the Android README. The
+old backup-enabled debug APK remains available solely for that migration.
+
 # Android 0.1.3 transfer validation — 2026-10-07
 
 `assembleDebug` and `lintDebug` passed with shared core 1.7.0. Both package

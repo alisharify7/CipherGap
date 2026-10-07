@@ -24,7 +24,10 @@ WebView with isolated-world injection. Eitaa numeric/username URLs use the same
 fixed shared core as desktop. Older debug-signed installs cannot update directly to the new signature. Export
 a password-encrypted full backup **before uninstalling** the old app, then
 install this release, sign in to messengers and restore the backup. Future
-production releases keep the same signing identity.
+production releases keep the same signing identity. If the old app has no Transfer
+tab, first update using the [debug migration APK](https://alisharify7.github.io/CipherGap/website/downloads/ciphergap-android-0.1.3-debug.apk)
+to export your backup. That helper is for migration; the release download above
+is production signed.
 
 [Build instructions](../../android/README.md) and
 [validation evidence](../android-validation.md) describe the tested emulator
