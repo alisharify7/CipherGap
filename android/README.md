@@ -1,4 +1,4 @@
-# CipherGap Android preview
+# CipherGap Android
 
 An installable browser for Bale, Eitaa and Telegram Web A using the desktop
 extension's encryption core. It does not modify native messenger apps.
@@ -6,9 +6,9 @@ Rubika and WhatsApp are shown as in development.
 
 ## Install and use
 
-1. Download `ciphergap-android-0.1.2.apk` from the published Android prerelease.
-   The current source builds 0.1.3 with backup/QR transfer; no new APK release is
-   implied by this source update.
+1. Download [ciphergap-android-0.1.3.apk](https://github.com/alisharify7/CipherGap/releases/download/android-v0.1.3/ciphergap-android-0.1.3.apk)
+   from the [Android 0.1.3 release](https://github.com/alisharify7/CipherGap/releases/tag/android-v0.1.3).
+   [SHA-256 checksums](https://github.com/alisharify7/CipherGap/releases/download/android-v0.1.3/SHA256SUMS) are included.
 2. Allow installation from your browser/Files app for this installation, install
    the APK, then disable that permission again.
 3. Choose a messenger and sign in **on its own website**.
@@ -26,10 +26,16 @@ does not guarantee that a compatible provider is available. The launcher disable
 messenger buttons and explains the update requirement if it is missing. There is
 no insecure page-world fallback.
 
-This is a **debug-signed test APK**, not a production/store release. Authorized
-ADB debugging can inspect its WebViews; use test conversations for initial
-evaluation. `assembleRelease` disables debugging; production distribution needs
-a separately protected release signing key.
+The download is a **production-signed release APK** with app and WebView debugging
+disabled. It is distributed directly; no Google Play publication is involved.
+The signing certificate is public in `android/ciphergap-release-cert.pem`;
+the private signing key and password must stay outside the repository.
+
+Older preview APKs used the Android debug certificate and cannot update directly
+to this signature. **Before uninstalling a debug build**, use Transfer to export
+a password-encrypted full backup. Install the release, sign in to your messenger
+accounts again and restore the backup. Uninstalling without a backup deletes
+local keys. Future releases signed with this production identity update normally.
 
 ## Build
 
@@ -40,7 +46,22 @@ and set `JAVA_HOME`/`ANDROID_HOME`, then run from the repository root:
 ./android/gradlew -p android assembleDebug lintDebug
 ```
 
-Output: `android/app/build/outputs/apk/debug/app-debug.apk`.
+Debug output: `android/app/build/outputs/apk/debug/app-debug.apk`.
+
+For a signed release, set `CIPHERGAP_SIGNING_STORE` to your private keystore,
+`CIPHERGAP_SIGNING_STORE_PASSWORD` and `CIPHERGAP_SIGNING_KEY_PASSWORD` to its
+passwords, and `CIPHERGAP_SIGNING_ALIAS` to the key alias (default `ciphergap`).
+Supply secrets through your local environment; do not commit them. Then run:
+
+```sh
+./android/gradlew -p android assembleRelease lintRelease
+python3 tests/verify_android_release.py
+```
+
+Release output: `android/app/build/outputs/apk/release/app-release.apk`.
+Verification requires `ANDROID_HOME` and optionally `JAVA_HOME` for the SDK/JDK.
+Back up the signing identity securely; updates must retain its certificate.
+Release signing fails when credentials are missing rather than using a debug key.
 Gradle 8.13 (SHA-256 checked), AGP 8.13.2 and AndroidX WebKit 1.17.1 are pinned.
 Google Maven is the default. If it is unavailable, an optional mirror URL may be
 provided through `CIPHERGAP_MAVEN_MIRROR`. No browser engine is bundled.

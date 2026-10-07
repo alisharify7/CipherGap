@@ -201,7 +201,7 @@ public class MainActivity extends Activity {
                     PendingAction action=actions.remove(request.getString("token"));if(action!=null)response(action.proxy,action.id,request.opt("result"),null);break;
                 case "tabs": requireLocal(local);result=chat==null?JSONObject.NULL:new JSONObject().put("id",1).put("url",chat.getUrl());break;
                 case "open_security": showSecurity();break;
-                case "app_state": requireLocal(local);result=new JSONObject().put("compatible",compatible).put("version",BuildConfig.VERSION_NAME).put("notificationsAllowed",notificationAllowed()).put("chatUrl",chat==null?JSONObject.NULL:chat.getUrl());break;
+                case "app_state": requireLocal(local);result=new JSONObject().put("compatible",compatible).put("version",BuildConfig.VERSION_NAME).put("debug",BuildConfig.DEBUG).put("notificationsAllowed",notificationAllowed()).put("chatUrl",chat==null?JSONObject.NULL:chat.getUrl());break;
                 case "navigate_state":requireLocal(local);String page=request.getString("page");if(!Arrays.asList("home","guide","settings").contains(page))throw new IllegalArgumentException();shellPage=page;break;
                 case "open_messenger":requireLocal(local);openMessenger(request.getString("url"));break;
                 case "resume":requireLocal(local);if(chat!=null){bar.setVisibility(View.VISIBLE);shell.setVisibility(View.GONE);if(security!=null)security.setVisibility(View.GONE);chat.setVisibility(View.VISIBLE);}break;

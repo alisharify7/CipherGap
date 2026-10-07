@@ -17,7 +17,7 @@ function render(){
  document.getElementById('compatibility').hidden=appState.compatible!==false;
  for(const button of document.querySelectorAll('[data-messenger]'))button.disabled=appState.compatible===false;
  document.getElementById('resume').hidden=!appState.chatUrl;
- document.getElementById('version').textContent='Android '+(appState.version||'0.1.1')+' · Preview';
+ document.getElementById('version').textContent='Android '+(appState.version||'0.1.1')+(appState.debug?' · Debug':' · Release');
 }
 async function refresh(){[preferences,appState]=await Promise.all([chrome.storage.local.get(['ciphergap_ui_language','ciphergap_ui_theme','ciphergap_enabled','android_notifications']),host('app_state')]);render();}
 window.navigate=async page=>{for(const s of document.querySelectorAll('.page'))s.hidden=s.id!==page;for(const b of document.querySelectorAll('nav [data-page]'))b.setAttribute('aria-current',b.dataset.page===page?'page':'false');status('');await host('navigate_state',{page});await refresh();window.scrollTo(0,0);};
