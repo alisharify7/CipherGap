@@ -27,12 +27,14 @@ function setLanguage(language) {
         }
         attributeOriginals.set(element, saved);
     }
+    document.querySelectorAll("img[data-shot]").forEach(img => { img.src = `website/screenshots/${img.dataset.shot}-${english ? "en" : "fa"}.png`; });
+    document.getElementById("screenshot-dialog")?.close();
     try { localStorage.setItem("ciphergap-language", language); } catch { /* Storage may be blocked. */ }
 }
 languageSelect.addEventListener("change", event => setLanguage(event.target.value));
 let savedLanguage;
 try { savedLanguage = localStorage.getItem("ciphergap-language"); } catch { /* Use the page default. */ }
-setLanguage(savedLanguage === "fa" ? "fa" : "en");
+setLanguage(savedLanguage === "en" ? "en" : "fa");
 const menu = document.querySelector(".menu-button");
 const navigation = document.getElementById("main-nav");
 function closeMenu() {
@@ -96,3 +98,18 @@ document.querySelectorAll("[data-copy]").forEach((button) => {
         statusTimer = setTimeout(() => { status.hidden = true; }, 5500);
     });
 });
+
+const screenshotDialog = document.getElementById("screenshot-dialog");
+let screenshotInvoker;
+document.querySelectorAll(".screenshot-open").forEach(button => {
+    button.addEventListener("click", () => {
+        const source = button.querySelector("img");
+        const target = screenshotDialog.querySelector("img");
+        target.src = source.src; target.alt = source.alt;
+        screenshotInvoker = button;
+        screenshotDialog.showModal();
+    });
+});
+document.getElementById("screenshot-close").addEventListener("click", () => screenshotDialog.close());
+screenshotDialog.addEventListener("click", event => { if (event.target === screenshotDialog) screenshotDialog.close(); });
+screenshotDialog.addEventListener("close", () => screenshotInvoker?.focus());

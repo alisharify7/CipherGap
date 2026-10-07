@@ -18,12 +18,10 @@ jobs:
       - uses: actions/configure-pages@v5
       - name: Assemble static site
         run: |
-          mkdir -p _site/website _site/docs/images _site/CipherGap/assets _site/CipherGap/share
+          mkdir -p _site/website _site/CipherGap/assets
           cp index.html .nojekyll _site/
           cp website/style.css website/app.js website/languages.js _site/website/
-          cp -R website/fonts website/messengers _site/website/
-          cp CipherGap/share/theme.css _site/CipherGap/share/
-          cp docs/images/security.png docs/images/files.png _site/docs/images/
+          cp -R website/fonts website/screenshots website/downloads _site/website/
           cp CipherGap/assets/ciphergap.svg _site/CipherGap/assets/
       - uses: actions/upload-pages-artifact@v4
         with:

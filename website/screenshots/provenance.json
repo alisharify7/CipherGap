@@ -1,0 +1,23 @@
+{
+  "captured_at": "2026-10-07T16:43:23.064820+00:00",
+  "desktop_version": "1.7.0",
+  "desktop_commit": "919e61bed78eb2248e4022c1fb9e37145582a9d8",
+  "android_commit": "1abaab329f50ae353ddcd11977efb97336f50343",
+  "android_version": "0.1.3",
+  "apk_sha256": "eca8421001cfbbd06fd925522d006d98f83d6676cc6f19d91d99f26fc44cb088",
+  "environment": "Real Chromium extension and Android 16/API36 emulator; synthetic chat data, no live accounts",
+  "screenshots": {
+    "android-home-en.png": "ee110da03ef351d864f71a7de28da4a36a295db0608b404163eb6e063c05c0e3",
+    "android-home-fa.png": "e7076facf5c98c1899ee1e2c533217449773b99478236073be4cf345ef64ed18",
+    "android-security-en.png": "bdbaad1aa92eef2fb0117359ebf5347a70283116ecfd91a9570fdf9c31282537",
+    "android-security-fa.png": "98397672f0b17e3d39aa2a868c3a597d0789ad4994fc0a342fa15f5f2da6c36e",
+    "android-transfer-en.png": "0477b4924fca814c9b0510112d704a9d1711e95ae141363ed18382d57469d9cf",
+    "android-transfer-fa.png": "b7726bbe737a39544f9b46cd0cca9363df9fe0b260cfa4fc20a3c377ae6835db",
+    "desktop-files-en.png": "b37505189d87e497c3bace069d93ed4fd0dcbde6fa9f4b54b11e557830c4d0c5",
+    "desktop-files-fa.png": "c38052df2d88e29898edc4aca80d4bc471922fb496f6af450a5c8ca50e8586de",
+    "desktop-security-en.png": "ff0b2e496ea8cf9bb2fcd13ce1f50f6e2908a1f4128524a3e3d3b978557cbc04",
+    "desktop-security-fa.png": "12c7d501452ec43dfc7419f48cff4537b7e2df4c9f50c89aaa04f6b788b16e15",
+    "desktop-transfer-en.png": "7b2281ddce26449db062e8b5ad077600ce4205bca8f1513237e3ea5cadec6577",
+    "desktop-transfer-fa.png": "7b59e4ccc4e9f3a3093963c2d177cbec76dd49b04334617e5564c3ff32d6a07b"
+  }
+}
