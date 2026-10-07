@@ -24,6 +24,8 @@ jobs:
           distribution: temurin
           java-version: '17'
       - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools platforms;android-36 build-tools;36.0.0'
       - name: Copy shared source from main
         run: |
           source_sha=$(git rev-parse --short origin/main)
@@ -35,7 +37,6 @@ jobs:
         run: |
           node --test tests/*.test.js
           python3 -m unittest discover -s tests -p '*_test.py'
-          sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
           ./android/gradlew -p android assembleDebug lintDebug
       - name: Save validated Android core
         run: |
