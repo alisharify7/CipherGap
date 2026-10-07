@@ -1,3 +1,40 @@
+# Android 0.1.3 transfer validation — 2026-10-07
+
+`assembleDebug` and `lintDebug` passed with shared core 1.7.0. Both package
+checks passed and popup/shared source matched main byte for byte. Version code
+is 4; the APK retains the existing debug signing certificate (SHA-256
+`99bf58db121ccc988e5bf97ec104337e0ff9e86c3dfa2c69ae4a1aac3a823e11`).
+
+`tests/browser_android_transfer.py` passed on a disposable Android 16/API 36
+x86_64 emulator with the compatible Cromite WebView 147.0.7727.56 provider:
+
+- A desktop encrypted backup was imported with Android's native file picker;
+  exact Persian/emoji keys, theme/language, chat flags and personal trust survived.
+- Messages encrypted on desktop decrypted in the actual Android messenger
+  WebView, and Android encrypted text decrypted on desktop with the exported key.
+- Android exported a full backup through its native save dialog; desktop opened
+  it and matched the complete portable snapshot. The filename retains `.ciphergap`.
+- Android generated/saved an actual key QR PNG; desktop decoded its exact key.
+  Android imported it through its native image picker into another chat and kept
+  partner identity unverified.
+- Camera denial/grant, a live emulator camera stream, track cleanup on close and
+  denial to messenger pages after approval passed. The system permission dialog
+  no longer cancels its own pending camera request. EN/FA mobile layouts fit.
+
+The existing Bale/Eitaa/Telegram WebView/desktop workflows also passed ECDH/SAS,
+text/emoji, native encrypted file/media transfer, pause and isolation. Settings,
+trusted keyboard touch, Back, persisted sessions/keys and confirmed data clearing
+passed. Generic notifications also passed permission handling, incoming exchange
+notifications, history/outgoing/duplicate exclusion and no background delivery.
+The keyboard test now reuses its CDP touch helper instead of relying on
+a potentially stale UIAutomator XML snapshot from an animated WebView.
+
+These are real WebView/native-dialog checks with isolated messenger fixtures.
+No physical-phone camera scan or live messenger-account delivery is claimed.
+Chromium additionally scanned a synthetic QR camera feed; Firefox decoded QR
+pixels and restored its native backup download. Existing provider limitations
+below apply. The published 0.1.2 APK does not contain these source changes.
+
 # Android 0.1.2 validation — 2026-10-06
 
 Built and linted successfully with the existing pinned toolchain and packaged

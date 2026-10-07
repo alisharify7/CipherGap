@@ -20,7 +20,7 @@ import org.json.*;
 public class MainActivity extends Activity {
     static final String LOCAL = "https://appassets.androidplatform.net";
     static final Set<String> ORIGINS = new HashSet<>(Arrays.asList("https://web.bale.ai", "https://web.eitaa.com", "https://web.telegram.org"));
-    static final int PICK_FILE = 10, SAVE_FILE = 11, NOTIFICATIONS = 12;
+    static final int PICK_FILE = 10, SAVE_FILE = 11, NOTIFICATIONS = 12, QR_CAMERA = 13;
     static final long MAX_BYTES = 101L * 1024 * 1024;
     WebView shell, chat, security;
     JavaScriptReplyProxy chatProxy;
@@ -40,6 +40,7 @@ public class MainActivity extends Activity {
     String settingsRequest;
     String shellPage="home";
     JavaScriptReplyProxy settingsProxy;
+    PermissionRequest cameraRequest;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
@@ -138,7 +139,15 @@ public class MainActivity extends Activity {
                 intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE,params.getMode()==FileChooserParams.MODE_OPEN_MULTIPLE);
                 try{startActivityForResult(intent,PICK_FILE);}catch(ActivityNotFoundException e){callback.onReceiveValue(null);fileCallback=null;}return true;
             }
-            @Override public void onPermissionRequest(PermissionRequest request) { request.deny(); }
+            @Override public void onPermissionRequest(PermissionRequest request) {
+                // Only the trusted key scanner can use video. Messenger pages
+                // and audio requests remain denied even after camera approval.
+                if (!local || view!=security || !LOCAL.equals(request.getOrigin().toString().replaceAll("/$","")) || request.getResources().length!=1 || !PermissionRequest.RESOURCE_VIDEO_CAPTURE.equals(request.getResources()[0])) {request.deny();return;}
+                if (cameraRequest!=null) cameraRequest.deny();
+                if (checkSelfPermission(Manifest.permission.CAMERA)==PackageManager.PERMISSION_GRANTED) request.grant(new String[]{PermissionRequest.RESOURCE_VIDEO_CAPTURE});
+                else {cameraRequest=request;requestPermissions(new String[]{Manifest.permission.CAMERA},QR_CAMERA);}
+            }
+            @Override public void onPermissionRequestCanceled(PermissionRequest request) {if(cameraRequest==request)cameraRequest=null;}
         });
         view.setDownloadListener((url,ua,disposition,mime,length)->Toast.makeText(this,tr("Use the CipherGap Download button for decrypted files.","برای فایل رمزگشایی‌شده از دکمهٔ دانلود CipherGap استفاده کنید."),Toast.LENGTH_LONG).show());
         if (local && WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) {
@@ -161,7 +170,7 @@ public class MainActivity extends Activity {
         return "web.bale.ai".equals(u.getHost()) || "web.eitaa.com".equals(u.getHost()) || "web.telegram.org".equals(u.getHost()) && u.getPath()!=null && u.getPath().startsWith("/a/");
     }
     void openExternal(Uri uri) { try{startActivity(new Intent(Intent.ACTION_VIEW,uri));}catch(ActivityNotFoundException e){Toast.makeText(this,tr("No browser is available.","مرورگری در دسترس نیست."),Toast.LENGTH_SHORT).show();} }
-    void showShell(String page) { bar.setVisibility(View.GONE);shell.setVisibility(View.VISIBLE);if(chat!=null)chat.setVisibility(View.GONE);if(security!=null)security.setVisibility(View.GONE);shell.evaluateJavascript("window.navigate && navigate("+JSONObject.quote(page)+")",null); }
+    void showShell(String page) {closeKeyScanner();bar.setVisibility(View.GONE);shell.setVisibility(View.VISIBLE);if(chat!=null)chat.setVisibility(View.GONE);if(security!=null)security.setVisibility(View.GONE);shell.evaluateJavascript("window.navigate && navigate("+JSONObject.quote(page)+")",null); }
     void openMessenger(String url) {
         if(!messengerUrl(url))throw new IllegalArgumentException("Unsupported messenger address.");
         if(!compatible){showShell("home");Toast.makeText(this,tr("Update Android System WebView to use encryption.","برای رمزنگاری، Android System WebView را به‌روزرسانی کنید."),Toast.LENGTH_LONG).show();return;}
@@ -289,17 +298,20 @@ public class MainActivity extends Activity {
         if(request==PICK_FILE && fileCallback!=null){ArrayList<Uri> files=new ArrayList<>();if(result==RESULT_OK&&intent!=null){if(intent.getClipData()!=null){for(int i=0;i<intent.getClipData().getItemCount();i++)files.add(intent.getClipData().getItemAt(i).getUri());}else if(intent.getData()!=null)files.add(intent.getData());}fileCallback.onReceiveValue(files.isEmpty()?null:files.toArray(new Uri[0]));fileCallback=null;}
         if(request==SAVE_FILE && saving!=null){Transfer t=saving;saving=null;downloads.values().remove(t);new Thread(()->{try{if(result==RESULT_OK&&intent!=null&&intent.getData()!=null){try(InputStream in=new FileInputStream(t.file);OutputStream out=getContentResolver().openOutputStream(intent.getData())){if(out==null)throw new IOException();copy(in,out);}runOnUiThread(()->Toast.makeText(this,tr("File saved","فایل ذخیره شد"),Toast.LENGTH_SHORT).show());}}catch(Exception e){runOnUiThread(()->Toast.makeText(this,tr("Could not save the file. Try Download again.","فایل ذخیره نشد. دوباره دانلود را بزنید."),Toast.LENGTH_LONG).show());}finally{t.dispose();}}).start();}
     }
-    @Override public void onRequestPermissionsResult(int code,String[] permissions,int[] results){super.onRequestPermissionsResult(code,permissions,results);if(code==NOTIFICATIONS&&settingsProxy!=null){try{data.put("android_notifications",notificationAllowed());store.write(data);response(settingsProxy,settingsRequest,notificationAllowed(),null);}catch(Exception e){response(settingsProxy,settingsRequest,null,"Could not save notification settings.");}settingsProxy=null;}}
+    @Override public void onRequestPermissionsResult(int code,String[] permissions,int[] results){super.onRequestPermissionsResult(code,permissions,results);if(code==QR_CAMERA&&cameraRequest!=null){PermissionRequest request=cameraRequest;cameraRequest=null;if(results.length>0&&results[0]==PackageManager.PERMISSION_GRANTED&&security!=null&&security.getVisibility()==View.VISIBLE&&security.getUrl()!=null&&security.getUrl().startsWith(LOCAL+"/assets/extension/popup/"))request.grant(new String[]{PermissionRequest.RESOURCE_VIDEO_CAPTURE});else request.deny();}if(code==NOTIFICATIONS&&settingsProxy!=null){try{data.put("android_notifications",notificationAllowed());store.write(data);response(settingsProxy,settingsRequest,notificationAllowed(),null);}catch(Exception e){response(settingsProxy,settingsRequest,null,"Could not save notification settings.");}settingsProxy=null;}}
     void handleNotification(Intent intent){String url=intent.getStringExtra("chat_url");if(url!=null&&messengerUrl(url))openMessenger(url);}
     @Override protected void onNewIntent(Intent intent){super.onNewIntent(intent);setIntent(intent);handleNotification(intent);}
     @Override protected void onStart(){super.onStart();started=true;}
-    @Override protected void onStop(){started=false;super.onStop();}
-    @Override protected void onPause(){super.onPause();CookieManager.getInstance().flush();}
+    @Override protected void onStop(){started=false;closeKeyScanner();super.onStop();}
+    void closeKeyScanner(){if(cameraRequest!=null){cameraRequest.deny();cameraRequest=null;}if(security!=null)security.evaluateJavascript("for(const id of ['scannerDialog','qrDialog']){const d=document.getElementById(id);if(d?.open)d.close();}",null);}
+    // The system camera permission dialog pauses the Activity. Keep its request
+    // alive until the result; onStop still releases it when the app is hidden.
+    @Override protected void onPause(){super.onPause();if(cameraRequest==null)closeKeyScanner();CookieManager.getInstance().flush();}
     // API 33+ uses the platform OnBackInvokedDispatcher registered above; older
     // devices retain their Activity callback. No AndroidX Activity dependency needed.
     @android.annotation.SuppressLint("GestureBackNavigation")
     @Override public void onBackPressed(){handleBack();}
-    void handleBack(){if(security!=null&&security.getVisibility()==View.VISIBLE){if(chat!=null){security.setVisibility(View.GONE);chat.setVisibility(View.VISIBLE);}else showShell("home");}else if(chat!=null&&chat.getVisibility()==View.VISIBLE){if(chat.canGoBack())chat.goBack();else showShell("home");}else if(!shellPage.equals("home"))showShell("home");else finish();}
+    void handleBack(){closeKeyScanner();if(security!=null&&security.getVisibility()==View.VISIBLE){if(chat!=null){security.setVisibility(View.GONE);chat.setVisibility(View.VISIBLE);}else showShell("home");}else if(chat!=null&&chat.getVisibility()==View.VISIBLE){if(chat.canGoBack())chat.goBack();else showShell("home");}else if(!shellPage.equals("home"))showShell("home");else finish();}
     @Override protected void onDestroy(){for(Transfer t:downloads.values())t.dispose();if(fileCallback!=null)fileCallback.onReceiveValue(null);if(shell!=null)shell.destroy();if(chat!=null)chat.destroy();if(security!=null)security.destroy();handler.removeCallbacksAndMessages(null);super.onDestroy();}
     static final class PendingAction{final JavaScriptReplyProxy proxy;final String id;PendingAction(JavaScriptReplyProxy p,String i){proxy=p;id=i;}}
     static final class Transfer{final File file;final String name,mime;final long size;final WebView owner;final FileOutputStream out;long written;boolean closed;Transfer(File f,String n,String m,long s,WebView o)throws IOException{file=f;name=n;mime=m;size=s;owner=o;out=new FileOutputStream(f);}void dispose(){try{out.close();}catch(IOException ignored){}file.delete();}}

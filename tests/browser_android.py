@@ -404,12 +404,7 @@ def native_checks(shell,key,secret):
     phone.evaluate('document.cookie="cg_session_probe=persisted;Secure;SameSite=Strict;path=/"')
     phone.evaluate('document.getElementById("editable-message-text").scrollIntoView()')
     # Real touch opens the Android keyboard, instead of synthesizing a JS focus.
-    rect=phone.evaluate('(()=>{const r=document.getElementById("editable-message-text").getBoundingClientRect();return [r.x+r.width/2,r.y+r.height/2,devicePixelRatio]})()')
-    adb('shell','uiautomator','dump','/sdcard/cg-ui.xml')
-    nodes=ET.fromstring(adb('shell','cat','/sdcard/cg-ui.xml'))
-    web=next(n for n in nodes.iter('node') if n.get('class')=='android.webkit.WebView')
-    left,top,_,_=map(int,re.findall(r'\d+',web.get('bounds')))
-    adb('shell','input','tap',str(int(left+rect[0]*rect[2])),str(int(top+rect[1]*rect[2])))
+    tap_dom(phone,'#editable-message-text')
     wait(lambda:'mInputShown=true' in adb('shell','dumpsys','input_method'))
     phone.screenshot('keyboard.png');adb('shell','input','keyevent','4')
     # Keystore data and a synthetic session cookie survive a process restart.

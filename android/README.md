@@ -6,7 +6,9 @@ Rubika and WhatsApp are shown as in development.
 
 ## Install and use
 
-1. Download `ciphergap-android-0.1.2.apk` from the Android prerelease.
+1. Download `ciphergap-android-0.1.2.apk` from the published Android prerelease.
+   The current source builds 0.1.3 with backup/QR transfer; no new APK release is
+   implied by this source update.
 2. Allow installation from your browser/Files app for this installation, install
    the APK, then disable that permission again.
 3. Choose a messenger and sign in **on its own website**.
@@ -77,8 +79,12 @@ inside a messenger page is readable by that page's JavaScript.**
 - Generic notifications need permission and a running page while the app is
   open. No message text, attachment names or keys appear. History/outgoing rows
   are excluded; selecting a notification opens its conversation.
-- No closed-app delivery, background service, push relay, calls, camera or
-  microphone support. Camera/microphone permission requests are denied.
+- The Transfer screen exports/imports password-encrypted full or single-chat
+  backups with the same portable format as Chrome/Firefox. QR images contain
+  the actual shared key. Share privately; partner imports stay unverified.
+- Camera access is requested only by the local key QR scanner. Messenger pages
+  and microphone requests are denied, including after scanner approval.
+- No closed-app delivery, background service, push relay or calls.
 - One active messenger WebView. Switching messengers preserves cookies but
   reloads the page; a pending exchange may need to be restarted.
 - Real account tests require direct user login. Sanitized DOM fixture success
@@ -90,6 +96,7 @@ Use a test emulator with a compatible WebView, install the debug APK, then:
 
 ```sh
 ANDROID_HOME=/path/to/sdk python3 tests/browser_android.py
+ANDROID_HOME=/path/to/sdk python3 tests/browser_android_transfer.py
 node --test tests/shared_core.test.js tests/exchange_expiry.test.js tests/bale_workflows.test.js
 python3 -m unittest tests/packages_test.py
 ```

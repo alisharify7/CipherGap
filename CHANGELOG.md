@@ -1,5 +1,11 @@
 # Changelog
 
+## [Android 0.1.3 preview](docs/releases/android-v0.1.3.md) - 2026-10-07
+
+- Reused shared 1.7.0 encrypted backups, key QR transfer and About/support links.
+- Added native scanner-only camera permission and correct permission-dialog lifecycle.
+- Retained readable mobile tab labels and native file saving.
+
 ## [1.7.0](docs/releases/v1.7.0.md) - 2026-10-07
 
 - Added encrypted full/chat backups, reviewed imports and exact UTF-8 key transfer.
