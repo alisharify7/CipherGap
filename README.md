@@ -11,7 +11,7 @@ Messages are encrypted locally in your browser before being sent, ensuring that 
 * AES-256-GCM message and attachment encryption in the browser
 * Per-chat keys and optional automatic message decryption
 * An installation guide for recipients without CipherGap, hidden while the extension is enabled
-* Separate Security, Files, Settings and About (with the guide) pages with light/dark themes
+* Separate Security, Files, Transfer, Settings and About (with the guide) pages with light/dark themes
 * Compact chat controls with icons, native light/dark surfaces and per-chat pause
 * Encrypted Unicode emoji and static/animated stickers, shown inside the message
 * Decrypt and preview images, play audio/video, or download the original file
@@ -23,6 +23,8 @@ Messages are encrypted locally in your browser before being sent, ensuring that 
 * Password-encrypted full/chat backups and offline key QR generation/scanning
 
 [Support CipherGap](https://www.coffeete.ir/alisharify7)
+
+The **About** tab includes the website, GitHub repository and compatibility guide.
 
 [Security interface](docs/images/security.png) · [File interface](docs/images/files.png)
 
