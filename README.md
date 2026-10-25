@@ -1,12 +1,38 @@
 # CipherGap 🔒
 
 <img src="CipherGap/assets/ciphergap.svg" width="80" height="80" alt="CipherGap logo"/>
-https://alisharify7.github.io/CipherGap/
-**CipherGap** is an open-source Chrome and Firefox extension for private messaging. **Bale Web, Eitaa Web, Telegram Web A, Rubika Web and Soroush Plus Web** are supported on desktop. WhatsApp remains in development. Android 0.1.4 supports the same five messengers and the same encryption, exchange, file, sticker and transfer features. Source and build instructions are on the [Android branch](https://github.com/alisharify7/CipherGap/tree/android). Telegram Web K is not supported.
 
-Messages are encrypted locally in your browser before being sent, ensuring that only users with the shared secret can read the original content.
+Encrypt messages and files before sending them through the messenger you already use. CipherGap runs on your device as a **Chrome or Firefox extension**, or as an **Android app**. Both people need CipherGap and a shared key to read the messages.
 
-CipherGap Website: https://alisharify7.github.io/CipherGap/
+Works with **Bale Web, Eitaa Web, Telegram Web A, Rubika Web and Soroush Plus Web**. Telegram Web K is not supported; WhatsApp is still in development.
+
+[Website & installation guide](https://alisharify7.github.io/CipherGap/) · [Desktop downloads](#downloads--desktop-170--android-014) · [Android source & build guide](https://github.com/alisharify7/CipherGap/tree/android)
+
+## See it in action
+
+Set up a chat key, send an encrypted file, or take your keys to another device. These are screenshots of the app with sample data. Click an image to view it at full size.
+
+<table>
+  <tr>
+    <th>Set up a chat key</th>
+    <th>Send encrypted files</th>
+    <th>Back up and transfer keys</th>
+  </tr>
+  <tr>
+    <td><a href="docs/images/security.png"><img src="docs/images/security.png" width="280" alt="CipherGap desktop Security tab showing a sample chat and shared-key controls"></a></td>
+    <td><a href="docs/images/files.png"><img src="docs/images/files.png" width="280" alt="CipherGap desktop Files tab with encrypted sending and automatic receiving controls"></a></td>
+    <td><a href="docs/images/transfer.png"><img src="docs/images/transfer.png" width="280" alt="CipherGap desktop Transfer tab with password-encrypted backups and key QR controls"></a></td>
+  </tr>
+</table>
+
+<details>
+<summary>See the Android app</summary>
+
+<a href="docs/images/android-security.png"><img src="docs/images/android-security.png" width="270" alt="CipherGap Android chat security screen with sample chat details and key verification controls"></a>
+
+The Android app uses the same shared keys and backup format as the desktop extension. Screenshots show desktop **1.7.0** and Android **0.1.3**; the Android download below is **0.1.4**. [Screenshot sources and capture details](https://github.com/alisharify7/CipherGap/blob/website/website/screenshots/provenance.json).
+
+</details>
 
 ## Features
 
@@ -27,8 +53,6 @@ CipherGap Website: https://alisharify7.github.io/CipherGap/
 [Support CipherGap](https://www.coffeete.ir/alisharify7)
 
 The **About** tab includes the website, GitHub repository and compatibility guide.
-
-[Security interface](docs/images/security.png) · [File interface](docs/images/files.png)
 
 [Changelog](CHANGELOG.md) · [Release notes for v1.7.0](docs/releases/v1.7.0.md)
 
