@@ -16,3 +16,73 @@ html[lang=en] h1{line-height:1.16;letter-spacing:-2.5px}html[lang=en] h2{line-he
 @media(max-width:480px){.container{width:calc(100% - 32px)}body{font-size:14px}.hero h1{font-size:43px;letter-spacing:-1.2px}.hero-description{font-size:13px;line-height:2}.hero-facts{gap:8px 15px;font-size:10px}.hero-actions{gap:10px;margin-top:24px}.hero-actions .button{padding:11px 14px;font-size:12px;min-height:48px}.hero .eyebrow{font-size:9px}.release-link{font-size:10px;gap:10px}.hero-product{min-height:450px;padding-inline-end:34px;margin-top:10px}.desktop-frame{width:270px;transform:translate(-4px,-10px)}.phone-frame{width:127px;right:0;bottom:4px;border-radius:20px}.phone-frame>img{border-radius:15px}.frame-bar{font-size:8px;padding:7px 9px}.hero-product-caption{font-size:10px}h2{font-size:29px;letter-spacing:-.8px}.flow h3{font-size:15px}.flow li{padding:20px 16px}.flow p{font-size:11px}.flow-number{margin-bottom:15px}.screenshot-grid{grid-template-columns:1fr;gap:20px}.screenshot-open{height:355px;padding:15px}.shot-copy{padding:18px}.shot-copy h3{font-size:18px}.shot-copy p{font-size:13px}.install-card{padding:18px}.tab-list{padding:4px;gap:2px;margin-bottom:22px}.tab-list button{font-size:10px;min-height:40px}.platform-summary{align-items:start}.platform-summary h3{font-size:18px}.platform-summary>span{font-size:9px}.panel-kicker{font-size:12px}.install-steps{gap:20px}.install-steps li{gap:11px}.install-steps h4{font-size:14px}.install-steps p{font-size:11px}.copy-row{padding:7px;gap:5px}.copy-row code{font-size:9px}.copy-row button{font-size:9px;padding:4px 6px}.faq-list summary{font-size:13px;padding-block:18px}.faq-list details>p{font-size:12px}.privacy-section h2{font-size:30px}.support-section{padding:25px}.support-section .button{width:100%}.site-footer .brand{font-size:18px}.site-footer nav{font-size:10px;gap:13px}html[lang=en] .hero h1{font-size:40px}html[lang=en] .hero-description{line-height:1.8}html[lang=en] .hero-actions .button{font-size:11px}html[lang=en] .flow h3{font-size:13px}}
 @media(max-width:350px){.hero-product{min-height:402px;padding-inline-end:28px}.desktop-frame{width:237px}.phone-frame{width:111px;right:-1px}.hero h1{font-size:38px}.header-inner{gap:10px}#language-select{font-size:10px;max-width:72px}.hero-actions .button{font-size:11px;padding-inline:12px}.release-link{font-size:9px}.platform-summary>span{max-width:95px;line-height:1.5}.site-footer nav{gap:11px}}
 @media(prefers-reduced-motion:reduce){:root{scroll-behavior:auto}*,*::before,*::after{transition:none!important}.button:hover{transform:none}}
+
+/* A quieter first screen, with the app and the next step easy to find. */
+:root{--paper:#fafbf7;--ink:#183b32;--muted:#5b6c63;--line:#dce4d9}
+.hero{background:var(--paper);color:var(--ink);border-bottom:1px solid var(--line)}
+.hero-grid{gap:52px;padding-block:64px}
+.hero .eyebrow{color:var(--muted);font-size:12px;letter-spacing:0;font-weight:550}
+.hero .signal-dot{background:#438267}
+.hero h1{font-weight:650;line-height:1.5;letter-spacing:-1.6px}
+.hero h1 span{color:#39765a}
+.hero-description{font-size:16px;line-height:1.95;color:var(--muted);max-width:530px}
+.hero-actions{margin-top:28px}
+.hero .button.lime{background:var(--forest);color:white}
+.hero .button.lime:hover{background:#285b48}
+.hero .button.ghost{color:var(--ink);border-color:#c8d4c6;background:transparent}
+.hero .button.ghost:hover{background:#eaf0e5}
+.hero-facts{color:var(--muted);font-size:11px;gap:10px 18px}
+.hero-facts li:before{color:#39765a}
+.release-link{color:var(--muted);border-color:var(--line);font-size:12px;padding-top:14px;margin-top:22px}
+.release-link>span:first-child{color:var(--forest)}
+.hero-product{min-height:540px;gap:16px;padding:30px 20px 54px;background:#e8eee3;border:1px solid #d9e2d2;border-radius:20px}
+.desktop-frame{width:66%;transform:none;border:1px solid #d0d9cb;border-radius:11px;box-shadow:0 16px 30px #183b3214}
+.frame-bar{padding:8px 10px;font-size:8px}
+.phone-frame{position:relative;width:29%;right:auto;bottom:auto;align-self:flex-end;transform:translateY(18px);padding:4px;border-radius:22px;box-shadow:0 12px 24px #183b3226}
+.phone-frame>img{border-radius:17px}
+.hero-product-caption{bottom:15px;color:#506653;font-size:11px}
+.messenger-strip{padding-block:27px;border-bottom:1px solid var(--line)}
+.messenger-strip h2{font-weight:600}
+.messenger-names{gap:10px}
+.messenger-names a{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:white;font-size:12px;font-weight:550;transition:border-color .15s}
+.messenger-names a:hover{border-color:#7da087}
+.eyebrow{font-size:12px;letter-spacing:0;font-weight:550}
+.section-heading h2{font-weight:650}
+.section-heading>p{font-size:15px}
+.flow p,.feature-grid p,.shot-copy p,.setup-grid p{font-size:14px;line-height:1.85}
+.feature-symbol{font-size:21px}
+.screenshot-open{background:#eef2e9}
+.shot-copy h3{font-weight:650}
+.faq-list summary{font-size:15px}
+.faq-list details>p{font-size:14px}
+html[lang=en] .hero h1{font-size:clamp(40px,4vw,59px);font-weight:650;letter-spacing:-2px;line-height:1.15}
+html[lang=en] .hero-description{line-height:1.8}
+@media(max-width:1120px){
+  .hero-grid{gap:32px}.hero-product{min-height:470px;padding-inline:16px;gap:12px}
+  .hero-description{font-size:15px}.messenger-names{max-width:540px}
+  .messenger-strip{align-items:center}.messenger-names a{font-size:11px;padding:7px 9px}
+}
+@media(max-width:800px){
+  .hero-grid{padding-block:40px;gap:32px}.hero-copy{max-width:630px}
+  .hero-product{max-width:510px;min-height:470px;padding:24px 20px 50px;gap:16px}
+  .desktop-frame{width:66%}.phone-frame{width:29%}
+  .hero-product-caption{bottom:14px}.messenger-strip{align-items:start}
+  .hero h1{font-size:50px}.section-heading>p{font-size:14px}
+}
+@media(max-width:480px){
+  .hero-grid{padding-block:32px}.hero h1{font-size:40px;letter-spacing:-1px}
+  html[lang=en] .hero h1{font-size:39px;letter-spacing:-1.5px}
+  .hero-description{font-size:14px;line-height:1.9;margin-top:16px}
+  .hero .eyebrow{font-size:11px}.hero-actions{margin-top:22px}
+  .hero-facts{font-size:10px;gap:8px 12px;margin-top:18px}
+  .hero-product{min-height:370px;margin-top:0;padding:20px 12px 45px;gap:4%;border-radius:14px}
+  .desktop-frame{width:66%}.phone-frame{width:30%;border-radius:17px;padding:3px;transform:translateY(8px)}
+  .phone-frame>img{border-radius:13px}.frame-bar{font-size:6px;padding:6px}
+  .hero-product-caption{font-size:10px;bottom:12px}
+  .messenger-names{gap:8px}.messenger-names a{font-size:11px;padding:7px 9px}
+  .flow p{font-size:12px}.feature-grid p,.shot-copy p,.setup-grid p{font-size:13px}
+}
+@media(max-width:350px){
+  .hero-product{min-height:320px}.hero h1{font-size:35px}
+  html[lang=en] .hero h1{font-size:34px}.hero-actions .button{font-size:11px}
+}
