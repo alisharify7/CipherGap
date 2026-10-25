@@ -1,10 +1,12 @@
 # CipherGap 🔒
 
 <img src="CipherGap/assets/ciphergap.svg" width="80" height="80" alt="CipherGap logo"/>
-
+https://alisharify7.github.io/CipherGap/
 **CipherGap** is an open-source Chrome and Firefox extension for private messaging. **Bale Web, Eitaa Web, Telegram Web A, Rubika Web and Soroush Plus Web** are supported on desktop. WhatsApp remains in development. Android 0.1.4 supports the same five messengers and the same encryption, exchange, file, sticker and transfer features. Source and build instructions are on the [Android branch](https://github.com/alisharify7/CipherGap/tree/android). Telegram Web K is not supported.
 
 Messages are encrypted locally in your browser before being sent, ensuring that only users with the shared secret can read the original content.
+
+CipherGap Website: https://alisharify7.github.io/CipherGap/
 
 ## Features
 
