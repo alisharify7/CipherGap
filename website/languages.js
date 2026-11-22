@@ -45,7 +45,7 @@ window.CipherGapEnglish = {
   "نسخه و منبع تصاویر": "Screenshot versions & sources",
   "از این دستگاه شروع کنید": "START ON THIS DEVICE",
   "شما و طرف مقابل، هر دو CipherGap لازم دارید. در بله، ایتا، تلگرام وب A، روبیکا و سروش پلاس می‌توانید از اندروید و کامپیوتر با هم گفتگو کنید.": "Both you and your partner need CipherGap. On Bale, Eitaa, Telegram Web A, Rubika and Soroush Plus, Android and desktop work together.",
-  "ریلیز دسکتاپ ۱.۸.۰": "Desktop 1.8.0 release",
+  "ریلیز دسکتاپ ۱.۸.۱": "Desktop 1.8.1 release",
   "ریلیز اندروید ۰.۱.۴": "Android 0.1.4 release",
   "مشاهدهٔ SHA-256 فایل‌ها": "View file SHA-256 checksums",
   "کد و راهنمای ساخت در GitHub": "Source & build instructions on GitHub",
@@ -125,7 +125,7 @@ window.CipherGapEnglish = {
   "کد و راهنمای ساخت در GitHub ↗": "Source & build instructions on GitHub ↗",
   "دانلود APK اندروید ↓": "Download Android APK ↓",
   "راهنمای کامل اندروید ↗": "Full Android guide ↗",
-  "1.8.0 / کامپیوتر": "1.8.0 / Desktop",
+  "1.8.1 / کامپیوتر": "1.8.1 / Desktop",
   "دانلود ZIP افزونه ↓": "Download extension ZIP ↓",
   "دانلود ZIP فایرفاکس ↓": "Download Firefox ZIP ↓",
   "جزئیات امنیت در مخزن ↗": "Security details in the repository ↗",
@@ -149,7 +149,7 @@ window.CipherGapEnglish = {
   "نسخه‌های قابل دانلود": "Available downloads",
   "افزونهٔ کامپیوتر و برنامهٔ اندروید": "The desktop extension and Android app",
   "پیام بازشده در صفحه قابل خواندن است": "Decrypted messages are visible to the page",
-  "تغییرات نسخهٔ ۱.۸.۰": "What’s new in 1.8.0",
+  "تغییرات نسخهٔ ۱.۸.۱": "What’s new in 1.8.1",
   "تصاویر برنامه": "Inside CipherGap",
   "حساب جدید لازم نیست؛ نسخهٔ وب را باز کنید.": "Use your existing account in the web version.",
   "حمایت از پروژه": "Support the project",
@@ -212,5 +212,8 @@ window.CipherGapEnglish = {
   "روی دستگاه شما.": "right on your device.",
   "گفتگوهای گروهی امن": "Secure group chats",
   "سازندهٔ گروه در همان چت دعوت می‌فرستد، اعضا می‌پیوندند و سازنده هر عضو را تأیید می‌کند؛ کلید گروه برای هر عضو جداگانه و رمز‌شده در همین چت می‌رسد.": "The group creator posts an invite in the chat, members join, and the creator approves each one; the group key reaches every member separately, encrypted, in that same chat.",
-  "تغییر پوسته": "Toggle theme"
+  "تغییر پوسته": "Toggle theme",
+  "نسخهٔ ۱.۸.۱": "Version 1.8.1",
+  "مدیریت گروه، جستجو و مرور پیش از ارسال": "Group management, search and send review",
+  "سازندهٔ گروه می‌تواند عضوی را حذف یا کلید گروه را بچرخاند؛ بقیه کلید جدید را بی‌نیاز از پیوستن دوباره می‌گیرند. در پنجره ببینید کلید چند روز قدمت دارد و پیام‌ها تا کجا خوانا هستند. مرور اختیاری پیش از ارسال و جستجو در پیام‌های رمزگشایی‌شدهٔ بارگذاری‌شده.": "A group creator can remove a member or rotate the group key; everyone else gets the new key without joining again. The popup shows how old a key is and how far back messages are readable. Optional review before sending, and search in the decrypted messages loaded in the chat."
 };

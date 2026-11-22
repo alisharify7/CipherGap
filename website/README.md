@@ -12,7 +12,7 @@ No third-party scripts or trackers are used.
 
 ## Downloads
 
-Desktop 1.8.0 provides Chrome/Chromium/Edge/Brave and Firefox packages.
+Desktop 1.8.1 provides Chrome/Chromium/Edge/Brave and Firefox packages.
 Android 0.1.4 provides a production-signed release APK with debugging disabled.
 The website mirrors the exact GitHub release assets and links to both releases.
 `downloads/provenance.json` records source commits, release URLs, the production
