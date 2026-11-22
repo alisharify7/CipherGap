@@ -9,13 +9,13 @@ function get_storage_key() {
 
 async function get_secret_key() {
     const storageKey = get_storage_key();
-    const storage = await chrome.storage.local.get([storageKey]);
+    const storage = await globalThis.CipherGapShared.vault.get([storageKey]);
     return storage[storageKey];
 }
 
 async function set_secret_key(key) {
     const storageKey = get_storage_key();
-    await chrome.storage.local.set({ [storageKey]: key });
+    await globalThis.CipherGapShared.vault.set({ [storageKey]: key });
 }
 
 // =========================

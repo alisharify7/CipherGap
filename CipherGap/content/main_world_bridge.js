@@ -82,11 +82,14 @@
 
     async function reportBlob(blob, request, blobURL = null) {
         if (!request || request !== pending || request.reading || Date.now() > request.expires || blob.size > request.maxBytes) return;
-        const header = new Uint8Array(await blob.slice(0, 4105).arrayBuffer());
+        const header = new Uint8Array(await blob.slice(0, 4109).arrayBuffer());
         if (header.length < 9 || header[0] !== 67 || header[1] !== 71 || header[2] !== 80 || header[3] !== 69) return;
-        const length = new DataView(header.buffer).getUint32(5, true);
-        if (length < 1 || length > 4096 || 9 + length > header.length) return;
-        const filename = new TextDecoder().decode(header.slice(9, 9 + length)) + ".cgpe";
+        // Version 2 inserts a 4-byte ratchet epoch before the filename length.
+        const base = header[4] === 2 ? 9 : 5;
+        if (header.length < base + 4) return;
+        const length = new DataView(header.buffer).getUint32(base, true);
+        if (length < 1 || length > 4096 || base + 4 + length > header.length) return;
+        const filename = new TextDecoder().decode(header.slice(base + 4, base + 4 + length)) + ".cgpe";
         if (filename !== request.filename || pending !== request) return;
         request.reading = true;
         const bytes = await blob.arrayBuffer();

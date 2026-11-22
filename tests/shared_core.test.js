@@ -30,6 +30,7 @@ function load_classic_script(relativePath) {
     "share/namespace.js",
     "share/config.js",
     "share/encoding.js",
+    "share/keyring.js",
     "share/crypto.js",
     "share/file_crypto.js",
     "share/stickers.js",
@@ -112,7 +113,7 @@ test("Eitaa accepts numeric and username chat URLs without confusing invalid fra
 
 test("CGP v1 adds an installation notice while parsing the original payload", () => {
     const protocol = globalThis.CipherGapShared.protocol;
-    const packet = protocol.build_ciphergap_packet("payload|with|pipes", 1700000000);
+    const packet = protocol.build_ciphergap_packet("payload|with|pipes", 1700000000, "cgp_v1");
 
     const legacy = "CGP|1|AESGCM|1700000000|payload|with|pipes";
     assert.equal(packet, legacy + "\n\n" + protocol.message_notice);
@@ -333,7 +334,7 @@ test("legacy SAS and fingerprint derivation vectors remain stable", async () => 
     );
 });
 
-test("CGPE v1 remains readable through the shared file implementation", async () => {
+test("CGPE v2 files round-trip with an authenticated header", async () => {
     const fileCrypto = globalThis.CipherGapShared.file_crypto;
     const original = new File(
         [encode_utf8("shared file payload")],
@@ -348,12 +349,16 @@ test("CGPE v1 remains readable through the shared file implementation", async ()
     );
 
     assert.equal(encrypted.name, "note.txt.cgpe");
-    assert.deepEqual([...encryptedBytes.slice(0, 5)], [0x43, 0x47, 0x50, 0x45, 0x01]);
+    assert.deepEqual([...encryptedBytes.slice(0, 5)], [0x43, 0x47, 0x50, 0x45, 0x02]);
     assert.equal(decrypted.name, "note.txt");
     assert.equal(decrypted.type, "text/plain");
     assert.equal(decode_utf8(decrypted.data), "shared file payload");
     assert.equal(fileCrypto.get_cgpe_file_accept(), ".cgpe,application/octet-stream");
     assert.equal(fileCrypto.get_cgpe_write_file_size_label(), "100 MB");
+    // The name/MIME header is authenticated in v2: any header edit is rejected.
+    const tampered = new Uint8Array(encryptedBytes);
+    tampered[5 + 4 + 4 + 1] ^= 0x01;
+    await assert.rejects(fileCrypto.decrypt_cgpe(tampered.buffer, "file-secret"));
 });
 
 test("a fixed legacy CGPE v1 container remains decryptable", async () => {
@@ -402,6 +407,8 @@ test("manifest loads shared utilities before runtime and adapter code", () => {
         "share/translations.js",
         "share/i18n.js",
         "share/encoding.js",
+        "share/keyring.js",
+        "share/vault.js",
         "share/crypto.js",
         "share/file_crypto.js",
         "share/chat_ui.js",
@@ -409,6 +416,7 @@ test("manifest loads shared utilities before runtime and adapter code", () => {
         "share/stickers.js",
         "share/dh_crypto.js",
         "share/protocol.js",
+        "share/group_protocol.js",
         "share/exchange_ui.js",
         "share/messenger_adapter.js"
     ];
@@ -524,7 +532,7 @@ test("localized messenger digits preserve authenticated packets and exchange dea
     const session = await ecdh.create_dh_session();
     const deadline = Date.now() + 900000;
     const request = protocol.build_start_exchange_message(session.nonce, session.publicKeyB64, session.codecId, deadline);
-    const packet = protocol.build_ciphergap_packet(await crypto.encrypt_message("سلام ۱۲۳ — original digits", "localized-wire-key"));
+    const packet = protocol.build_ciphergap_packet(await crypto.encrypt_message("سلام ۱۲۳ — original digits", "localized-wire-key"), null, "cgp_v1");
     for (const digits of ["۰۱۲۳۴۵۶۷۸۹", "٠١٢٣٤٥٦٧٨٩"]) {
         const localize = text => text.replace(/[0-9]/g, d => digits[Number(d)]);
         assert.deepEqual(protocol.parse_strict_exchange_message(localize(request)), protocol.parse_strict_exchange_message(request));

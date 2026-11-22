@@ -792,7 +792,7 @@ async function refresh_popup_state({ announceStale = false } = {}) {
 
     const trustStorageKey = get_trust_storage_key();
     const exchangeStorageKey = get_exchange_storage_key();
-    const result = await chrome.storage.local.get([
+    const result = await globalThis.CipherGapShared.vault.get([
         storageKey,
         trustStorageKey,
         exchangeStorageKey
@@ -1075,7 +1075,7 @@ async function handle_manual_key_submit(event) {
     set_status("Saving the manual key…", "progress");
 
     try {
-        await chrome.storage.local.set({
+        await globalThis.CipherGapShared.vault.set({
             [storageKey]: key,
             [get_trust_storage_key()]: create_manual_trust()
         });
@@ -1121,7 +1121,7 @@ async function clear_current_key({
 
     let latestState;
     try {
-        latestState = await chrome.storage.local.get([
+        latestState = await globalThis.CipherGapShared.vault.get([
             storageKey,
             get_trust_storage_key(),
             get_exchange_storage_key()
@@ -1291,7 +1291,7 @@ function wait_for_exchange_complete(key, timeoutMs = EXCHANGE_WAIT_TIMEOUT_MS) {
             }
 
             try {
-                const result = await chrome.storage.local.get([
+                const result = await globalThis.CipherGapShared.vault.get([
                     key,
                     exchangeStorageKey,
                     trustStorageKey
@@ -1893,7 +1893,196 @@ chrome.storage.local.get(THEME_STORAGE_KEY).then(state => {
     if (["light","dark"].includes(state[THEME_STORAGE_KEY])) { localStorage.setItem(THEME_STORAGE_KEY, state[THEME_STORAGE_KEY]); followsSystemTheme = false; apply_theme(state[THEME_STORAGE_KEY]); }
 }).catch(() => {});
 initialize_theme();
-init();
+
+// =========================
+// Privacy & security: forward secrecy and app lock
+// =========================
+
+const vaultApi = globalThis.CipherGapShared.vault;
+const privacyEl = id => document.getElementById(id);
+const PRIVACY_KEYS = globalThis.CipherGapShared.storage_keys;
+const FS_PROFILE = globalThis.CipherGapShared.formats.crypto.profiles.hkdf_aes_gcm_v2;
+
+function get_retention_days() {
+    return Number(privacyEl("retentionSelect").value) || FS_PROFILE.default_retention_epochs;
+}
+
+async function refresh_privacy_card() {
+    const stored = await chrome.storage.local.get([PRIVACY_KEYS.forward_secrecy, PRIVACY_KEYS.retention_days]);
+    privacyEl("forwardSecrecyToggle").checked = stored[PRIVACY_KEYS.forward_secrecy] !== false;
+    const retention = String(stored[PRIVACY_KEYS.retention_days] || FS_PROFILE.default_retention_epochs);
+    if (![...privacyEl("retentionSelect").options].some(option => option.value === retention)) {
+        privacyEl("retentionSelect").add(new Option(`${retention} days`, retention));
+    }
+    privacyEl("retentionSelect").value = retention;
+
+    const chatStatus = privacyEl("chatForwardSecrecyStatus"), enableChat = privacyEl("enableChatForwardSecrecyBtn");
+    const hasKey = Boolean(currentSecretKey);
+    const ratcheted = hasKey && globalThis.CipherGapShared.keyring.is_ratchet_secret(currentSecretKey);
+    chatStatus.hidden = !hasKey;
+    enableChat.hidden = !hasKey || ratcheted;
+    chatStatus.textContent = ratcheted
+        ? `Forward secrecy is on for this chat. Messages older than ${retention} days can no longer be read.`
+        : "Forward secrecy is off for this chat. Its key never changes, so a stolen key opens every message.";
+
+    const lock = await vaultApi.status();
+    for (const id of ["appLockHeading", "appLockDescription"]) privacyEl(id).hidden = !lock.available;
+    privacyEl("appLockOff").hidden = !lock.available || lock.enabled;
+    privacyEl("appLockOn").hidden = !lock.available || !lock.enabled;
+    if (lock.enabled) privacyEl("autolockSelectOn").value = String(lock.autolockMinutes);
+}
+
+privacyEl("forwardSecrecyToggle").addEventListener("change", async event => {
+    try { await chrome.storage.local.set({ [PRIVACY_KEYS.forward_secrecy]: event.target.checked }); }
+    catch (error) { event.target.checked = !event.target.checked; set_status(error.message, "error"); }
+});
+privacyEl("retentionSelect").addEventListener("change", async () => {
+    try {
+        await chrome.storage.local.set({ [PRIVACY_KEYS.retention_days]: get_retention_days() });
+        await refresh_privacy_card();
+    } catch (error) { set_status(error.message, "error"); }
+});
+privacyEl("enableChatForwardSecrecyBtn").addEventListener("click", async () => {
+    if (!storageKey || !currentSecretKey) return;
+    const approved = await show_confirmation({
+        title: "Turn on forward secrecy for this chat?",
+        message: "Old messages in the previous format (version 1) will no longer open on this device, and messages older than the retention window become unreadable by design. Your partner must also use this version of CipherGap.",
+        confirmLabel: "Turn on"
+    });
+    if (!approved) return;
+    try {
+        const latest = (await vaultApi.get([storageKey]))[storageKey];
+        if (latest !== currentSecretKey) throw new Error("The key changed. Reopen CipherGap and try again.");
+        const state = await globalThis.CipherGapShared.keyring.ratchet_forward(latest, get_retention_days());
+        if (!state) return;
+        await vaultApi.set({ [storageKey]: state });
+        globalThis.CipherGapShared.keyring.forget_cached();
+        await refresh_popup_state();
+        await refresh_privacy_card();
+        set_status("Forward secrecy is on for this chat.", "success");
+    } catch (error) { set_status(error.message, "error"); }
+});
+
+function show_lock_error(message) {
+    const error = privacyEl("unlockError");
+    error.textContent = message ? globalThis.CipherGapShared.i18n.translate(message) : "";
+    error.hidden = !message;
+}
+let unlockResolvers = [];
+function show_lock_screen() {
+    privacyEl("lockScreen").hidden = false;
+    privacyEl("unlockPassphrase").value = "";
+    show_lock_error("");
+    privacyEl("unlockPassphrase").focus();
+    return new Promise(resolve => unlockResolvers.push(resolve));
+}
+privacyEl("unlockForm").addEventListener("submit", async event => {
+    event.preventDefault();
+    const button = privacyEl("unlockBtn");
+    button.disabled = true;
+    try {
+        await vaultApi.unlock(privacyEl("unlockPassphrase").value);
+        privacyEl("lockScreen").hidden = true;
+        privacyEl("unlockPassphrase").value = "";
+        unlockResolvers.splice(0).forEach(resolve => resolve());
+    } catch (error) { show_lock_error(error.message); }
+    finally { button.disabled = false; }
+});
+
+privacyEl("enableAppLockBtn").addEventListener("click", async event => {
+    const button = event.currentTarget, pass = privacyEl("lockPassphraseNew").value;
+    if (pass !== privacyEl("lockPassphraseConfirm").value) { set_status("The passphrases do not match.", "error"); return; }
+    button.disabled = true;
+    try {
+        await vaultApi.setup(pass, Number(privacyEl("autolockSelect").value));
+        privacyEl("lockPassphraseNew").value = privacyEl("lockPassphraseConfirm").value = "";
+        await refresh_privacy_card();
+        set_status("App lock is on. Your saved keys are now encrypted.", "success");
+    } catch (error) { set_status(error.message, "error"); }
+    finally { button.disabled = false; }
+});
+privacyEl("lockNowBtn").addEventListener("click", async () => {
+    try { await vaultApi.lock(); } catch (error) { set_status(error.message, "error"); }
+});
+privacyEl("autolockSelectOn").addEventListener("change", async event => {
+    try { await vaultApi.set_autolock(Number(event.target.value)); }
+    catch (error) { set_status(error.message, "error"); }
+});
+privacyEl("disableAppLockBtn").addEventListener("click", async event => {
+    const button = event.currentTarget;
+    button.disabled = true;
+    try {
+        await vaultApi.disable(privacyEl("lockPassphraseOff").value);
+        privacyEl("lockPassphraseOff").value = "";
+        await refresh_privacy_card();
+        set_status("App lock is off. Saved keys are stored without a passphrase.", "warning");
+    } catch (error) { set_status(error.message, "error"); }
+    finally { button.disabled = false; }
+});
+chrome.storage.onChanged.addListener((changes, area) => {
+    if (area !== "local") return;
+    if (changes[vaultApi.STATE_KEY] && !(Number(changes[vaultApi.STATE_KEY].newValue?.unlockedUntil) > Date.now())) {
+        vaultApi.status().then(status => { if (status.enabled && !status.unlocked) show_lock_screen().then(() => refresh_popup_state().catch(() => {})); }).catch(() => {});
+    }
+});
+
+// =========================
+// Group chats
+// =========================
+
+async function refresh_group_card() {
+    const card = privacyEl("groupCard");
+    if (!card) return;
+    card.hidden = !storageKey;
+    if (!storageKey) return;
+    const name = PRIVACY_KEYS.group_session(storageKey);
+    let session = (await chrome.storage.local.get(name))[name];
+    if (session && Number(session.expiresAt) <= Date.now()) session = null;
+    const minutes = session ? Math.max(1, Math.round((session.expiresAt - Date.now()) / 60000)) : 0;
+    privacyEl("groupStatus").textContent = session?.role === "creator"
+        ? `Your invitation is open for about ${minutes < 90 ? minutes + " min" : Math.round(minutes / 60) + " h"}. ${session.approved.length} member${session.approved.length === 1 ? "" : "s"} approved. Approve people from the chat.`
+        : session?.role === "joiner" ? "Join request sent. Waiting for the creator to approve you in the chat."
+        : currentSecretKey ? "This chat already has a key. Creating an invitation replaces it with a new group key."
+        : "No group key yet.";
+    privacyEl("startGroupBtn").hidden = Boolean(session);
+    privacyEl("cancelGroupBtn").hidden = session?.role !== "creator";
+}
+privacyEl("startGroupBtn").addEventListener("click", async event => {
+    const button = event.currentTarget;
+    if (currentSecretKey && !await show_confirmation({
+        title: "Replace this chat's key?",
+        message: "A new group key replaces the current key. Older messages may no longer decrypt. Members must join again from the invitation.",
+        confirmLabel: "Create invitation"
+    })) return;
+    button.disabled = true;
+    set_status("Sending the invitation…", "progress");
+    try {
+        const response = await send_tab_message({ action: "start_group_invite" });
+        if (!response?.ok) throw new Error(response?.error || "The invitation could not be sent.");
+        await refresh_popup_state(); await refresh_group_card();
+        set_status("Invitation sent. Approve members as they join in the chat.", "success");
+    } catch (error) { set_status(error.message, "error"); }
+    finally { button.disabled = false; }
+});
+privacyEl("cancelGroupBtn").addEventListener("click", async () => {
+    try { await send_tab_message({ action: "cancel_group_invite" }); await refresh_group_card(); }
+    catch (error) { set_status(error.message, "error"); }
+});
+chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === "local" && storageKey && changes[PRIVACY_KEYS.group_session(storageKey)]) refresh_group_card().catch(() => {});
+});
+
+async function start_popup() {
+    try {
+        const lock = await vaultApi.status();
+        if (lock.enabled && !lock.unlocked) await show_lock_screen();
+        else if (lock.enabled) await vaultApi.touch();
+    } catch (error) { console.error("[CipherGap] App lock check failed:", error); }
+    await init();
+    await refresh_privacy_card().catch(() => {});
+    await refresh_group_card().catch(() => {});
+}
+start_popup();
 
 document.getElementById("languageSelect").addEventListener("change", event => {
     globalThis.CipherGapShared.i18n.setLanguage(event.target.value).catch(error => set_status(error.message, "error"));

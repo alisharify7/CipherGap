@@ -205,8 +205,23 @@ async function finalize_exchange(
         throw new DOMException("The key exchange was cancelled.", "AbortError");
     }
 
+    // Forward secrecy (default): keep only a ratchet state, not the root
+    // secret. SAS/fingerprint were already derived from the root above.
+    const settings = await chrome.storage.local.get([
+        globalThis.CipherGapShared.storage_keys.forward_secrecy,
+        globalThis.CipherGapShared.storage_keys.retention_days
+    ]);
+    const forwardSecrecy = settings[globalThis.CipherGapShared.storage_keys.forward_secrecy] !== false;
+    const savedKey = forwardSecrecy
+        ? await globalThis.CipherGapShared.keyring.ratchet_forward(
+            sharedSecret,
+            Number(settings[globalThis.CipherGapShared.storage_keys.retention_days]) ||
+                globalThis.CipherGapShared.formats.crypto.profiles.hkdf_aes_gcm_v2.default_retention_epochs
+        ) ?? sharedSecret
+        : sharedSecret;
+
     const storageUpdates = {
-        [storageKey]: sharedSecret,
+        [storageKey]: savedKey,
         [globalThis.CipherGapShared.storage_keys.exchange_status(storageKey)]: {
             status: "complete",
             nonce,
@@ -240,7 +255,7 @@ async function finalize_exchange(
     }
 
     await require_active_exchange(storageKey, nonce, expiresAt);
-    await chrome.storage.local.set(storageUpdates);
+    await globalThis.CipherGapShared.vault.set(storageUpdates);
 
     // Send the SAS code as a chat message so both users can see and verify it
     const adapter = EXCHANGE_SHARED_ADAPTERS.get_active();
@@ -718,16 +733,11 @@ async function send_verification_confirmation() {
         throw new Error("This exchange confirmation format is not supported.");
     }
 
-    const encrypted = await EXCHANGE_SHARED_CRYPTO.encrypt_message(
+    const packet = await EXCHANGE_SHARED_CRYPTO.seal_message(
         CONFIRMATION_MESSAGE,
         secretKey,
         null,
-        messageCryptoProfile
-    );
-    const packet = EXCHANGE_SHARED_PROTOCOL.build_ciphergap_packet(
-        encrypted,
-        null,
-        messageCodec.id
+        { codecId: messageCodec.id }
     );
     await adapter.send_message(packet, { storageKey });
 
@@ -761,6 +771,12 @@ function init_key_exchange_listener() {
             chrome.storage.local.set({
                 [globalThis.CipherGapShared.storage_keys.auto_files(get_storage_key())]: message.enabled
             }).then(() => sendResponse({ ok: true }))
+                .catch((error) => sendResponse({ ok: false, error: error.message }));
+            return true;
+        }
+        if (message.action === "start_group_invite" || message.action === "cancel_group_invite") {
+            handle_group_action(message)
+                .then((result) => sendResponse({ ok: true, ...result }))
                 .catch((error) => sendResponse({ ok: false, error: error.message }));
             return true;
         }
@@ -866,7 +882,7 @@ function init_key_exchange_listener() {
                     .exchange_status(storageKey);
                 const trustKey = globalThis.CipherGapShared.storage_keys
                     .key_trust(storageKey);
-                const stored = await chrome.storage.local.get([
+                const stored = await globalThis.CipherGapShared.vault.get([
                     storageKey,
                     statusKey,
                     trustKey

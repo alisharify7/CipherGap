@@ -22,7 +22,8 @@ export function setup_transfer(ui) {
     }
     async function apply(plan, target = null) {
         const names = [...new Set([...Object.keys(plan.values), ...plan.remove])];
-        const before = await chrome.storage.local.get(names);
+        const vault = CipherGapShared.vault;
+        const before = await vault.get(names);
         for (const id of plan.chats) {
             if (["waiting","incoming"].includes(before[keys.exchange_status(id)]?.status)) throw new Error("Finish or decline the current key exchange before importing.");
         }
@@ -31,17 +32,17 @@ export function setup_transfer(ui) {
         if (!approved) return;
         if (target && destination() !== target) throw new Error("The destination chat changed. Nothing was imported.");
         if (target && !(await ui.checkContext())?.ok) throw new Error("The destination chat changed. Nothing was imported.");
-        const latest = await chrome.storage.local.get(names);
+        const latest = await vault.get(names);
         if (names.some(name => JSON.stringify(before[name]) !== JSON.stringify(latest[name]))) throw new Error("Settings changed while reviewing. Try importing again.");
         // One storage write publishes keys and their trust/settings together.
-        await chrome.storage.local.set(plan.values);
+        await vault.set(plan.values);
         if (plan.remove.length) await chrome.storage.local.remove(plan.remove);
         ui.status(target ? "Key imported. Identity remains unverified." : "Import complete.", "success");
         el("backupPassword").value = ""; el("qrTextInput").value = "";
     }
     for (const [id, single] of [["exportAllBtn",false],["exportChatBtn",true]]) {
         el(id).addEventListener("click", event => run(event.currentTarget, async () => {
-            const state = await chrome.storage.local.get(null);
+            const state = await CipherGapShared.vault.get(null);
             if (!state[keys.ui_theme] && localStorage.getItem(keys.ui_theme)) state[keys.ui_theme] = localStorage.getItem(keys.ui_theme);
             const backup = transfer.snapshot(state, single ? destination() : null);
             const text = await transfer.seal(backup, el("backupPassword").value);
@@ -63,7 +64,7 @@ export function setup_transfer(ui) {
         const target = destination(), key = ui.context().key;
         if (!key) throw new Error("No chat key is available to export.");
         if (!await ui.confirm({title:"Share your chat key?",message:"Anyone who scans this QR gets your chat key. Show it privately.",confirmLabel:"Show key QR"})) return;
-        const state = await chrome.storage.local.get(target);
+        const state = await CipherGapShared.vault.get(target);
         if (destination() !== target || state[target] !== key || !(await ui.checkContext())?.ok) throw new Error("The destination chat changed. Nothing was imported.");
         const qr = qrcode(0,"M"); qr.addData(transfer.share_key(key)); qr.make();
         const cell = 5, margin = 4, modules = qr.getModuleCount();
