@@ -7,7 +7,7 @@
 **Encrypt messages and files on your device before they reach the messenger. Keep chatting where you already chat.**
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-2f6f55)](LICENSE)
-[![Desktop 1.7.0](https://img.shields.io/badge/desktop-1.7.0-163b32)](https://github.com/alisharify7/CipherGap/releases/tag/v1.7.0)
+[![Desktop 1.8.0](https://img.shields.io/badge/desktop-1.8.0-163b32)](https://github.com/alisharify7/CipherGap/releases/tag/v1.8.0)
 [![Android 0.1.4](https://img.shields.io/badge/android-0.1.4-3ddc84)](https://github.com/alisharify7/CipherGap/releases/tag/android-v0.1.4)
 ![Chrome, Firefox, Android](https://img.shields.io/badge/platforms-Chrome%20%C2%B7%20Firefox%20%C2%B7%20Android-4b6f5f)
 ![No backend](https://img.shields.io/badge/backend-none-lightgrey)
@@ -101,9 +101,9 @@ The Android app uses the same shared keys and backup format as the desktop exten
 
 </details>
 
-## New in the next release (on `main`, not yet published)
+## New in 1.8.0
 
-> These features are implemented on `main` and covered by tests, but are **not** in the published desktop 1.7.0 or Android 0.1.4 downloads. They arrive with the next desktop release; Android follows when its build is updated.
+> Released in desktop **1.8.0**. The Android app (0.1.4) does not include them yet; its core is synchronized from this repository and a new Android build follows separately.
 
 * **Forward secrecy (daily key ratchet):** new chat keys advance daily through a one-way ratchet. Keys older than a retention window (default 7 days, 1–90 in **Settings → Privacy & security**) are deleted, so a stolen key cannot open older messages. Those older messages become **unreadable by design**. Existing chats can opt in from the same page.
 * **Stronger key derivation (message format v2):** HKDF-SHA256 for random keys and PBKDF2-SHA256 (600,000 iterations) for typed passphrases.
@@ -129,7 +129,7 @@ Honest limitations:
 * Both people need CipherGap and a shared key. Ordinary messenger buttons send ordinary, unencrypted messages and files.
 * The messenger still sees that you are talking, with whom, when, and roughly how large messages and files are.
 * Decrypted text and previews are displayed in the messenger page's DOM, so that page can read them. Keys and cryptographic operations stay in CipherGap's isolated script.
-* In the published 1.7.0 release chat keys are long-lived: anyone who obtains a key can read every message encrypted with it. Forward secrecy (above) limits this in the next release.
+* In 1.7.0 and earlier, and in chats that keep a non-ratcheted key, a chat key is long-lived: anyone who obtains it can read every message encrypted with it. Forward secrecy (above) limits this for ratcheted keys.
 * A compromised device, browser or extension environment defeats any client-side encryption.
 * Telegram Web K is unsupported; WhatsApp is still in development. Firefox desktop builds are unsigned and installed temporarily.
 
@@ -145,18 +145,18 @@ Honest limitations:
 
 **Can I use it on my phone?** Yes, with the Android app, which uses the same key and backup format as the extension.
 
-**Do old messages stay readable after updates?** Yes so far: format upgrades keep old readers registered. The v2 format in the next release is the exception: it needs both people to update to read new messages.
+**Do old messages stay readable after updates?** Yes so far: format upgrades keep old readers registered. The v2 format in 1.8.0 is the exception: it needs both people to update to read new messages.
 
-[Support CipherGap](https://www.coffeete.ir/alisharify7) · [Changelog](CHANGELOG.md) · [Release notes for v1.7.0](docs/releases/v1.7.0.md)
+[Support CipherGap](https://www.coffeete.ir/alisharify7) · [Changelog](CHANGELOG.md) · [Release notes for v1.8.0](docs/releases/v1.8.0.md)
 
 ## Installation
 
-### Downloads — desktop 1.7.0 / Android 0.1.4
+### Downloads — desktop 1.8.0 / Android 0.1.4
 
-- [Chrome / Chromium / Edge / Brave ZIP](https://github.com/alisharify7/CipherGap/releases/download/v1.7.0/ciphergap-1.7.0-chrome.zip)
-- [Firefox desktop ZIP](https://github.com/alisharify7/CipherGap/releases/download/v1.7.0/ciphergap-1.7.0-firefox.zip) — unsigned; temporary installation.
+- [Chrome / Chromium / Edge / Brave ZIP](https://github.com/alisharify7/CipherGap/releases/download/v1.8.0/ciphergap-1.8.0-chrome.zip)
+- [Firefox desktop ZIP](https://github.com/alisharify7/CipherGap/releases/download/v1.8.0/ciphergap-1.8.0-firefox.zip) — unsigned; temporary installation.
 - [Android APK](https://github.com/alisharify7/CipherGap/releases/download/android-v0.1.4/ciphergap-android-0.1.4.apk) — signed release build; Android 8+ and a compatible WebView required.
-- [Desktop SHA-256 checksums](https://github.com/alisharify7/CipherGap/releases/download/v1.7.0/SHA256SUMS) · [Android SHA-256 checksums](https://github.com/alisharify7/CipherGap/releases/download/android-v0.1.4/SHA256SUMS)
+- [Desktop SHA-256 checksums](https://github.com/alisharify7/CipherGap/releases/download/v1.8.0/SHA256SUMS) · [Android SHA-256 checksums](https://github.com/alisharify7/CipherGap/releases/download/android-v0.1.4/SHA256SUMS)
 
 Follow the [installation guide](https://alisharify7.github.io/CipherGap/#installation).
 

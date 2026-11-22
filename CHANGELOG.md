@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased — message format v2, forward secrecy, self-destruct and app lock
+## [1.8.0](docs/releases/v1.8.0.md) - 2026-11-22
 
 - New message format `CGP|2` (HKDF-SHA256 key schedule, AES-256-GCM with authenticated header). Version 1 messages still open with keys that were not ratcheted. **Both people must update**: older versions cannot read version 2.
 - Forward secrecy: new chat keys are a daily symmetric ratchet. Keys older than a retention window (default 7 days, configurable 1-90) are deleted, so a stolen key cannot open older messages. Existing chats can opt in from Settings.
