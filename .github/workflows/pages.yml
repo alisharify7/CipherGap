@@ -21,7 +21,7 @@ jobs:
           mkdir -p _site/website _site/CipherGap/assets
           cp index.html .nojekyll _site/
           cp website/style.css website/app.js website/languages.js _site/website/
-          cp -R website/fonts website/screenshots website/downloads _site/website/
+          cp -R website/fonts website/screenshots website/downloads website/media website/messengers _site/website/
           cp CipherGap/assets/ciphergap.svg _site/CipherGap/assets/
       - uses: actions/upload-pages-artifact@v4
         with:

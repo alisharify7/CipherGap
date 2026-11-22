@@ -3,7 +3,12 @@
 Static Persian/English installation site, hosted from the `website` branch root
 at https://alisharify7.github.io/CipherGap/ through GitHub Pages.
 Persian is the default; language, browser choice and direction are saved locally.
-Fonts and screenshots are bundled.
+Fonts and screenshots are bundled. The page follows the system light/dark
+setting (with a manual toggle saved locally), is styled by a single `style.css`
+(calm light/dark tokens shared with the extension popup), embeds a self-hosted demo video (`media/`, recorded
+against local mock pages by `docs/demo/record_demo.py` on `main`) and has a
+clearly marked "coming soon" section for planned, unreleased features.
+No third-party scripts or trackers are used.
 
 ## Downloads
 
@@ -25,7 +30,13 @@ the capture APK hash can differ from a later release with the same UI.
 
 ## Checks
 
-Start a local server with `python3 -m http.server 8769`, then run:
+Run the bundled smoke test (it starts its own local server; needs Playwright):
+
+```sh
+python3 website/verify.py
+```
+
+The fuller suite on `main` can still be pointed at a served copy:
 
 ```sh
 python3 tests/browser_website.py http://127.0.0.1:8769/

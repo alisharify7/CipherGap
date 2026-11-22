@@ -113,3 +113,11 @@ document.querySelectorAll(".screenshot-open").forEach(button => {
 document.getElementById("screenshot-close").addEventListener("click", () => screenshotDialog.close());
 screenshotDialog.addEventListener("click", event => { if (event.target === screenshotDialog) screenshotDialog.close(); });
 screenshotDialog.addEventListener("close", () => screenshotInvoker?.focus());
+
+const themeToggle = document.querySelector(".theme-toggle");
+themeToggle?.addEventListener("click", () => {
+    const root = document.documentElement;
+    const dark = root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+    root.dataset.theme = dark ? "light" : "dark";
+    try { localStorage.setItem("ciphergap-theme", root.dataset.theme); } catch { /* Storage may be blocked. */ }
+});
