@@ -6,7 +6,7 @@ const GROUP_ECDH = globalThis.CipherGapShared.ecdh;
 const GROUP_ADAPTERS = globalThis.CipherGapShared.messenger_adapters;
 const GROUP_INVITE_MS = globalThis.CipherGapShared.timeouts.group_invite_ms;
 
-let group_cache = { storageKey: null, session: null, hasKey: false };
+let group_cache = { storageKey: null, session: null, hasKey: false, oldKeys: [] };
 
 function group_session_name(storageKey = get_storage_key()) {
     return globalThis.CipherGapShared.storage_keys.group_session(storageKey);
@@ -22,8 +22,55 @@ async function refresh_group_cache() {
         await chrome.storage.local.remove(name);
         session = null;
     }
-    group_cache = { storageKey, session, hasKey: Boolean(stored[storageKey]) };
+    let oldKeys = [];
+    try {
+        oldKeys = await read_group_old_keys(storageKey);
+        // Old ratchet keys obey the same retention window as the current key.
+        const { retention } = await group_ratchet_settings();
+        let changed = false;
+        oldKeys = await Promise.all(oldKeys.map(async (key) => {
+            if (!globalThis.CipherGapShared.keyring.is_ratchet_secret(key)) return key;
+            const advanced = await globalThis.CipherGapShared.keyring.ratchet_forward(key, retention);
+            if (advanced) changed = true;
+            return advanced ?? key;
+        }));
+        if (changed) await globalThis.CipherGapShared.vault.set({ [group_old_keys_name(storageKey)]: JSON.stringify(oldKeys) });
+    } catch { oldKeys = []; }
+    group_cache = { storageKey, session, hasKey: Boolean(stored[storageKey]), oldKeys };
     update_group_cards();
+}
+
+function group_members_name(storageKey = get_storage_key()) {
+    return globalThis.CipherGapShared.storage_keys.group_members(storageKey);
+}
+// Membership and old keys are stored as JSON strings so the app lock can encrypt them.
+async function read_group_membership(storageKey = get_storage_key()) {
+    const name = group_members_name(storageKey);
+    const value = (await globalThis.CipherGapShared.vault.get([name]))[name];
+    try { return value ? JSON.parse(value) : null; } catch { return null; }
+}
+async function write_group_membership(storageKey, membership) {
+    await globalThis.CipherGapShared.vault.set({ [group_members_name(storageKey)]: JSON.stringify(membership) });
+}
+function group_old_keys_name(storageKey = get_storage_key()) {
+    return `${storageKey}__oldkeys`;
+}
+async function read_group_old_keys(storageKey = get_storage_key()) {
+    const name = group_old_keys_name(storageKey);
+    try { const list = JSON.parse((await globalThis.CipherGapShared.vault.get([name]))[name] ?? "[]"); return Array.isArray(list) ? list : []; } catch { return []; }
+}
+// Messages sent before a rotation stay readable with the key that protected them.
+async function remember_previous_group_key(storageKey, previousKey) {
+    if (!previousKey) return;
+    const list = (await read_group_old_keys(storageKey)).filter((key) => key !== previousKey);
+    list.unshift(previousKey);
+    await globalThis.CipherGapShared.vault.set({ [group_old_keys_name(storageKey)]: JSON.stringify(list.slice(0, 8)) });
+}
+async function decrypt_with_previous_group_keys(packetText) {
+    for (const key of group_cache.oldKeys ?? []) {
+        try { return await CHAT_SHARED_CRYPTO.open_message(packetText, key); } catch { /* try the next key */ }
+    }
+    return null;
 }
 
 async function new_group_keys() {
@@ -81,6 +128,8 @@ async function start_group_invite() {
         await chrome.storage.local.remove(name);
         throw error;
     }
+    // A new invitation starts a new group: remember who owns it and who joins.
+    await write_group_membership(storageKey, { role: "creator", gid, publicKeyB64: keys.publicKeyB64, privateJwk: keys.privateJwk, members: {}, at: Date.now() });
     // The existing key is replaced only after the invitation was really sent.
     const trustKey = globalThis.CipherGapShared.storage_keys.key_trust(storageKey);
     await globalThis.CipherGapShared.vault.set({
@@ -146,6 +195,11 @@ async function approve_group_join(parsed, storageKey) {
             await import_group_private_key(session.privateJwk), parsed.publicKeyB64, session.gid, session.expiresAt, secret
         );
         await adapter.send_message(GROUP_PROTOCOL.build_key(session.gid, sealed.fingerprint, sealed.sealed, session.expiresAt), { storageKey });
+        const membership = await read_group_membership(storageKey);
+        if (membership?.role === "creator" && membership.gid === session.gid) {
+            membership.members[fingerprint] = { publicKeyB64: parsed.publicKeyB64, alias: "", at: Date.now() };
+            await write_group_membership(storageKey, membership);
+        }
         const latest = (await chrome.storage.local.get(name))[name];
         if (latest?.gid === session.gid && !latest.approved.includes(fingerprint)) {
             latest.approved.push(fingerprint);
@@ -173,13 +227,73 @@ async function handle_group_key(parsed, storageKey) {
         [storageKey]: savedKey,
         [keys.key_trust(storageKey)]: { state: "unverified", source: "manual", fingerprint: session.creatorFingerprint, at: Date.now() }
     });
+    await write_group_membership(storageKey, {
+        role: "member", gid: session.gid, privateJwk: session.privateJwk, fingerprint: session.fingerprint,
+        creatorPublicKeyB64: session.creatorPublicKeyB64, creatorFingerprint: session.creatorFingerprint,
+        lastRekeyAt: 0, at: Date.now()
+    });
     await chrome.storage.local.remove([name, keys.exchange_status(storageKey)]);
     show_ciphergap_notice("You joined the secure group. Messages from members now decrypt.", "success", 6000);
+}
+
+// Member: the creator sent a fresh key (rotation or after someone was removed).
+async function handle_group_rekey(parsed, storageKey) {
+    const membership = await read_group_membership(storageKey);
+    if (membership?.role !== "member" || membership.gid !== parsed.gid || membership.fingerprint !== parsed.fingerprint) return;
+    if (parsed.expiresAt <= membership.lastRekeyAt || parsed.expiresAt > Date.now() + 10 * 60 * 1000) return;
+    await require_ciphergap_enabled(storageKey);
+    const secret = await GROUP_PROTOCOL.open_group_key(await import_group_private_key(membership.privateJwk), membership.creatorPublicKeyB64, parsed);
+    const { forwardSecrecy, retention } = await group_ratchet_settings();
+    const savedKey = forwardSecrecy
+        ? (await globalThis.CipherGapShared.keyring.ratchet_forward(secret, retention)) ?? secret : secret;
+    const latest = await read_group_membership(storageKey);
+    if (latest?.gid !== membership.gid || parsed.expiresAt <= latest.lastRekeyAt) return;
+    await remember_previous_group_key(storageKey, (await globalThis.CipherGapShared.vault.get([storageKey]))[storageKey]);
+    await globalThis.CipherGapShared.vault.set({ [storageKey]: savedKey });
+    await write_group_membership(storageKey, { ...latest, lastRekeyAt: parsed.expiresAt });
+    show_ciphergap_notice("The group key was updated by its creator.", "info", 6000);
+}
+
+// Creator: issue a new group key to every remaining member. Passing a
+// fingerprint removes that member: they keep old messages but cannot read new ones.
+async function rekey_group(removeFingerprint = null) {
+    const storageKey = get_storage_key();
+    await require_ciphergap_enabled(storageKey);
+    const adapter = group_adapter(storageKey);
+    const membership = await read_group_membership(storageKey);
+    if (membership?.role !== "creator") throw new Error("Only the creator of this group can change its key.");
+    const members = { ...membership.members };
+    if (removeFingerprint) {
+        if (!members[removeFingerprint]) throw new Error("That member is not in this group.");
+        delete members[removeFingerprint];
+    }
+    const { forwardSecrecy, retention } = await group_ratchet_settings();
+    const root = GROUP_PROTOCOL.generate_group_secret();
+    const savedKey = forwardSecrecy
+        ? (await globalThis.CipherGapShared.keyring.ratchet_forward(root, retention)) ?? root : root;
+    const issuedAt = Date.now();
+    const privateKey = await import_group_private_key(membership.privateJwk);
+    const sealedFor = [];
+    for (const [fingerprint, member] of Object.entries(members)) {
+        const sealed = await GROUP_PROTOCOL.seal_group_key(privateKey, member.publicKeyB64, membership.gid, issuedAt, savedKey, "rekey");
+        sealedFor.push(GROUP_PROTOCOL.build_rekey(membership.gid, sealed.fingerprint, sealed.sealed, issuedAt));
+    }
+    // Members first, then ourselves: a failed send must not strand the creator on a key nobody has.
+    for (const message of sealedFor) await adapter.send_message(message, { storageKey });
+    await remember_previous_group_key(storageKey, (await globalThis.CipherGapShared.vault.get([storageKey]))[storageKey]);
+    await globalThis.CipherGapShared.vault.set({ [storageKey]: savedKey });
+    await write_group_membership(storageKey, { ...membership, members, rekeyedAt: issuedAt });
+    return { members: Object.keys(members).length, removed: Boolean(removeFingerprint) };
 }
 
 async function handle_group_action(message) {
     if (message.action === "start_group_invite") return start_group_invite();
     if (message.action === "cancel_group_invite") return cancel_group_invite();
+    if (message.action === "rotate_group_key") return rekey_group(null);
+    if (message.action === "remove_group_member") {
+        if (!/^[A-F0-9]{8}$/.test(message.fingerprint ?? "")) throw new Error("Invalid member.");
+        return rekey_group(message.fingerprint);
+    }
     throw new Error("Unknown group action.");
 }
 
@@ -218,7 +332,8 @@ function create_group_card(parsed, signature) {
     card.dataset.ciphergapExpiresAt = String(parsed.expiresAt);
     card.append(group_card_heading(
         parsed.type === "invite" ? "Secure group invitation"
-            : parsed.type === "join" ? "Request to join the group" : "Group key delivered"
+            : parsed.type === "join" ? "Request to join the group"
+            : parsed.type === "rekey" ? "Group key updated" : "Group key delivered"
     ));
     const meta = document.createElement("span");
     meta.className = "ciphergap-chat-card__meta";
@@ -235,7 +350,7 @@ function create_group_card(parsed, signature) {
     actions.append(button);
     card.append(actions);
 
-    const fingerprintSource = parsed.type === "key" ? Promise.resolve(parsed.fingerprint) : GROUP_ECDH.compute_key_fingerprint(parsed.publicKeyB64);
+    const fingerprintSource = parsed.type === "key" || parsed.type === "rekey" ? Promise.resolve(parsed.fingerprint) : GROUP_ECDH.compute_key_fingerprint(parsed.publicKeyB64);
     fingerprintSource.then((fingerprint) => {
         card.dataset.ciphergapFingerprint = fingerprint;
         detail.textContent = `${parsed.type === "invite" ? "Creator" : "Member"} fingerprint · ${globalThis.CipherGapShared.protocol.format_protocol_fingerprint(fingerprint)}`;
@@ -280,7 +395,9 @@ function update_group_cards() {
         const button = actions.querySelector("button");
         let text = "";
         let label = "";
-        if (type === "key") {
+        if (type === "rekey") {
+            text = "The group creator issued a new key to the remaining members.";
+        } else if (type === "key") {
             text = own?.role === "joiner" && own.fingerprint === card.dataset.ciphergapFingerprint
                 ? "Opening your group key…" : "Delivered to a member of this group.";
         } else if (expired) {
@@ -332,6 +449,13 @@ function handle_group_row(messageElement, payload) {
     render_group_message(messageElement, payload);
     if (messageElement.dataset.ciphergapGroupHandled === payload.signature) return;
     messageElement.dataset.ciphergapGroupHandled = payload.signature;
+    if (payload.parsed.type === "rekey") {
+        handle_group_rekey(payload.parsed, get_storage_key())
+            .catch((error) => {
+                delete messageElement.dataset.ciphergapGroupHandled;
+                console.warn("[CipherGap] Group rekey not accepted:", error.message);
+            });
+    }
     if (payload.parsed.type === "key" && payload.parsed.expiresAt > Date.now()) {
         handle_group_key(payload.parsed, get_storage_key())
             .then(() => refresh_group_cache())

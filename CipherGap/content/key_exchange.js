@@ -774,7 +774,7 @@ function init_key_exchange_listener() {
                 .catch((error) => sendResponse({ ok: false, error: error.message }));
             return true;
         }
-        if (message.action === "start_group_invite" || message.action === "cancel_group_invite") {
+        if (message.action === "start_group_invite" || message.action === "cancel_group_invite" || message.action === "rotate_group_key" || message.action === "remove_group_member") {
             handle_group_action(message)
                 .then((result) => sendResponse({ ok: true, ...result }))
                 .catch((error) => sendResponse({ ok: false, error: error.message }));

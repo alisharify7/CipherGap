@@ -73,5 +73,35 @@ with sync_playwright() as p:
     rc2 = row(2, pages[2].evaluate("t=>addMessage(t)", packet)); rc2.locator(".ciphergap-decrypt-button").click(); rc2.locator(".ciphergap-plaintext").wait_for()
     assert rc2.locator(".ciphergap-plaintext").inner_text() == "hello group"
     print("PASS second member approved later reads the same group")
+
+    # --- Removal: creator removes C; B follows the new key, C cannot read new messages, old ones still open for B.
+    import json
+    members = json.loads(worker.evaluate("k=>chrome.storage.local.get(k).then(s=>s[k])", keys[0] + "__members"))
+    assert members["role"] == "creator" and len(members["members"]) == 2, members
+    fp_c = pages[2].evaluate('testSent.findLast(t=>t.startsWith("cg-group-join|"))')
+    fp_c = worker.evaluate("""async ([k,pub])=>{const e=CipherGapShared?.ecdh;return null}""", [keys[0], fp_c]) if False else None
+    ids_fp = list(members["members"].keys())
+    # find which fingerprint belongs to C by matching the join message's public key
+    pub_c = fp_c_pub = pages[2].evaluate('testSent.findLast(t=>t.startsWith("cg-group-join|"))').split("|")[2]
+    remove_fp = next(fp for fp, m in members["members"].items() if m["publicKeyB64"] == pub_c)
+    old_message = packet                                           # sent before the rotation
+    before_b = worker.evaluate("k=>chrome.storage.local.get(k).then(s=>s[k])", keys[1])
+    r = action(0, {"action": "remove_group_member", "fingerprint": remove_fp}); assert r["ok"], r
+    pages[0].wait_for_function('testSent.some(t=>t.startsWith("cg-group-rekey|"))')
+    rekeys = pages[0].evaluate('testSent.filter(t=>t.startsWith("cg-group-rekey|"))'); assert len(rekeys) == 1, rekeys   # only B remains
+    for i in (1, 2): pages[i].evaluate("t=>addMessage(t)", rekeys[0])
+    after_b = worker.evaluate("""async ([k,old])=>{for(let i=0;i<200;i++){const s=await chrome.storage.local.get(k);if(s[k]&&s[k]!==old)return s[k];await new Promise(r=>setTimeout(r,25))}return null}""", [keys[1], before_b])
+    assert after_b and after_b != before_b, "member B must switch to the new key"
+    assert worker.evaluate("k=>chrome.storage.local.get(k).then(s=>s[k])", keys[2]) == stored_c, "removed member keeps its old key"
+    pages[0].locator("[contenteditable=true]").fill("after removal"); pages[0].locator("#ciphergap-btn").click()
+    pages[0].wait_for_function('!document.getElementById("ciphergap-btn").disabled')
+    fresh = pages[0].evaluate("testSent.at(-1)"); assert fresh.startswith("CGP|2|")
+    rb = row(1, pages[1].evaluate("t=>addMessage(t)", fresh)); rb.locator(".ciphergap-decrypt-button").click(); rb.locator(".ciphergap-plaintext").wait_for()
+    assert rb.locator(".ciphergap-plaintext").inner_text() == "after removal"
+    rc = row(2, pages[2].evaluate("t=>addMessage(t)", fresh)); rc.locator(".ciphergap-decrypt-button").click(); pages[2].wait_for_timeout(1500)
+    assert rc.locator(".ciphergap-plaintext").count() == 0, "removed member must not read new messages"
+    ro = row(1, pages[1].evaluate("t=>addMessage(t)", old_message)); ro.locator(".ciphergap-decrypt-button").click(); ro.locator(".ciphergap-plaintext").wait_for()
+    assert ro.locator(".ciphergap-plaintext").inner_text() == "hello group", "older messages still open after rotation"
+    print("PASS remove member: new key reaches the others, removed member locked out, old messages still readable")
     assert not errors, errors
     ctx.close()

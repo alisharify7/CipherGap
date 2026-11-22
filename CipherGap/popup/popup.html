@@ -180,6 +180,8 @@
 <p class="supporting-text" id="groupStatus"></p>
 <button class="secondary-btn" id="startGroupBtn" type="button">Create group invitation</button>
 <button class="secondary-btn" id="cancelGroupBtn" type="button" hidden>Cancel invitation</button>
+<div class="group-members" id="groupMembers" hidden></div>
+<button class="secondary-btn" id="rotateGroupBtn" type="button" hidden>Rotate group key</button>
 </section>
 <div class="quick-guide"><span class="eyebrow">YOUR NEXT MESSAGE</span><h2>Write. Encrypt. Send.</h2><p>Use <strong>Encrypt</strong> in the chat’s CipherGap controls. Only that button encrypts your text.</p><button class="text-link" data-go-page="files" type="button">Send a secure attachment <span aria-hidden="true">↗</span></button></div></section><section aria-labelledby="nav-files" class="page" hidden="" id="page-files" role="tabpanel"><div class="page-heading"><span class="eyebrow">BEYOND WORDS</span><h2>Share files privately.</h2><p>Documents, photos and voice files. Encrypted in your browser before your messenger receives them.</p></div>
 <section class="file-hero"><div aria-hidden="true" class="file-symbol">↗</div><h3>Choose. Encrypt. Share.</h3><p>Choose files and confirm in your messenger’s attachment preview.</p><button class="primary-btn" disabled="" id="chooseFilesBtn" type="button">Choose secure files</button><span class="supporting-text" id="fileKeyHint">Set up a chat key first.</span></section>
@@ -187,6 +189,7 @@
 <p class="footnote">Your partner needs the same chat key. Decrypt & view opens images, audio and video here. Download saves the original file. You can also choose a downloaded .cgpe file.</p></section><section aria-labelledby="nav-settings" class="page" hidden="" id="page-settings" role="tabpanel"><div class="page-heading"><span class="eyebrow">MAKE IT YOURS</span><h2>Chat settings</h2><p>These controls apply to the current conversation.</p></div><section class="glass-card"><label class="auto-decrypt-row" for="enabledToggle"><span class="auto-decrypt-info"><span class="auto-decrypt-title">CipherGap enabled</span><span class="auto-decrypt-sub">Pause encryption and decryption everywhere without deleting keys.</span></span><span class="toggle-switch"><input id="enabledToggle" class="toggle-input" type="checkbox" checked><span class="toggle-slider" aria-hidden="true"></span></span></label></section>
 <section class="glass-card"><label class="auto-decrypt-row" for="chatEnabledToggle"><span class="auto-decrypt-info"><span class="auto-decrypt-title">Enabled in this chat</span><span class="auto-decrypt-sub">Pause only this conversation. Your saved key is kept.</span></span><span class="toggle-switch"><input id="chatEnabledToggle" class="toggle-input" type="checkbox" checked disabled><span class="toggle-slider" aria-hidden="true"></span></span></label></section><section class="glass-card privacy-card" id="privacyCard"><h3>Privacy &amp; security</h3>
 <label class="auto-decrypt-row" for="forwardSecrecyToggle"><span class="auto-decrypt-info"><span class="auto-decrypt-title" id="forwardSecrecyTitle">Forward secrecy for new keys</span><span class="auto-decrypt-sub" id="forwardSecrecyDescription">New chat keys ratchet daily. Keys older than the window below are deleted, so a stolen key cannot open old messages.</span></span><span class="toggle-switch"><input aria-describedby="forwardSecrecyDescription" aria-labelledby="forwardSecrecyTitle" class="toggle-input" id="forwardSecrecyToggle" type="checkbox" checked><span aria-hidden="true" class="toggle-slider"></span></span></label>
+<label class="auto-decrypt-row" for="previewSendToggle"><span class="auto-decrypt-info"><span class="auto-decrypt-title" id="previewSendTitle">Review before sending</span><span class="auto-decrypt-sub" id="previewSendDescription">Show your message and the ciphertext before each encrypted send.</span></span><span class="toggle-switch"><input aria-describedby="previewSendDescription" aria-labelledby="previewSendTitle" class="toggle-input" id="previewSendToggle" type="checkbox"><span aria-hidden="true" class="toggle-slider"></span></span></label>
 <label class="field-caption" for="retentionSelect">Keep older messages readable for</label>
 <select id="retentionSelect"><option value="1">1 day</option><option value="3">3 days</option><option value="7">7 days</option><option value="30">30 days</option><option value="90">90 days</option></select>
 <p class="supporting-text" id="chatForwardSecrecyStatus" hidden></p>
@@ -230,6 +233,7 @@
 <code dir="ltr" id="currentFingerprint"></code>
 <p class="old-fingerprint" hidden="" id="oldFingerprint"></p>
 </div>
+<dl class="key-lifecycle" hidden="" id="keyLifecycle"></dl>
 <div class="key-material" hidden="" id="keyMaterial">
 <div class="key-value-row">
 <div class="key-value-copy">

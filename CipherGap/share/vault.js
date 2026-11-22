@@ -20,6 +20,13 @@
             !/[\s/\\?#\x00-\x1f]/.test(name) &&
             hostnames.some(host => name.startsWith(host + "_") && name.length > host.length + 1);
     }
+    // Chat keys, plus the group membership record (holds a private key) and the
+    // list of previous group keys, are encrypted at rest when the lock is on.
+    function is_secret_name(name) {
+        if (is_chat_key_name(name)) return true;
+        const match = /^(.*)__(members|oldkeys)$/.exec(String(name));
+        return Boolean(match) && is_chat_key_name(match[1]);
+    }
     function is_wrapped(value) {
         return Boolean(value) && typeof value === "object" && value.cgv === 1 &&
             typeof value.iv === "string" && typeof value.ct === "string";
@@ -104,7 +111,7 @@ const has_background = () => !globalThis.CipherGapHost?.mobile && Boolean(global
         const out = {};
         let key;
         for (const [name, value] of Object.entries(values)) {
-            if (config && is_chat_key_name(name) && typeof value === "string") {
+            if (config && is_secret_name(name) && typeof value === "string") {
                 key ??= await unlocked_key();
                 if (!key) throw locked_error();
                 out[name] = await wrap(name, value, key);
@@ -135,7 +142,7 @@ const has_background = () => !globalThis.CipherGapHost?.mobile && Boolean(global
         const all = await chrome.storage.local.get(null);
         const updates = {};
         for (const [name, value] of Object.entries(all)) {
-            if (!is_chat_key_name(name)) continue;
+            if (!is_secret_name(name)) continue;
             const converted = await transform(name, value);
             if (converted !== undefined) updates[name] = converted;
         }
@@ -211,7 +218,7 @@ const has_background = () => !globalThis.CipherGapHost?.mobile && Boolean(global
     }
 
     shared.vault = Object.freeze({
-        MIN_PASSPHRASE, STATE_KEY, is_chat_key_name, is_wrapped, status, get, set, setup, unlock, lock,
+        MIN_PASSPHRASE, STATE_KEY, is_chat_key_name, is_secret_name, is_wrapped, status, get, set, setup, unlock, lock,
         touch, set_autolock, disable, forget
     });
 })(globalThis.CipherGapShared);

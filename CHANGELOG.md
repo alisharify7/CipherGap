@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.8.1](docs/releases/v1.8.1.md) - 2026-11-22
+
+- Group management: the creator can remove a member or rotate the group key. Everyone else receives the new key in the chat (no re-joining); the removed member keeps old messages but cannot read new ones. Older messages stay readable through previous keys, which follow the same retention window. Optional member names are stored locally.
+- Group membership records and previous keys are encrypted at rest by the app lock.
+- Key lifecycle in the popup: key type, when the key was saved, how far back messages are readable, and verification.
+- Optional "Review before sending" shows your message and the ciphertext before each encrypted send.
+- Search decrypted messages loaded in the open chat, with next/previous match.
+- The passphrase app lock is browser-only (hidden on Android).
+
 ## [1.8.0](docs/releases/v1.8.0.md) - 2026-11-22
 
 - New message format `CGP|2` (HKDF-SHA256 key schedule, AES-256-GCM with authenticated header). Version 1 messages still open with keys that were not ratcheted. **Both people must update**: older versions cannot read version 2.

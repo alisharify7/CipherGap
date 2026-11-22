@@ -499,3 +499,25 @@
 #ciphergap-timer[data-active="true"] {
   color: #d97706;
 }
+
+/* Review before sending */
+.ciphergap-send-preview { max-width: min(92vw, 420px); padding: 18px; border: 1px solid var(--cg-border); border-radius: 16px; background: var(--cg-surface); color: var(--cg-text); font: 13px/1.6 Inter, Vazirmatn, system-ui, sans-serif; }
+.ciphergap-send-preview::backdrop { background: rgb(14 17 28 / .55); }
+.ciphergap-send-preview form { display: flex; flex-direction: column; gap: 6px; }
+.ciphergap-send-preview h2 { margin: 0 0 6px; font-size: 16px; }
+.ciphergap-send-preview__plain { margin: 0 0 8px; padding: 10px; border-radius: 10px; background: var(--cg-muted-surface); white-space: pre-wrap; overflow-wrap: anywhere; max-height: 160px; overflow: auto; }
+.ciphergap-send-preview code { display: block; padding: 10px; border-radius: 10px; background: var(--cg-muted-surface); font-size: 11px; overflow-wrap: anywhere; }
+.ciphergap-send-preview small { color: var(--cg-muted); }
+.ciphergap-send-preview__actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
+.ciphergap-send-preview button { min-height: 38px; padding: 6px 16px; border-radius: 10px; border: 1px solid var(--cg-border); background: var(--cg-surface); color: inherit; cursor: pointer; }
+.ciphergap-send-preview .ciphergap-action--primary { background: var(--cg-primary); color: var(--cg-on-primary); border-color: transparent; }
+
+/* Search decrypted messages */
+.ciphergap-search-bar { position: fixed; z-index: 2147483000; top: 10px; left: 50%; transform: translateX(-50%); display: flex; flex-wrap: wrap; align-items: center; gap: 6px; width: min(94vw, 460px); padding: 8px; border: 1px solid var(--cg-border); border-radius: 14px; background: var(--cg-surface); color: var(--cg-text); box-shadow: 0 8px 28px rgb(14 17 28 / .22); font: 13px/1.5 Inter, Vazirmatn, system-ui, sans-serif; }
+.ciphergap-search-bar input { flex: 1 1 180px; min-width: 0; min-height: 36px; padding: 6px 10px; border: 1px solid var(--cg-border); border-radius: 10px; background: var(--cg-muted-surface); color: inherit; font: inherit; }
+.ciphergap-search-bar button { min-width: 36px; min-height: 36px; padding: 6px; border: 1px solid var(--cg-border); border-radius: 10px; background: var(--cg-surface); color: inherit; cursor: pointer; }
+.ciphergap-search-bar svg { width: 18px; height: 18px; }
+.ciphergap-search-bar small { flex: 1 0 100%; color: var(--cg-muted); font-size: 11px; }
+.ciphergap-search-bar__count { min-width: 56px; text-align: center; color: var(--cg-muted); font-size: 12px; }
+[data-ciphergap-search-hit="true"] { outline: 2px solid color-mix(in srgb, var(--cg-primary) 45%, transparent); outline-offset: 2px; border-radius: 10px; }
+[data-ciphergap-search-current="true"] { outline: 2px solid var(--cg-primary); }
