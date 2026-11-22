@@ -112,6 +112,8 @@ The Android app uses the same shared keys and backup format as the desktop exten
 * **Secure group chats:** one member creates a group invitation from the popup; members join from the invitation card in the chat with one click, and the creator approves each person. Approval delivers the group key sealed (ECDH + AES-GCM) to that member only, so other members and the messenger cannot open it. Everything else (forward secrecy, self-destruct timers, files) works in the group. Fingerprints are shown on every card; approve only people you recognise. Removing someone means creating a new invitation and approving the remaining members again.
 * **Optional app lock (browser extension):** a passphrase of at least 6 characters encrypts saved chat keys at rest. It locks after inactivity and when the browser closes, and slows repeated wrong guesses. A forgotten passphrase cannot be recovered; restore from an encrypted backup. Android does not have this lock yet.
 
+**After 1.8.0 (on `main`'s next release):** group creators can remove a member or rotate the group key; the popup shows each key's type, age and how far back messages are readable; an optional review step shows the ciphertext before sending; and an in-chat search finds decrypted messages loaded in the open chat.
+
 **Refreshed interface:** the popup has a new calmer teal design with light and dark themes (Persian/English).
 
 **Compatibility:** version 2 messages and files need **both people to update**; older versions cannot read them. Version 1 messages still open with keys that have not been ratcheted, but not after a chat's key has been ratcheted.
