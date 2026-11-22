@@ -326,3 +326,11 @@ button.primary-btn { box-shadow: none; }
 .status { border-radius: 12px; }
 .file-hero { border: 0; box-shadow: 0 1px 2px rgb(17 24 39 / .05); border-radius: 18px; }
 .group-card, .privacy-card { gap: 10px; }
+.group-members { display: flex; flex-direction: column; gap: 8px; }
+.group-member { display: grid; grid-template-columns: 1fr auto; gap: 6px 10px; align-items: center; padding: 10px; border: 1px solid var(--border); border-radius: 12px; }
+.group-member input { grid-column: 1 / -1; min-height: 36px; padding: 6px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-muted); color: var(--text); font: inherit; }
+.group-member code { font-size: 12px; }
+.group-member button { min-height: 34px; padding: 4px 12px; }
+.key-lifecycle { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; margin: 0 0 4px; font-size: 12px; }
+.key-lifecycle dt { color: var(--text-muted); }
+.key-lifecycle dd { margin: 0; font-weight: 600; text-align: end; }

@@ -140,7 +140,10 @@ function inject_chat_security_toolbar() {
     media.addEventListener("click", open_chat_media_picker);
     const timer = document.createElement("button");timer.type = "button";timer.id = "ciphergap-timer";
     timer.addEventListener("click", cycle_message_timer);
-    toolbar.append(status, files, media, timer, toggle);
+    const search = document.createElement("button");search.type = "button";search.id = "ciphergap-search";
+    CHAT_UI.button(search, "search", "Search messages", true);
+    search.addEventListener("click", toggle_chat_search);
+    toolbar.append(status, files, media, timer, search, toggle);
     if (CHAT_FLOATING_TOOLBAR) toolbar.dataset.ciphergapFloating = "true";
     // Teact updates native children by position. Keep our floating toolbar
     // outside its subtree so opening a file preview cannot corrupt the composer.
@@ -198,6 +201,8 @@ function update_chat_security_toolbar(trust, exchange) {
     if (files) files.disabled = !cg_cached_key || !cg_cached_enabled;
     const media = document.getElementById("ciphergap-media");
     if (media) media.disabled = !cg_cached_key || !cg_cached_enabled;
+    const searchButton = document.getElementById("ciphergap-search");
+    if (searchButton) searchButton.disabled = !cg_cached_key || !cg_cached_enabled;
     const timer = document.getElementById("ciphergap-timer");
     if (timer) {
         const option = MESSAGE_TIMER_OPTIONS.find(item => item.id === cg_cached_timer) ?? MESSAGE_TIMER_OPTIONS[0];
@@ -464,6 +469,7 @@ let cg_cached_auto_decrypt = false;
 let cg_cached_auto_files = false;
 let cg_cached_message_key = null;
 let cg_cached_timer = "off";
+let cg_cached_preview = false;
 let cg_vault_locked = false;
 let cg_cached_exchange_status = null;
 let cg_cache_ready = false;
@@ -518,7 +524,7 @@ async function refresh_cg_chat_cache(force = false) {
         const keys = globalThis.CipherGapShared.storage_keys;
         let result;
         try {
-            result = await globalThis.CipherGapShared.vault.get([storageKey, autoDecryptKey, autoFilesKey, trustKey, exchangeKey, keys.enabled, keys.chat_enabled(storageKey), keys.message_timer(storageKey), keys.retention_days]);
+            result = await globalThis.CipherGapShared.vault.get([storageKey, autoDecryptKey, autoFilesKey, trustKey, exchangeKey, keys.enabled, keys.chat_enabled(storageKey), keys.message_timer(storageKey), keys.retention_days, keys.preview_before_send]);
             cg_vault_locked = false;
         } catch (error) {
             if (error?.code !== "VAULT_LOCKED") throw error;
@@ -528,6 +534,7 @@ async function refresh_cg_chat_cache(force = false) {
             result = await chrome.storage.local.get([autoDecryptKey, autoFilesKey, trustKey, exchangeKey, keys.enabled, keys.chat_enabled(storageKey), keys.message_timer(storageKey)]);
         }
         const secretKey = result[storageKey] ?? null;
+        cg_cached_preview = result[keys.preview_before_send] === true;
         cg_cached_timer = MESSAGE_TIMER_OPTIONS.some(item => item.id === result[keys.message_timer(storageKey)]) ? result[keys.message_timer(storageKey)] : "off";
         if (secretKey) maintain_forward_secrecy(storageKey, secretKey, result[keys.retention_days]).catch(() => {});
         const messageKey = secretKey
@@ -593,6 +600,7 @@ if (IS_CHAT_HOST) {
             }
             refresh_cg_chat_cache(true).catch(() => {});
         }
+        if (changes[globalThis.CipherGapShared.storage_keys.preview_before_send]) refresh_cg_chat_cache(true).catch(() => {});
         if (changes[globalThis.CipherGapShared.storage_keys.message_timer(storageKey)] ||
             changes[globalThis.CipherGapShared.storage_keys.retention_days]) {
             refresh_cg_chat_cache(true).catch(() => {});
@@ -919,6 +927,110 @@ function watch_message_lifetime(messageElement, end) {
 }
 
 // =========================
+// Search decrypted messages (messages loaded in this chat)
+// =========================
+
+let chat_search = null;
+
+function close_chat_search() {
+    chat_search?.bar.remove();
+    document.querySelectorAll("[data-ciphergap-search-hit]").forEach((row) => {
+        delete row.dataset.ciphergapSearchHit;
+        delete row.dataset.ciphergapSearchCurrent;
+    });
+    chat_search = null;
+}
+
+async function decrypt_loaded_messages() {
+    const scroller = document.querySelector(CHAT_MESSAGE_SCROLLER);
+    if (!scroller) return;
+    await refresh_cg_chat_cache();
+    for (const row of scroller.querySelectorAll(CHAT_MESSAGE_ITEM)) {
+        if (row.dataset.ciphergapDecrypted === "true") continue;
+        if (!CHAT_SHARED_PROTOCOL.is_ciphergap_packet(extract_cgp_packet_text(row))) continue;
+        try { await decrypt_message_element(row, cg_cached_key, cg_cached_message_key); }
+        catch { /* burn messages and unreadable ones are skipped */ }
+    }
+}
+
+function run_chat_search(direction = 0) {
+    if (!chat_search) return;
+    const term = chat_search.input.value.trim().toLocaleLowerCase();
+    const rows = [...document.querySelectorAll(CHAT_MESSAGE_ITEM)];
+    rows.forEach((row) => { delete row.dataset.ciphergapSearchHit; delete row.dataset.ciphergapSearchCurrent; });
+    chat_search.hits = term ? rows.filter((row) => [...row.querySelectorAll(".ciphergap-plaintext")]
+        .some((node) => node.textContent.toLocaleLowerCase().includes(term))) : [];
+    chat_search.hits.forEach((row) => { row.dataset.ciphergapSearchHit = "true"; });
+    if (chat_search.hits.length) {
+        chat_search.index = (chat_search.index + direction + chat_search.hits.length) % chat_search.hits.length;
+        const current = chat_search.hits[chat_search.index];
+        current.dataset.ciphergapSearchCurrent = "true";
+        current.scrollIntoView({ block: "center", behavior: "smooth" });
+    } else chat_search.index = 0;
+    chat_search.count.textContent = term ? (chat_search.hits.length ? `${chat_search.index + 1} / ${chat_search.hits.length}` : "No matches") : "";
+}
+
+async function toggle_chat_search() {
+    if (chat_search) { close_chat_search(); return; }
+    if (!cg_cached_key || !cg_cached_enabled) return;
+    const bar = document.createElement("div");
+    bar.dataset.ciphergapUi = "search";
+    bar.className = "ciphergap-search-bar";
+    bar.setAttribute("role", "search");
+    const input = document.createElement("input");
+    input.type = "search"; input.placeholder = "Search decrypted messages"; input.setAttribute("aria-label", "Search decrypted messages");
+    input.dir = "auto";
+    const count = document.createElement("span"); count.className = "ciphergap-search-bar__count"; count.setAttribute("aria-live", "polite");
+    const make = (label, glyph) => { const button = document.createElement("button"); button.type = "button"; CHAT_UI.button(button, glyph, label, true); return button; };
+    const prev = make("Previous match", "up"), next = make("Next match", "down"), close = make("Close search", "close");
+    const hint = document.createElement("small"); hint.textContent = "Searches messages loaded in this chat. Scroll up to load older ones.";
+    bar.append(input, count, prev, next, close, hint);
+    document.body.append(bar);
+    chat_search = { bar, input, count, hits: [], index: 0 };
+    let timer = null;
+    input.addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(async () => { await decrypt_loaded_messages(); chat_search && (chat_search.index = 0, run_chat_search(0)); }, 200); });
+    input.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") { event.preventDefault(); run_chat_search(event.shiftKey ? -1 : 1); }
+        if (event.key === "Escape") close_chat_search();
+    });
+    prev.addEventListener("click", () => run_chat_search(-1));
+    next.addEventListener("click", () => run_chat_search(1));
+    close.addEventListener("click", close_chat_search);
+    input.focus();
+    decrypt_loaded_messages().catch(() => {});
+}
+
+// Optional review step: shows the plaintext next to what the messenger will receive.
+function confirm_send_preview(plainText, packet) {
+    return new Promise((resolve) => {
+        const dialog = document.createElement("dialog");
+        dialog.dataset.ciphergapUi = "send-preview";
+        dialog.className = "ciphergap-send-preview";
+        const form = document.createElement("form");
+        form.method = "dialog";
+        const heading = document.createElement("h2");
+        heading.textContent = "Review before sending";
+        const youLabel = document.createElement("strong"); youLabel.textContent = "Your message";
+        const you = document.createElement("p"); you.className = "ciphergap-send-preview__plain"; you.dir = "auto"; you.textContent = plainText; you.setAttribute("translate", "no");
+        const wireLabel = document.createElement("strong"); wireLabel.textContent = "What the messenger receives";
+        const wire = document.createElement("code"); wire.dir = "ltr"; wire.setAttribute("translate", "no");
+        const visible = CHAT_SHARED_PROTOCOL.strip_ciphergap_notice(packet);
+        wire.textContent = visible.length > 170 ? visible.slice(0, 170) + "…" : visible;
+        const size = document.createElement("small"); size.textContent = `${visible.length} characters of ciphertext. Only people with your chat key can read it.`;
+        const actions = document.createElement("div"); actions.className = "ciphergap-send-preview__actions";
+        const cancel = document.createElement("button"); cancel.type = "submit"; cancel.value = "cancel"; cancel.className = "ciphergap-action"; cancel.textContent = "Cancel";
+        const send = document.createElement("button"); send.type = "submit"; send.value = "send"; send.className = "ciphergap-action ciphergap-action--primary"; send.textContent = "Send";
+        actions.append(cancel, send);
+        form.append(heading, youLabel, you, wireLabel, wire, size, actions);
+        dialog.append(form);
+        dialog.addEventListener("close", () => { const sent = dialog.returnValue === "send"; dialog.remove(); resolve(sent); });
+        document.body.append(dialog);
+        dialog.showModal();
+        send.focus();
+    });
+}
+
+// =========================
 // Encrypt button
 // =========================
 
@@ -989,6 +1101,7 @@ function inject_encrypt_button_chat() {
                 cg_cached_message_key,
                 message_timer_options()
             );
+            if (cg_cached_preview && !await confirm_send_preview(plainText, finalMessage)) return;
             if (!cg_cached_enabled || storageKey !== get_storage_key() || cg_cached_key !== secretKey) {
                 throw new Error("The chat or key changed while encrypting the message.");
             }
@@ -1228,11 +1341,15 @@ async function decrypt_message_element(
         throw new Error("No encryption key set for this chat.");
     }
 
-    const opened = await CHAT_SHARED_CRYPTO.open_message(
-        currentText,
-        secretKey,
-        cachedCryptoKey
-    );
+    let opened;
+    try {
+        opened = await CHAT_SHARED_CRYPTO.open_message(currentText, secretKey, cachedCryptoKey);
+    } catch (error) {
+        // After a group key rotation, older messages open with the previous keys.
+        if (error?.code !== "AUTH_FAILED") throw error;
+        opened = await decrypt_with_previous_group_keys(currentText);
+        if (!opened) throw error;
+    }
     if (!cg_cached_enabled || get_storage_key() !== storageKey || cg_cached_key !== secretKey || !messageElement.isConnected) throw new Error("The chat or key changed during decryption.");
 
     const end = await message_end_of_life(opened, { start: options.manual === true });

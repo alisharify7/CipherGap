@@ -12,7 +12,9 @@
     const PREFIXES = Object.freeze({
         invite: "cg-group-invite",
         join: "cg-group-join",
-        key: "cg-group-key"
+        key: "cg-group-key",
+        // Fresh key for an existing member (key rotation / member removal).
+        rekey: "cg-group-rekey"
     });
     const MARKER = "cg-group-";
     const WRAP_SALT = "ciphergap/group/v1";
@@ -43,6 +45,10 @@
     function build_key(gid, fingerprint, sealed, expiresAt) {
         return [PREFIXES.key, gid, fingerprint, sealed, expiresAt].join(SEPARATOR);
     }
+    // For a rekey the last field is the issue time (ms): it orders rotations.
+    function build_rekey(gid, fingerprint, sealed, issuedAt) {
+        return [PREFIXES.rekey, gid, fingerprint, sealed, issuedAt].join(SEPARATOR);
+    }
 
     // Strict parse of a complete protocol message. Returns null when invalid.
     function parse(text) {
@@ -52,13 +58,13 @@
         if (!type) return null;
         const gid = parts[1]?.toLowerCase();
         if (!GID.test(gid ?? "")) return null;
-        if (type === "key") {
+        if (type === "key" || type === "rekey") {
             if (parts.length !== 5) return null;
             const fingerprint = parts[2].toUpperCase();
             if (!FINGERPRINT.test(fingerprint) || !valid_sealed(parts[3]) || !EXPIRES.test(parts[4])) return null;
             return { type, gid, fingerprint, sealed: parts[3], expiresAt: Number(parts[4]),
-                protocolText: build_key(gid, fingerprint, parts[3], parts[4]),
-                signature: `key:${gid}:${fingerprint}` };
+                protocolText: (type === "key" ? build_key : build_rekey)(gid, fingerprint, parts[3], parts[4]),
+                signature: `${type}:${gid}:${fingerprint}:${type === "rekey" ? parts[4] : ""}` };
         }
         if (parts.length !== 4 || !valid_public_key(parts[2]) || !EXPIRES.test(parts[3])) return null;
         return { type, gid, publicKeyB64: parts[2], expiresAt: Number(parts[3]),
@@ -82,16 +88,16 @@
             info: shared.encoding.encode_utf8(`wrap|${gid}|${fingerprint}`)
         }, base, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
     }
-    function aad(gid, fingerprint, expiresAt) {
-        return shared.encoding.encode_utf8([PREFIXES.key, gid, fingerprint, expiresAt].join(SEPARATOR));
+    function aad(gid, fingerprint, expiresAt, type = "key") {
+        return shared.encoding.encode_utf8([PREFIXES[type], gid, fingerprint, expiresAt].join(SEPARATOR));
     }
 
     // Creator side: seal `groupSecret` for the member whose public key is given.
-    async function seal_group_key(creatorPrivateKey, memberPublicKeyB64, gid, expiresAt, groupSecret) {
+    async function seal_group_key(creatorPrivateKey, memberPublicKeyB64, gid, expiresAt, groupSecret, type = "key") {
         const fingerprint = await shared.ecdh.compute_key_fingerprint(memberPublicKeyB64);
         const key = await wrap_key(creatorPrivateKey, memberPublicKeyB64, gid, fingerprint);
         const iv = crypto.getRandomValues(new Uint8Array(12));
-        const sealed = await crypto.subtle.encrypt({ name: "AES-GCM", iv, additionalData: aad(gid, fingerprint, expiresAt) }, key, shared.encoding.encode_utf8(groupSecret));
+        const sealed = await crypto.subtle.encrypt({ name: "AES-GCM", iv, additionalData: aad(gid, fingerprint, expiresAt, type) }, key, shared.encoding.encode_utf8(groupSecret));
         return { fingerprint, sealed: shared.encoding.bytes_to_base64(shared.encoding.concat_bytes(iv, sealed)) };
     }
 
@@ -103,7 +109,7 @@
         try {
             const plain = await crypto.subtle.decrypt({
                 name: "AES-GCM", iv: bytes.slice(0, 12),
-                additionalData: aad(parsed.gid, parsed.fingerprint, parsed.expiresAt)
+                additionalData: aad(parsed.gid, parsed.fingerprint, parsed.expiresAt, parsed.type === "rekey" ? "rekey" : "key")
             }, key, bytes.slice(12));
             return shared.encoding.decode_utf8(plain);
         } catch {
@@ -112,7 +118,7 @@
     }
 
     shared.group = Object.freeze({
-        PREFIXES, contains_marker, parse, build_invite, build_join, build_key,
+        PREFIXES, contains_marker, parse, build_invite, build_join, build_key, build_rekey,
         generate_group_id, generate_group_secret, seal_group_key, open_group_key
     });
 })(globalThis.CipherGapShared);

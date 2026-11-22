@@ -504,7 +504,45 @@ function format_verified_date(timestamp) {
     }).format(new Date(timestamp));
 }
 
+function format_lifecycle_date(value) {
+    return new Date(value).toLocaleDateString(globalThis.CipherGapShared.i18n.getLanguage() === "fa" ? "fa-IR" : undefined, { year: "numeric", month: "short", day: "numeric" });
+}
+function lifecycle_age(sinceMs) {
+    const days = Math.floor((Date.now() - sinceMs) / 86400000);
+    return days <= 0 ? "today" : days === 1 ? "1 day ago" : `${days} days ago`;
+}
+
+// Key lifecycle: what kind of key this is, how old it is and how far back it reads.
+function render_key_lifecycle() {
+    const list = document.getElementById("keyLifecycle");
+    list.replaceChildren();
+    list.hidden = !currentSecretKey;
+    if (!currentSecretKey) return;
+    const keyring = globalThis.CipherGapShared.keyring;
+    const profile = globalThis.CipherGapShared.formats.crypto.profiles.hkdf_aes_gcm_v2;
+    const rows = [];
+    if (keyring.is_ratchet_secret(currentSecretKey)) {
+        const epoch = Number(currentSecretKey.split(":")[1]);
+        const readableSince = (profile.epoch_origin_day + epoch) * 86400000;
+        rows.push(["Key type", "Forward secrecy (renewed daily)"]);
+        rows.push(["Older messages", `Readable since ${format_lifecycle_date(readableSince)}`]);
+    } else {
+        rows.push(["Key type", "Long-lived (never changes)"]);
+        rows.push(["Older messages", "All messages stay readable"]);
+    }
+    const since = currentTrust?.at;
+    if (since) rows.push(["Key saved", `${format_lifecycle_date(since)} (${lifecycle_age(since)})`]);
+    rows.push(["Verification", ({ verified: "Verified", changed: "Identity changed", unverified: "Not verified" })[currentTrust?.state] ?? "Not verified"]);
+    for (const [label, value] of rows) {
+        const term = document.createElement("dt"), detail = document.createElement("dd");
+        term.textContent = label; detail.textContent = value;
+        list.append(term, detail);
+    }
+    globalThis.CipherGapShared.i18n.refresh?.();
+}
+
 function render_key_material() {
+    render_key_lifecycle();
     const hasKey = Boolean(currentSecretKey);
     keyMaterial.hidden = !hasKey;
 
@@ -1910,6 +1948,7 @@ function get_retention_days() {
 async function refresh_privacy_card() {
     const stored = await chrome.storage.local.get([PRIVACY_KEYS.forward_secrecy, PRIVACY_KEYS.retention_days]);
     privacyEl("forwardSecrecyToggle").checked = stored[PRIVACY_KEYS.forward_secrecy] !== false;
+    privacyEl("previewSendToggle").checked = (await chrome.storage.local.get(PRIVACY_KEYS.preview_before_send))[PRIVACY_KEYS.preview_before_send] === true;
     const retention = String(stored[PRIVACY_KEYS.retention_days] || FS_PROFILE.default_retention_epochs);
     if (![...privacyEl("retentionSelect").options].some(option => option.value === retention)) {
         privacyEl("retentionSelect").add(new Option(`${retention} days`, retention));
@@ -1934,6 +1973,10 @@ async function refresh_privacy_card() {
 
 privacyEl("forwardSecrecyToggle").addEventListener("change", async event => {
     try { await chrome.storage.local.set({ [PRIVACY_KEYS.forward_secrecy]: event.target.checked }); }
+    catch (error) { event.target.checked = !event.target.checked; set_status(error.message, "error"); }
+});
+privacyEl("previewSendToggle").addEventListener("change", async event => {
+    try { await chrome.storage.local.set({ [PRIVACY_KEYS.preview_before_send]: event.target.checked }); }
     catch (error) { event.target.checked = !event.target.checked; set_status(error.message, "error"); }
 });
 privacyEl("retentionSelect").addEventListener("change", async () => {
@@ -2046,7 +2089,72 @@ async function refresh_group_card() {
         : "No group key yet.";
     privacyEl("startGroupBtn").hidden = Boolean(session);
     privacyEl("cancelGroupBtn").hidden = session?.role !== "creator";
+    await render_group_members();
 }
+
+async function read_group_membership_for_popup() {
+    const name = PRIVACY_KEYS.group_members(storageKey);
+    try {
+        const value = (await vaultApi.get([name]))[name];
+        return value ? JSON.parse(value) : null;
+    } catch { return null; }
+}
+async function render_group_members() {
+    const list = privacyEl("groupMembers"), rotate = privacyEl("rotateGroupBtn");
+    const membership = await read_group_membership_for_popup();
+    const members = membership?.role === "creator" ? Object.entries(membership.members ?? {}) : [];
+    list.hidden = members.length === 0;
+    rotate.hidden = membership?.role !== "creator" || members.length === 0;
+    list.replaceChildren();
+    for (const [fingerprint, member] of members) {
+        const row = document.createElement("div");
+        row.className = "group-member";
+        const alias = document.createElement("input");
+        alias.type = "text"; alias.maxLength = 40; alias.value = member.alias ?? "";
+        alias.placeholder = globalThis.CipherGapShared.i18n.translate("Name (optional)");
+        alias.setAttribute("aria-label", "Member name");
+        alias.addEventListener("change", async () => {
+            const latest = await read_group_membership_for_popup();
+            if (!latest?.members?.[fingerprint]) return;
+            latest.members[fingerprint].alias = alias.value.trim().slice(0, 40);
+            await vaultApi.set({ [PRIVACY_KEYS.group_members(storageKey)]: JSON.stringify(latest) });
+        });
+        const code = document.createElement("code");
+        code.dir = "ltr";
+        code.textContent = globalThis.CipherGapShared.protocol.format_protocol_fingerprint(fingerprint);
+        const remove = document.createElement("button");
+        remove.type = "button"; remove.className = "secondary-btn"; remove.textContent = "Remove";
+        remove.addEventListener("click", async () => {
+            const name = alias.value.trim() || code.textContent;
+            if (!await show_confirmation({
+                title: "Remove this member?",
+                message: `${name} keeps the messages they already have but cannot read new ones. Everyone else receives a new group key in the chat.`,
+                confirmLabel: "Remove"
+            })) return;
+            remove.disabled = true;
+            try {
+                const response = await send_tab_message({ action: "remove_group_member", fingerprint });
+                if (!response?.ok) throw new Error(response?.error || "The member could not be removed.");
+                await refresh_popup_state(); await refresh_group_card();
+                set_status("Member removed. A new group key was sent to the others.", "success");
+            } catch (error) { set_status(error.message, "error"); }
+            finally { remove.disabled = false; }
+        });
+        row.append(alias, code, remove);
+        list.append(row);
+    }
+}
+privacyEl("rotateGroupBtn").addEventListener("click", async event => {
+    const button = event.currentTarget;
+    button.disabled = true;
+    try {
+        const response = await send_tab_message({ action: "rotate_group_key" });
+        if (!response?.ok) throw new Error(response?.error || "The key could not be rotated.");
+        await refresh_popup_state();
+        set_status("A new group key was sent to every member.", "success");
+    } catch (error) { set_status(error.message, "error"); }
+    finally { button.disabled = false; }
+});
 privacyEl("startGroupBtn").addEventListener("click", async event => {
     const button = event.currentTarget;
     if (currentSecretKey && !await show_confirmation({
