@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## [1.8.1](docs/releases/v1.8.1.md) - 2026-11-22
 
 - Group management: the creator can remove a member or rotate the group key. Everyone else receives the new key in the chat (no re-joining); the removed member keeps old messages but cannot read new ones. Older messages stay readable through previous keys, which follow the same retention window. Optional member names are stored locally.
 - Group membership records and previous keys are encrypted at rest by the app lock.

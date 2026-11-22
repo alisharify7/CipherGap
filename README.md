@@ -7,7 +7,7 @@
 **Encrypt messages and files on your device before they reach the messenger. Keep chatting where you already chat.**
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-2f6f55)](LICENSE)
-[![Desktop 1.8.0](https://img.shields.io/badge/desktop-1.8.0-163b32)](https://github.com/alisharify7/CipherGap/releases/tag/v1.8.0)
+[![Desktop 1.8.1](https://img.shields.io/badge/desktop-1.8.1-163b32)](https://github.com/alisharify7/CipherGap/releases/tag/v1.8.1)
 [![Android 0.1.4](https://img.shields.io/badge/android-0.1.4-3ddc84)](https://github.com/alisharify7/CipherGap/releases/tag/android-v0.1.4)
 ![Chrome, Firefox, Android](https://img.shields.io/badge/platforms-Chrome%20%C2%B7%20Firefox%20%C2%B7%20Android-4b6f5f)
 ![No backend](https://img.shields.io/badge/backend-none-lightgrey)
@@ -112,7 +112,7 @@ The Android app uses the same shared keys and backup format as the desktop exten
 * **Secure group chats:** one member creates a group invitation from the popup; members join from the invitation card in the chat with one click, and the creator approves each person. Approval delivers the group key sealed (ECDH + AES-GCM) to that member only, so other members and the messenger cannot open it. Everything else (forward secrecy, self-destruct timers, files) works in the group. Fingerprints are shown on every card; approve only people you recognise. Removing someone means creating a new invitation and approving the remaining members again.
 * **Optional app lock (browser extension):** a passphrase of at least 6 characters encrypts saved chat keys at rest. It locks after inactivity and when the browser closes, and slows repeated wrong guesses. A forgotten passphrase cannot be recovered; restore from an encrypted backup. Android does not have this lock yet.
 
-**After 1.8.0 (on `main`'s next release):** group creators can remove a member or rotate the group key; the popup shows each key's type, age and how far back messages are readable; an optional review step shows the ciphertext before sending; and an in-chat search finds decrypted messages loaded in the open chat.
+**New in 1.8.1:** group creators can remove a member or rotate the group key; the popup shows each key's type, age and how far back messages are readable; an optional review step shows the ciphertext before sending; and an in-chat search finds decrypted messages loaded in the open chat.
 
 **Refreshed interface:** the popup has a new calmer teal design with light and dark themes (Persian/English).
 
@@ -149,16 +149,16 @@ Honest limitations:
 
 **Do old messages stay readable after updates?** Yes so far: format upgrades keep old readers registered. The v2 format in 1.8.0 is the exception: it needs both people to update to read new messages.
 
-[Support CipherGap](https://www.coffeete.ir/alisharify7) · [Changelog](CHANGELOG.md) · [Release notes for v1.8.0](docs/releases/v1.8.0.md)
+[Support CipherGap](https://www.coffeete.ir/alisharify7) · [Changelog](CHANGELOG.md) · [Release notes for v1.8.1](docs/releases/v1.8.1.md)
 
 ## Installation
 
-### Downloads — desktop 1.8.0 / Android 0.1.4
+### Downloads — desktop 1.8.1 / Android 0.1.4
 
-- [Chrome / Chromium / Edge / Brave ZIP](https://github.com/alisharify7/CipherGap/releases/download/v1.8.0/ciphergap-1.8.0-chrome.zip)
-- [Firefox desktop ZIP](https://github.com/alisharify7/CipherGap/releases/download/v1.8.0/ciphergap-1.8.0-firefox.zip) — unsigned; temporary installation.
+- [Chrome / Chromium / Edge / Brave ZIP](https://github.com/alisharify7/CipherGap/releases/download/v1.8.1/ciphergap-1.8.1-chrome.zip)
+- [Firefox desktop ZIP](https://github.com/alisharify7/CipherGap/releases/download/v1.8.1/ciphergap-1.8.1-firefox.zip) — unsigned; temporary installation.
 - [Android APK](https://github.com/alisharify7/CipherGap/releases/download/android-v0.1.4/ciphergap-android-0.1.4.apk) — signed release build; Android 8+ and a compatible WebView required.
-- [Desktop SHA-256 checksums](https://github.com/alisharify7/CipherGap/releases/download/v1.8.0/SHA256SUMS) · [Android SHA-256 checksums](https://github.com/alisharify7/CipherGap/releases/download/android-v0.1.4/SHA256SUMS)
+- [Desktop SHA-256 checksums](https://github.com/alisharify7/CipherGap/releases/download/v1.8.1/SHA256SUMS) · [Android SHA-256 checksums](https://github.com/alisharify7/CipherGap/releases/download/android-v0.1.4/SHA256SUMS)
 
 Follow the [installation guide](https://alisharify7.github.io/CipherGap/#installation).
 
