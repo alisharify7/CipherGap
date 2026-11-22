@@ -1,5 +1,11 @@
 # Changelog
 
+## [Android 0.2.0](docs/releases/android-v0.2.0.md) - 2026-11-22 (unsigned, not yet released)
+
+- Bring message format v2, forward secrecy, self-destructing messages and secure group chats to Android through the synchronized shared core.
+- Adopt the new teal theme and bottom tab bar; allow the new settings keys for messenger pages.
+- The passphrase app lock stays browser-only; Android already encrypts its store with the Keystore.
+
 ## [Android 0.1.4](docs/releases/android-v0.1.4.md) - 2026-10-08
 
 - Enable Rubika and Soroush Plus on Android using the existing shared adapters.

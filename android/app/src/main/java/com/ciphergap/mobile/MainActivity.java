@@ -236,7 +236,7 @@ public class MainActivity extends Activity {
     void requireLocal(boolean local){if(!local)throw new SecurityException("Trusted app UI required.");}
     boolean keyAllowed(String key,boolean local,Uri origin) {
         if(local)return true;
-        if(key.startsWith("ciphergap_ui_") || key.equals("ciphergap_enabled") || key.equals("cg_handled_nonces"))return true;
+        if(key.startsWith("ciphergap_ui_") || key.equals("ciphergap_enabled") || key.equals("cg_handled_nonces") || key.equals("ciphergap_forward_secrecy") || key.equals("ciphergap_retention_days") || key.equals("ciphergap_burned_messages"))return true;
         return key.contains(origin.getHost()+"_") && !key.contains("/") && key.length()<256;
     }
     JSONObject readKeys(Object keys,boolean local,Uri origin)throws Exception {
