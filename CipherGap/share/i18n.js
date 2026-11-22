@@ -21,6 +21,15 @@
         [/^(\d+) attachments? encrypted and ready to send\.$/, x => `${x} فایل رمزگذاری شد و آمادهٔ ارسال است.`],
         [/^Attachment not sent: (.+)$/, x => `فایل ارسال نشد: ${translate(x)}`],
         [/^File decryption failed: (.+)$/, x => `رمزگشایی فایل ناموفق بود: ${translate(x)}`],
+        [/^Creator fingerprint · (.+)$/, x => `اثر انگشت سازنده · ${x}`],
+        [/^Member fingerprint · (.+)$/, x => `اثر انگشت عضو · ${x}`],
+        [/^Your invitation is open\. Approve members as they join \((\d+) approved\)\.$/, x => `دعوت‌نامهٔ شما باز است. اعضا را هنگام پیوستن تأیید کنید (${x} تأییدشده).`],
+        [/^Disappears in (\d+) s$/, x => `${x} ثانیهٔ دیگر ناپدید می‌شود`],
+        [/^Disappears in (\d+) min$/, x => `${x} دقیقهٔ دیگر ناپدید می‌شود`],
+        [/^Disappears in (\d+) h$/, x => `${x} ساعت دیگر ناپدید می‌شود`],
+        [/^Disappears in (\d+) days$/, x => `${x} روز دیگر ناپدید می‌شود`],
+        [/^Self-destruct: (.+)$/, x => `خودتخریبی: ${x}`],
+        [/^New messages self-destruct: (.+)\.$/, x => `پیام‌های جدید خودتخریب می‌شوند: ${x}.`],
         [/^Switch to (dark|light) theme$/, x => x === "dark" ? "تغییر به ظاهر تیره" : "تغییر به ظاهر روشن"]
     ];
     function translate(value) {

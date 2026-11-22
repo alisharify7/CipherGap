@@ -20,6 +20,8 @@ const CGPE_MAX_FILE_BYTES = CGPE_WRITE_FORMAT.max_file_bytes;
 const CGPE_MAX_FILENAME_BYTES = CGPE_WRITE_FORMAT.max_filename_bytes;
 const CGPE_MAX_MIME_BYTES = CGPE_WRITE_FORMAT.max_mime_bytes;
 const CGPE_GCM_TAG_BYTES = CGPE_WRITE_CRYPTO.gcm_tag_bytes;
+// Bytes between the version byte and the filename length (v2: ratchet epoch).
+function cgpe_extra_header_bytes(format) { return format.epoch_bytes ?? 0; }
 const CGPE_IV_BYTES = CGPE_WRITE_CRYPTO.iv_bytes;
 
 function get_cgpe_formats() {
@@ -28,7 +30,7 @@ function get_cgpe_formats() {
 
 function get_cgpe_max_container_bytes_for_format(format) {
     const cryptoProfile = CGPE_CRYPTO_PROFILES[format.crypto_profile];
-    return format.max_file_bytes + format.magic_bytes.length + 1 + 4 +
+    return format.max_file_bytes + format.magic_bytes.length + 1 + cgpe_extra_header_bytes(format) + 4 +
         format.max_filename_bytes + 4 + format.max_mime_bytes +
         cryptoProfile.iv_bytes + cryptoProfile.gcm_tag_bytes;
 }
@@ -80,11 +82,9 @@ function contains_cgpe_filename(value) {
     );
 }
 
+// Returns the key ring (keyring.js) used for both writing and reading files.
 async function derive_cgpe_write_key(password) {
-    return globalThis.CipherGapShared.crypto.derive_aes_key_for_profile(
-        password,
-        CGPE_WRITE_CRYPTO
-    );
+    return globalThis.CipherGapShared.keyring.open(password);
 }
 
 // =========================
@@ -106,14 +106,10 @@ async function encrypt_file(file, password, existingAesKey = null) {
     }
 
     const fileBuffer = await file.arrayBuffer();
-    const aesKey = existingAesKey ?? await derive_cgpe_write_key(password);
+    const ring = existingAesKey ?? await derive_cgpe_write_key(password);
     const iv = crypto.getRandomValues(new Uint8Array(CGPE_IV_BYTES));
-
-    const encryptedBuffer = await crypto.subtle.encrypt(
-        { name: CGPE_WRITE_CRYPTO.aes_algorithm, iv },
-        aesKey,
-        fileBuffer
-    );
+    const epoch = globalThis.CipherGapShared.keyring.now_epoch();
+    const aesKey = await ring.file_key(epoch);
 
     // Encode original filename and MIME type as UTF-8
     const nameBytes = globalThis.CipherGapShared.encoding.encode_utf8(file.name);
@@ -127,11 +123,10 @@ async function encrypt_file(file, password, existingAesKey = null) {
         throw new Error("The selected file has an unusually long MIME type.");
     }
 
-    const headerSize = CGPE_MAGIC.byteLength + 1 + 4 +
+    const headerSize = CGPE_MAGIC.byteLength + 1 + cgpe_extra_header_bytes(CGPE_WRITE_FORMAT) + 4 +
         nameBytes.length + 4 + mimeBytes.length;
-    const totalSize = headerSize + CGPE_IV_BYTES + encryptedBuffer.byteLength;
-
-    const cgpe = new Uint8Array(totalSize);
+    const header = new Uint8Array(headerSize + CGPE_IV_BYTES);
+    const cgpe = header;
     let offset = 0;
 
     // Magic
@@ -141,6 +136,13 @@ async function encrypt_file(file, password, existingAesKey = null) {
     // Version
     cgpe[offset] = CGPE_VERSION;
     offset += 1;
+
+    // Ratchet epoch (uint32 LE) selects the file key of that day.
+    cgpe[offset] = epoch & 0xFF;
+    cgpe[offset + 1] = (epoch >> 8) & 0xFF;
+    cgpe[offset + 2] = (epoch >> 16) & 0xFF;
+    cgpe[offset + 3] = (epoch >>> 24) & 0xFF;
+    offset += CGPE_WRITE_FORMAT.epoch_bytes;
 
     // Original filename length (uint32 LE)
     cgpe[offset] = nameBytes.length & 0xFF;
@@ -168,12 +170,20 @@ async function encrypt_file(file, password, existingAesKey = null) {
     cgpe.set(iv, offset);
     offset += CGPE_IV_BYTES;
 
-    // Ciphertext
-    cgpe.set(new Uint8Array(encryptedBuffer), offset);
+    // The complete header (magic, version, epoch, name, MIME, IV) is
+    // authenticated, so the file name and type cannot be altered in transit.
+    const encryptedBuffer = await crypto.subtle.encrypt(
+        { name: CGPE_WRITE_CRYPTO.aes_algorithm, iv, additionalData: header.subarray(0, offset) },
+        aesKey,
+        fileBuffer
+    );
+    const container = new Uint8Array(offset + encryptedBuffer.byteLength);
+    container.set(header, 0);
+    container.set(new Uint8Array(encryptedBuffer), offset);
 
     // Return as a File object with the configured CGPE extension.
     const encryptedName = file.name + CGPE_FILE_EXTENSION;
-    return new File([cgpe.buffer], encryptedName, {
+    return new File([container.buffer], encryptedName, {
         type: "application/octet-stream"
     });
 }
@@ -188,7 +198,7 @@ async function decrypt_cgpe(arrayBuffer, password, existingAesKey = null) {
     const minimumContainerBytes = Math.min(
         ...formats.map((format) => {
             const cryptoProfile = CGPE_CRYPTO_PROFILES[format.crypto_profile];
-            return format.magic_bytes.length + 1 + 4 + 4 +
+            return format.magic_bytes.length + 1 + cgpe_extra_header_bytes(format) + 4 + 4 +
                 cryptoProfile.iv_bytes + cryptoProfile.gcm_tag_bytes;
         })
     );
@@ -224,6 +234,11 @@ async function decrypt_cgpe(arrayBuffer, password, existingAesKey = null) {
     }
 
     let offset = format.magic_bytes.length + 1;
+    let epoch = null;
+    if (format.epoch_bytes) {
+        epoch = (data[offset] | (data[offset + 1] << 8) | (data[offset + 2] << 16) | (data[offset + 3] << 24)) >>> 0;
+        offset += format.epoch_bytes;
+    }
 
     // Read original filename length
     const nameLen = (data[offset] | (data[offset + 1] << 8) |
@@ -264,25 +279,39 @@ async function decrypt_cgpe(arrayBuffer, password, existingAesKey = null) {
     // Read the configured AES-GCM IV.
     const iv = new Uint8Array(data.buffer, data.byteOffset + offset, cryptoProfile.iv_bytes);
     offset += cryptoProfile.iv_bytes;
+    const authenticatedHeader = new Uint8Array(data.buffer, data.byteOffset, offset);
 
     // Remaining bytes are ciphertext
     const ciphertext = new Uint8Array(data.buffer, data.byteOffset + offset, data.byteLength - offset);
 
     // Decrypt
-    const canReuseExistingKey =
-        format.crypto_profile ===
-        globalThis.CipherGapShared.crypto.get_message_crypto_profile().id;
-    const aesKey = existingAesKey && canReuseExistingKey
-        ? existingAesKey
-        : await globalThis.CipherGapShared.crypto.derive_aes_key_for_profile(
-            password,
-            cryptoProfile
+    const shared = globalThis.CipherGapShared;
+    const ring = existingAesKey?.file_key ? existingAesKey : await shared.keyring.open(password);
+    let decryptedBuffer;
+    if (format.version === 1) {
+        decryptedBuffer = await crypto.subtle.decrypt(
+            { name: cryptoProfile.aes_algorithm, iv },
+            await ring.legacy_key(),
+            ciphertext
         );
-    const decryptedBuffer = await crypto.subtle.decrypt(
-        { name: cryptoProfile.aes_algorithm, iv },
-        aesKey,
-        ciphertext
-    );
+    } else {
+        const current = shared.keyring.now_epoch();
+        if (epoch > current + cryptoProfile.max_future_epochs) {
+            throw new Error("This file is dated too far in the future. Check your device clock.");
+        }
+        const aesKey = await ring.file_key(epoch);
+        try {
+            decryptedBuffer = await crypto.subtle.decrypt(
+                { name: cryptoProfile.aes_algorithm, iv, additionalData: authenticatedHeader },
+                aesKey,
+                ciphertext
+            );
+        } catch {
+            const error = new Error("Wrong key, or the file was modified.");
+            error.code = "AUTH_FAILED";
+            throw error;
+        }
+    }
 
     return {
         name: originalName,

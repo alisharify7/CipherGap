@@ -12,7 +12,7 @@ try:
   worker=ctx.service_workers[0] if ctx.service_workers else ctx.wait_for_event('serviceworker')
   extension_id=worker.url.split('/')[2]
   kernel=ctx.new_page();kernel.goto(f'chrome-extension://{extension_id}/popup/popup.html')
-  kernel.evaluate("""async()=>{for(const file of ['encoding','crypto','file_crypto','dh_crypto','stickers'])await new Promise((resolve,reject)=>{const s=document.createElement('script');s.src='../share/'+file+'.js';s.onload=resolve;s.onerror=reject;document.head.append(s)});} """)
+  kernel.evaluate("""async()=>{for(const file of ['encoding','keyring','crypto','file_crypto','dh_crypto','stickers'])await new Promise((resolve,reject)=>{const s=document.createElement('script');s.src='../share/'+file+'.js';s.onload=resolve;s.onerror=reject;document.head.append(s)});} """)
   for platform,base in [('eitaa','https://web.eitaa.com/'),('telegram','https://web.telegram.org/a/')]:
    pages=[];errors=[]
    ctx.route(base+'**',lambda route,request,p=platform:route.fulfill(body=html(p),content_type='text/html'))

@@ -10,7 +10,7 @@ try:
   ctx=p.chromium.launch_persistent_context(profile,channel='chromium',headless=True,args=[f'--disable-extensions-except={root}/CipherGap',f'--load-extension={root}/CipherGap'],accept_downloads=True)
   worker=next((w for w in ctx.service_workers if w.url.startswith('chrome-extension://')),None) or ctx.wait_for_event('serviceworker')
   kernel=ctx.new_page();kernel.goto(worker.url.rsplit('/',1)[0]+'/popup/popup.html')
-  kernel.evaluate('''async()=>{for(const f of ['encoding','crypto','file_crypto','dh_crypto'])await new Promise(r=>{const s=document.createElement('script');s.src='../share/'+f+'.js';s.onload=r;document.head.append(s)})}''')
+  kernel.evaluate('''async()=>{for(const f of ['encoding','keyring','crypto','file_crypto','dh_crypto'])await new Promise(r=>{const s=document.createElement('script');s.src='../share/'+f+'.js';s.onload=r;document.head.append(s)})}''')
   for platform,base in [('rubika','https://web.rubika.ir/'),('splus','https://web.splus.ir/')]:
    ctx.route(base+'**',lambda route,request,name=platform:route.fulfill(body=html(name),content_type='text/html'))
    pages=[];errors=[]

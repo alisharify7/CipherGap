@@ -198,3 +198,79 @@ html[dir="rtl"] .file-hero { text-align: right; }
 
 .project-links { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
 .project-links a { padding: 9px 12px; border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-size: 12px; }
+
+/* Privacy & app lock */
+.lock-screen { position: fixed; inset: 0; z-index: 50; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 32px; background: var(--bg, var(--surface)); text-align: center; }
+.lock-screen[hidden] { display: none; }
+.lock-screen form { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 280px; }
+.privacy-card { display: flex; flex-direction: column; gap: 10px; }
+.privacy-card h3 { font-size: 14px; font-weight: 700; }
+.privacy-card hr { border: 0; border-top: 1px solid var(--border); margin: 6px 0; }
+.privacy-card input[type="password"], .privacy-card select, .lock-screen input { width: 100%; min-height: 38px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-muted); color: var(--text); font: inherit; }
+.privacy-card > div { display: flex; flex-direction: column; gap: 10px; }
+.privacy-card [hidden], .lock-screen [hidden] { display: none !important; }
+.field-error { color: var(--danger, #b42318); font-size: 12px; }
+
+/* ===== Visual refresh: calmer, flatter, roomier ===== */
+:root { --surface-hover:#e9ecf4; --border-strong:#cfd4e2; --warning:#b45309; --warning-soft:#fef3c7; --info:#3b5bdb; --info-soft:#eef2ff; --success-soft:#e3f5ea; --danger-soft:#fdecea; --focus:#5eead4; --radius-large:14px; --radius-medium:10px; }
+:root[data-theme="dark"] { --surface-hover:#222840; --border-strong:#38405a; --warning:#f59e0b; --warning-soft:#3a2c12; --info:#93a8ff; --info-soft:#1f2747; --success-soft:#14301f; --danger-soft:#3a1c1a; --focus:#2dd4bf; }
+body { font: 13px/1.55 Inter, Vazirmatn, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+.app { padding: 14px 16px 10px; gap: 10px; }
+.topbar { gap: 8px; }
+.brand { margin-inline-end: auto; gap: 9px; }
+.brand-logo, .brand-logo img { width: 32px; height: 32px; border-radius: 10px; }
+.brand-title { font-size: 16px; letter-spacing: -.3px; }
+.brand-subtitle { display: none; }
+#languageSelect { height: 30px; padding: 0 8px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); color: var(--text); font-size: 12px; }
+.theme-toggle { width: 30px; height: 30px; background: var(--surface); }
+.theme-toggle svg { width: 15px; height: 15px; }
+.chat-context-strip { padding: 0 2px; border: 0; background: transparent; }
+.chat-name { font-size: 13px; }
+.chat-context-hint { font-size: 11px; margin-top: 1px; }
+.context-badge, .trust-badge { padding: 3px 9px; font-size: 11px; }
+.navigation { display: flex; gap: 2px; padding: 0; border-radius: 0; background: transparent; border-bottom: 1px solid var(--border); }
+.navigation button { flex: 1; flex-direction: column; gap: 2px; padding: 8px 2px 9px; border-radius: 0; font-size: 11px; font-weight: 600; position: relative; }
+.navigation button span { font-size: 15px; }
+.navigation button:hover { color: var(--text); }
+.navigation [aria-selected="true"] { background: transparent; box-shadow: none; color: var(--primary); }
+.navigation [aria-selected="true"]::after { content: ""; position: absolute; inset-inline: 14px; bottom: -1px; height: 2px; border-radius: 2px; background: var(--primary); }
+.page { gap: 12px; padding: 4px 4px 8px 0; }
+.page > * { flex-shrink: 0; }
+.glass-card { padding: 14px; border-radius: 14px; box-shadow: none; }
+.security-card { padding: 16px; }
+.security-card-header { margin-bottom: 12px; }
+.security-view h3 { font-size: 18px; letter-spacing: -.3px; margin-bottom: 6px; }
+.security-view p { font-size: 12.5px; }
+.security-actions { margin-top: 14px; }
+button.primary-btn, button.secondary-btn, button.danger-btn, button.danger-outline-btn, button.danger-solid-btn, button.tertiary-btn { min-height: 40px; border-radius: 10px; font-size: 13px; font-weight: 600; transition: background .15s, border-color .15s; }
+button.secondary-btn { background: var(--surface); border-color: var(--border-strong); }
+button.primary-btn { box-shadow: none; }
+.eyebrow { font-size: 10px; letter-spacing: 1.2px; }
+.page-heading h2 { font-size: 20px; letter-spacing: -.4px; margin: 4px 0 6px; }
+.quick-guide { padding: 6px 2px; }
+.quick-guide h2 { font-size: 16px; letter-spacing: -.2px; }
+.file-hero { padding: 20px 16px; border-radius: 14px; }
+.file-symbol { border-radius: 14px; font-size: 24px; }
+.input { border-color: var(--border-strong); border-radius: 10px; }
+.input:focus, .privacy-card input:focus, .privacy-card select:focus { outline: 2px solid var(--focus); outline-offset: 1px; border-color: transparent; }
+.sas-code { background: var(--primary-soft); letter-spacing: 4px; }
+.status { border: 1px solid var(--border); }
+.app-footer { border-top: 0; padding-top: 2px; font-size: 10px; }
+.disclosure-card summary { padding: 13px 14px; }
+.auto-decrypt-title { font-size: 13px; }
+.auto-decrypt-sub { font-size: 11.5px; }
+.toggle-switch { flex-basis: 40px; width: 40px; }
+.toggle-slider { height: 24px; }
+.toggle-input:checked+.toggle-slider::after { transform: translateX(16px); }
+.privacy-card h3, .group-card h3 { font-size: 14px; }
+.group-card { display: flex; flex-direction: column; gap: 8px; }
+#page-security { overflow-y: auto; }
+#page-security .security-card { flex-shrink: 0; overflow: visible; }
+#page-security[data-state="sas"] #groupCard, #page-security[data-state="incoming"] #groupCard, #page-security[data-state="waiting"] #groupCard, #page-security[data-state="changed"] #groupCard { display: none; }
+.navigation button svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.navigation button span { font-size: 11px; line-height: 1.2; }
+.navigation button { border: 0; font-size: 11px; }
+.navigation { border: 0; border-bottom: 1px solid var(--border); border-radius: 0; padding: 0; gap: 2px; background: transparent; }
+.navigation button { min-height: 0; border: 0; padding: 8px 2px 10px; }
+.navigation button:hover:not([aria-selected="true"]) { background: transparent; color: var(--text); }
+.navigation [aria-selected="true"] { border: 0; background: transparent; }
