@@ -30,7 +30,9 @@
         return error;
     }
 
-    const has_background = () => Boolean(globalThis.chrome?.runtime?.sendMessage && globalThis.chrome?.storage?.local);
+    // The Android app has no background worker and already keeps every key in a
+// Keystore-encrypted store, so the passphrase lock is a browser-only feature.
+const has_background = () => !globalThis.CipherGapHost?.mobile && Boolean(globalThis.chrome?.runtime?.sendMessage && globalThis.chrome?.storage?.local);
     async function ask(message) {
         const response = await chrome.runtime.sendMessage({ ciphergapVault: true, ...message });
         if (!response?.ok) throw new Error(response?.error || "CipherGap background is unavailable.");
