@@ -97,7 +97,7 @@ try:
  assert 'https://github.com/alisharify7/CipherGap' not in script('return document.getElementById("message_list_scroller_id").innerText')
  print('PASS encrypted composer text and automatic peer decryption',flush=True)
  m.switch_to_window(extension_handle)
- check(async_js('''for(const file of ['encoding','crypto','file_crypto']) {await new Promise((resolve,reject)=>{const s=document.createElement('script');s.src='../share/'+file+'.js';s.onload=resolve;s.onerror=reject;document.head.append(s)});}return true;'''))
+ check(async_js('''for(const file of ['encoding','keyring','crypto','file_crypto']) {await new Promise((resolve,reject)=>{const s=document.createElement('script');s.src='../share/'+file+'.js';s.onload=resolve;s.onerror=reject;document.head.append(s)});}return true;'''))
  for name,mime,data,kind in media_fixtures(ROOT):
   m.switch_to_window(extension_handle)
   encoded=check(async_js(ENCRYPT_JS,[[list(data),name,mime,storage[keys[0]]]]))

@@ -8,6 +8,7 @@
     pause: "M8 5v14 M16 5v14",
     play: "m8 5 11 7-11 7z",
     send: "m3 3 18 9-18 9 4-9z M7 12h14",
+    timer: "M12 8v5l3 2 M5 12a7 7 0 1 0 14 0 7 7 0 0 0-14 0 M9 2h6 M12 2v3",
     download: "M12 3v12 m-5-5 5 5 5-5 M4 17v4h16v-4",
   };
   function icon(name) {

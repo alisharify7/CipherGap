@@ -1,16 +1,83 @@
-# CipherGap 🔒
+<div align="center">
 
-<img src="CipherGap/assets/ciphergap.svg" width="80" height="80" alt="CipherGap logo"/>
+<img src="CipherGap/assets/ciphergap.svg" width="96" height="96" alt="CipherGap logo"/>
 
-Encrypt messages and files before sending them through the messenger you already use. CipherGap runs on your device as a **Chrome or Firefox extension**, or as an **Android app**. Both people need CipherGap and a shared key to read the messages.
+# CipherGap
 
-Works with **Bale Web, Eitaa Web, Telegram Web A, Rubika Web and Soroush Plus Web**. Telegram Web K is not supported; WhatsApp is still in development.
+**Encrypt messages and files on your device before they reach the messenger. Keep chatting where you already chat.**
 
-[Website & installation guide](https://alisharify7.github.io/CipherGap/) · [Desktop downloads](#downloads--desktop-170--android-014) · [Android source & build guide](https://github.com/alisharify7/CipherGap/tree/android)
+[![License: MIT](https://img.shields.io/badge/license-MIT-2f6f55)](LICENSE)
+[![Desktop 1.8.0](https://img.shields.io/badge/desktop-1.8.0-163b32)](https://github.com/alisharify7/CipherGap/releases/tag/v1.8.0)
+[![Android 0.1.4](https://img.shields.io/badge/android-0.1.4-3ddc84)](https://github.com/alisharify7/CipherGap/releases/tag/android-v0.1.4)
+![Chrome, Firefox, Android](https://img.shields.io/badge/platforms-Chrome%20%C2%B7%20Firefox%20%C2%B7%20Android-4b6f5f)
+![No backend](https://img.shields.io/badge/backend-none-lightgrey)
+
+[Website & installation guide](https://alisharify7.github.io/CipherGap/) · [Downloads](#downloads--desktop-170--android-014) · [Demo](#demo) · [Android source](https://github.com/alisharify7/CipherGap/tree/android) · [Changelog](CHANGELOG.md)
+
+</div>
+
+CipherGap is a **Chrome/Firefox extension** and an **Android app** that adds an Encrypt button to the web messenger you already use. Text, emoji, stickers and files are encrypted with AES-256-GCM locally, so the messenger only carries ciphertext. Your partner, who also runs CipherGap and holds the same chat key, reads it in the same conversation. CipherGap is free and open source (MIT), has no server, and works in Persian and English.
+
+## Why CipherGap
+
+* **Stay in your messenger:** keep using Bale, Eitaa, Telegram Web A, Rubika or Soroush Plus; there is no separate chat app to move to.
+* **Keys stay with you:** per-chat keys are created on your device by ECDH key exchange with a six-digit code to compare. There is no CipherGap server or cloud processing.
+* **Encrypts what matters:** messages, emoji, stickers and files (images, audio and video preview inside the chat after decryption).
+* **Moves with you:** password-encrypted backups and offline key QR codes work between desktop and Android.
+* **Open to review:** all source is public.
+
+## Demo
+
+A 34-second walkthrough of shipped behaviour: Alice sets up a secure chat, Bob accepts, they verify the code, Alice sends an encrypted message and Bob decrypts it. It was recorded against the **local mock messenger page** from the test suite (never a real messenger or account) by [`docs/demo/record_demo.py`](docs/demo/record_demo.py).
+
+<p align="center"><a href="docs/demo/ciphergap-demo.webm"><img src="docs/demo/ciphergap-demo.gif" width="720" alt="Animated demo: two mock chats set up a secure chat, verify a code, send an encrypted message and decrypt it"></a></p>
+
+[Download the WebM video](docs/demo/ciphergap-demo.webm)
+
+## Quick start
+
+1. **Install** on both sides: the [Chrome/Edge/Brave or Firefox ZIP](#downloads--desktop-170--android-014), or the Android APK. Then open your messenger's web version.
+2. **Set up a secure chat:** open a conversation, open CipherGap's **Security** page and choose **Set up secure chat**. Your partner accepts the request in the chat; compare the six-digit code over a trusted channel and mark the key verified.
+3. **Send:** write your message and press the injected **Encrypt** button (or **Encrypted file** for attachments). Your partner clicks **Decrypt** or **Open**.
+
+## Supported messengers
+
+| Messenger | Web address | Notes |
+| --- | --- | --- |
+| Bale Web | web.bale.ai | |
+| Eitaa Web | web.eitaa.com | Numeric IDs and usernames in the URL hash |
+| Telegram Web A | web.telegram.org/a/ | Numeric chat IDs. Web K is not supported |
+| Rubika Web | web.rubika.ir | Uses its `#c=<chat-id>` route |
+| Soroush Plus Web | web.splus.ir | Numeric chat IDs |
+
+WhatsApp is still in development.
+
+## Features
+
+**Security**
+* AES-256-GCM message and attachment encryption, performed in the browser or app
+* ECDH P-256 key exchange with a six-digit SAS verification step, in-chat accept/decline controls and a 15-minute exchange deadline
+* Persistent peer-fingerprint change warnings (TOFU)
+* Manifest V3 with no external servers or cloud processing
+
+**Files and media**
+* Encrypted Unicode emoji and static/animated stickers, shown inside the message
+* Decrypt and preview images, play audio/video, or download the original file
+* Optional automatic download/decryption of newly received files, per chat
+
+**Transfer and backup**
+* Password-encrypted full/chat backups (`.ciphergap`)
+* Offline key QR generation and scanning
+* Same shared format on Chrome, Firefox and Android 0.1.3+
+
+**Usability**
+* Separate Security, Files, Transfer, Settings and About pages with light/dark themes, Persian (RTL) and English
+* Compact chat controls with icons and per-chat pause
+* An installation guide for recipients without CipherGap, hidden while the extension is enabled
 
 ## See it in action
 
-Set up a chat key, send an encrypted file, or take your keys to another device. These are screenshots of the app with sample data. Click an image to view it at full size.
+Screenshots of the app with sample data. Click an image to view it at full size.
 
 <table>
   <tr>
@@ -34,36 +101,62 @@ The Android app uses the same shared keys and backup format as the desktop exten
 
 </details>
 
-## Features
+## New in 1.8.0
 
-* AES-256-GCM message and attachment encryption in the browser
-* Per-chat keys and optional automatic message decryption
-* An installation guide for recipients without CipherGap, hidden while the extension is enabled
-* Separate Security, Files, Transfer, Settings and About (with the guide) pages with light/dark themes
-* Compact chat controls with icons, native light/dark surfaces and per-chat pause
-* Encrypted Unicode emoji and static/animated stickers, shown inside the message
-* Decrypt and preview images, play audio/video, or download the original file
-* Optional automatic download/decryption of newly received files
-* ECDH P-256 key exchange with a six-digit SAS verification step
-* Persistent peer-fingerprint change warnings (TOFU)
-* In-chat accept/decline controls, a countdown and a 15-minute exchange deadline
-* Manifest V3 with no external servers or cloud processing
-* Password-encrypted full/chat backups and offline key QR generation/scanning
+> Released in desktop **1.8.0**. The Android app (0.1.4) does not include them yet; its core is synchronized from this repository and a new Android build follows separately.
 
-[Support CipherGap](https://www.coffeete.ir/alisharify7)
+* **Forward secrecy (daily key ratchet):** new chat keys advance daily through a one-way ratchet. Keys older than a retention window (default 7 days, 1–90 in **Settings → Privacy & security**) are deleted, so a stolen key cannot open older messages. Those older messages become **unreadable by design**. Existing chats can opt in from the same page.
+* **Stronger key derivation (message format v2):** HKDF-SHA256 for random keys and PBKDF2-SHA256 (600,000 iterations) for typed passphrases.
+* **Authenticated headers:** AES-GCM additional data covers the message header (version, timestamp, purpose) and the file header (name, type, epoch), so tampering is detected. Messages are not bound to a chat ID, because each person's ID for the same conversation differs.
+* **Self-destructing messages:** a timer button in the chat controls: 5 minutes, 1 hour, 24 hours, 7 days, or burn after reading (30 seconds after the recipient opens it). Enforced by CipherGap on each device; it cannot stop screenshots, copies or a modified client.
+* **Secure group chats:** one member creates a group invitation from the popup; members join from the invitation card in the chat with one click, and the creator approves each person. Approval delivers the group key sealed (ECDH + AES-GCM) to that member only, so other members and the messenger cannot open it. Everything else (forward secrecy, self-destruct timers, files) works in the group. Fingerprints are shown on every card; approve only people you recognise. Removing someone means creating a new invitation and approving the remaining members again.
+* **Optional app lock (browser extension):** a passphrase of at least 6 characters encrypts saved chat keys at rest. It locks after inactivity and when the browser closes, and slows repeated wrong guesses. A forgotten passphrase cannot be recovered; restore from an encrypted backup. Android does not have this lock yet.
 
-The **About** tab includes the website, GitHub repository and compatibility guide.
+**Refreshed interface:** the popup has a new calmer teal design with light and dark themes (Persian/English).
 
-[Changelog](CHANGELOG.md) · [Release notes for v1.7.0](docs/releases/v1.7.0.md)
+**Compatibility:** version 2 messages and files need **both people to update**; older versions cannot read them. Version 1 messages still open with keys that have not been ratcheted, but not after a chat's key has been ratcheted.
+
+## Security model and limitations
+
+* Encryption and decryption occur entirely on the client side; CipherGap has no backend.
+* Incoming key exchanges require explicit approval and remain unverified until the SAS codes are compared. Manually shared keys stay unverified.
+* Peer fingerprints are retained when a chat key is cleared so unexpected identity changes can still be detected.
+* CGPE v1 authenticates the complete file before preview/playback and applies a 100 MB safety limit. Playback uses local decrypted bytes, not network streaming.
+* Source code is publicly available for review and auditing.
+
+Honest limitations:
+
+* Both people need CipherGap and a shared key. Ordinary messenger buttons send ordinary, unencrypted messages and files.
+* The messenger still sees that you are talking, with whom, when, and roughly how large messages and files are.
+* Decrypted text and previews are displayed in the messenger page's DOM, so that page can read them. Keys and cryptographic operations stay in CipherGap's isolated script.
+* In 1.7.0 and earlier, and in chats that keep a non-ratcheted key, a chat key is long-lived: anyone who obtains it can read every message encrypted with it. Forward secrecy (above) limits this for ratcheted keys.
+* A compromised device, browser or extension environment defeats any client-side encryption.
+* Telegram Web K is unsupported; WhatsApp is still in development. Firefox desktop builds are unsigned and installed temporarily.
+
+> CipherGap improves privacy on supported messaging platforms, but no independent security audit is claimed. Review the cryptographic implementation yourself before relying on it for highly sensitive communications.
+
+## FAQ
+
+**Does my contact need CipherGap too?** Yes. They need CipherGap and the same chat key. Without it they see only ciphertext and an installation guide.
+
+**Does CipherGap send my keys or messages anywhere?** No. There is no CipherGap server. Encrypted data travels only through the messenger you chose; backups are files you export yourself.
+
+**What if I lose my backup password?** CipherGap cannot recover it.
+
+**Can I use it on my phone?** Yes, with the Android app, which uses the same key and backup format as the extension.
+
+**Do old messages stay readable after updates?** Yes so far: format upgrades keep old readers registered. The v2 format in 1.8.0 is the exception: it needs both people to update to read new messages.
+
+[Support CipherGap](https://www.coffeete.ir/alisharify7) · [Changelog](CHANGELOG.md) · [Release notes for v1.8.0](docs/releases/v1.8.0.md)
 
 ## Installation
 
-### Downloads — desktop 1.7.0 / Android 0.1.4
+### Downloads — desktop 1.8.0 / Android 0.1.4
 
-- [Chrome / Chromium / Edge / Brave ZIP](https://github.com/alisharify7/CipherGap/releases/download/v1.7.0/ciphergap-1.7.0-chrome.zip)
-- [Firefox desktop ZIP](https://github.com/alisharify7/CipherGap/releases/download/v1.7.0/ciphergap-1.7.0-firefox.zip) — unsigned; temporary installation.
+- [Chrome / Chromium / Edge / Brave ZIP](https://github.com/alisharify7/CipherGap/releases/download/v1.8.0/ciphergap-1.8.0-chrome.zip)
+- [Firefox desktop ZIP](https://github.com/alisharify7/CipherGap/releases/download/v1.8.0/ciphergap-1.8.0-firefox.zip) — unsigned; temporary installation.
 - [Android APK](https://github.com/alisharify7/CipherGap/releases/download/android-v0.1.4/ciphergap-android-0.1.4.apk) — signed release build; Android 8+ and a compatible WebView required.
-- [Desktop SHA-256 checksums](https://github.com/alisharify7/CipherGap/releases/download/v1.7.0/SHA256SUMS) · [Android SHA-256 checksums](https://github.com/alisharify7/CipherGap/releases/download/android-v0.1.4/SHA256SUMS)
+- [Desktop SHA-256 checksums](https://github.com/alisharify7/CipherGap/releases/download/v1.8.0/SHA256SUMS) · [Android SHA-256 checksums](https://github.com/alisharify7/CipherGap/releases/download/android-v0.1.4/SHA256SUMS)
 
 Follow the [installation guide](https://alisharify7.github.io/CipherGap/#installation).
 
@@ -200,17 +293,6 @@ encryption or packet-format code. Format upgrades add a new immutable codec and
 keep old readers registered, so existing messages and files remain compatible.
 
 Telegram, Rubika and Soroush expose no machine-readable sending timestamp. Automatic receiving ignores the initial one-second settling period and messages at or below the observed message-ID baseline; missed or historical files remain available through **Open**. Undated legacy exchange requests on Telegram require a new timed request. Eitaa’s app-encrypted cache (when an app passcode is enabled) falls back to native download handling. The manual downloaded-file option remains available on every platform.
-
-## Security
-
-* Encryption and decryption occur entirely on the client side.
-* Incoming key exchanges require explicit approval and remain unverified until the SAS codes are compared.
-* Peer fingerprints are retained when a chat key is cleared so unexpected identity changes can still be detected.
-* CGPE v1 authenticates the complete file before preview/playback and applies a 100 MB safety limit. Playback uses local decrypted bytes, not network streaming.
-* CipherGap has no backend; plaintext processing happens locally before ciphertext is sent through the messenger.
-* Source code is publicly available for review and auditing.
-
-> CipherGap improves privacy on supported messaging platforms, but users should independently review the cryptographic implementation before relying on it for highly sensitive communications.
 
 ## Contributing
 

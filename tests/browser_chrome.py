@@ -91,7 +91,7 @@ with sync_playwright() as p:
  assert not errors,errors
  print('PASS actual popup localization, RTL/LTR, fonts and English restore')
  # Exercise actual CGPE decryption through the native bridge, then shared media UI.
- popup.evaluate("""async()=>{for(const name of ['encoding','crypto','file_crypto','dh_crypto'])await new Promise((resolve,reject)=>{const s=document.createElement('script');s.src='../share/'+name+'.js';s.onload=resolve;s.onerror=reject;document.head.append(s)});} """)
+ popup.evaluate("""async()=>{for(const name of ['encoding','keyring','crypto','file_crypto','dh_crypto'])await new Promise((resolve,reject)=>{const s=document.createElement('script');s.src='../share/'+name+'.js';s.onload=resolve;s.onerror=reject;document.head.append(s)});} """)
  for name,mime,data,kind in media_fixtures(root):
   encoded=popup.evaluate('async args=>{'+ENCRYPT_JS.replace('arguments[0]','args')+'}',[list(data),name,mime,'fixture-long-shared-key'])
   sid=page.evaluate('args=>{'+ATTACHMENT_JS.replace('arguments[0]','args')+'}',[encoded,name])

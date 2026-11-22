@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.8.0](docs/releases/v1.8.0.md) - 2026-11-22
+
+- New message format `CGP|2` (HKDF-SHA256 key schedule, AES-256-GCM with authenticated header). Version 1 messages still open with keys that were not ratcheted. **Both people must update**: older versions cannot read version 2.
+- Forward secrecy: new chat keys are a daily symmetric ratchet. Keys older than a retention window (default 7 days, configurable 1-90) are deleted, so a stolen key cannot open older messages. Existing chats can opt in from Settings.
+- Typed passphrases are stretched with PBKDF2-SHA256 (600,000 iterations); random 32-byte keys use HKDF directly.
+- Message headers and file headers (name, type, epoch) are authenticated with AES-GCM additional data. CGPE files use container version 2; version 1 files still open.
+- Self-destructing messages: per-chat timer (5 min, 1 h, 24 h, 7 days) or burn after reading (30 s after opening). Enforced by CipherGap on each device; it cannot stop screenshots or copies.
+- Optional app lock: chat keys are encrypted at rest with a passphrase, auto-lock after inactivity and when the browser closes, throttled unlock attempts.
+- Secure group chats: the creator publishes an invitation in the group; members join with one click and the creator approves each person, which delivers the group key sealed to that member only (ECDH + AES-GCM). Works with forward secrecy and self-destruct. Members see each other's fingerprints; approve only people you recognise.
+- Tests: `tests/browser_group.py`, `tests/crypto_v2.test.js`, `tests/browser_v2_features.py`.
+
 ## [Android 0.1.4](docs/releases/android-v0.1.4.md) - 2026-10-08
 
 - Enable Rubika and Soroush Plus on Android using the existing shared adapters.

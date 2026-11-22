@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "CipherGap",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "description": "Client-side encrypted messages and files for Bale, Eitaa, Telegram Web A, Rubika and Soroush Plus.",
   "icons": {
     "16": "assets/icon16.png",
@@ -11,6 +11,7 @@
   },
   "permissions": [
     "storage",
+    "alarms",
     "activeTab",
     "clipboardWrite"
   ],
@@ -61,6 +62,8 @@
         "share/translations.js",
         "share/i18n.js",
         "share/encoding.js",
+        "share/keyring.js",
+        "share/vault.js",
         "share/crypto.js",
         "share/file_crypto.js",
         "share/chat_ui.js",
@@ -68,11 +71,13 @@
         "share/stickers.js",
         "share/dh_crypto.js",
         "share/protocol.js",
+        "share/group_protocol.js",
         "share/exchange_ui.js",
         "share/messenger_adapter.js",
         "content/utils.js",
         "content/storage.js",
         "content/key_exchange.js",
+        "content/group.js",
         "content/bale.js",
         "content/eitaa.js",
         "content/telegram.js",

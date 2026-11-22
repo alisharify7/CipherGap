@@ -480,3 +480,22 @@
 }
 
 #ciphergap-toolbar[data-ciphergap-theme="dark"] #ciphergap-security-status[data-state="verified"] small{color:#65ba74} #ciphergap-toolbar[data-ciphergap-theme="dark"] #ciphergap-security-status[data-state="changed"] small{color:#ed9472}
+
+/* Self-destructing messages */
+.ciphergap-expiry {
+  display: block;
+  margin-block-start: 3px;
+  font:
+    10px/1.4 system-ui,
+    sans-serif;
+  opacity: 0.7;
+}
+.ciphergap-message[data-mode="expired"] {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  opacity: 0.8;
+}
+#ciphergap-timer[data-active="true"] {
+  color: #d97706;
+}

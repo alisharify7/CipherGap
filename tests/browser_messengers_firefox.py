@@ -56,7 +56,7 @@ try:
  addon=Addons(m).install(str(package),temp=True);m.set_context('chrome')
  meta=async_js('const {ExtensionParent}=ChromeUtils.importESModule("resource://gre/modules/ExtensionParent.sys.mjs");const e=ExtensionParent.GlobalManager.getExtension(arguments[0]);await e.wakeupBackground();return {base:e.baseURI.spec,errors:e.errors,warnings:e.warnings};',[addon]);assert not meta['errors'] and not meta['warnings'],meta
  m.set_context('content');m.navigate(meta['base']+'popup/popup.html');kernel=m.current_window_handle
- async_js("for(const file of ['encoding','crypto','file_crypto','dh_crypto','stickers'])await new Promise((resolve,reject)=>{const s=document.createElement('script');s.src='../share/'+file+'.js';s.onload=resolve;s.onerror=reject;document.head.append(s)});return true;")
+ async_js("for(const file of ['encoding','keyring','crypto','file_crypto','dh_crypto','stickers'])await new Promise((resolve,reject)=>{const s=document.createElement('script');s.src='../share/'+file+'.js';s.onload=resolve;s.onerror=reject;document.head.append(s)});return true;")
  for platform,base in platforms:
   handles=[]
   chat_ids=["333000","@mralizohdi"] if platform=="eitaa" else ["601","602"]

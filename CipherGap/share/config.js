@@ -11,6 +11,28 @@
         iv_bytes: 12,
         gcm_tag_bytes: 16
     });
+    // Version 2: HKDF-SHA256 key schedule, a daily symmetric key ratchet and
+    // AES-256-GCM with authenticated headers (additionalData).
+    const hkdf_aes_gcm_v2 = Object.freeze({
+        id: "hkdf_aes_gcm_v2",
+        aes_algorithm: "AES-GCM",
+        hash_algorithm: "SHA-256",
+        iv_bytes: 12,
+        gcm_tag_bytes: 16,
+        // Typed passphrases are stretched; 32-byte random keys skip stretching.
+        pbkdf2_iterations: 600000,
+        pbkdf2_salt: "ciphergap/v2/passphrase",
+        hkdf_salt: "ciphergap/v2",
+        epoch_seconds: 24 * 60 * 60,
+        // Day 20454 is 2026-01-01 (UTC). Epoch 0 is that day.
+        epoch_origin_day: 20454,
+        max_epoch_steps: 4000,
+        max_future_epochs: 2,
+        ratchet_prefix: "cgfs1",
+        default_retention_epochs: 7,
+        min_retention_epochs: 1,
+        max_retention_epochs: 90
+    });
     const ecdh_p256_sha256_v1 = Object.freeze({
         id: "ecdh_p256_sha256_v1",
         key_algorithm: "ECDH",
@@ -27,6 +49,14 @@
         separator: "|",
         crypto_profile: aes_gcm_sha256_v1.id
     });
+    const cgp_v2 = Object.freeze({
+        id: "cgp_v2",
+        prefix: "CGP",
+        version: "2",
+        algorithm: "AESGCMHKDF",
+        separator: "|",
+        crypto_profile: hkdf_aes_gcm_v2.id
+    });
     const exchange_legacy_v1 = Object.freeze({
         id: "exchange_legacy_v1",
         start_prefix: "start exchange key:",
@@ -39,7 +69,7 @@
         sas_digits: 6,
         fingerprint_hex_length: 8,
         crypto_profile: ecdh_p256_sha256_v1.id,
-        message_codec: cgp_v1.id
+        message_codec: cgp_v2.id
     });
     const cgpe_v1 = Object.freeze({
         id: "cgpe_v1",
@@ -53,10 +83,25 @@
         crypto_profile: aes_gcm_sha256_v1.id
     });
 
+    const cgpe_v2 = Object.freeze({
+        id: "cgpe_v2",
+        magic: "CGPE",
+        magic_bytes: Object.freeze([0x43, 0x47, 0x50, 0x45]),
+        version: 0x02,
+        extension: ".cgpe",
+        max_file_bytes: 100 * 1024 * 1024,
+        max_filename_bytes: 4096,
+        max_mime_bytes: 1024,
+        // The v2 container carries a 4-byte little-endian ratchet epoch after
+        // the version byte; the whole header is authenticated by AES-GCM.
+        epoch_bytes: 4,
+        crypto_profile: hkdf_aes_gcm_v2.id
+    });
+
     const formats = Object.freeze({
         message: Object.freeze({
-            write_codec: cgp_v1.id,
-            codecs: Object.freeze({ [cgp_v1.id]: cgp_v1 })
+            write_codec: cgp_v2.id,
+            codecs: Object.freeze({ [cgp_v1.id]: cgp_v1, [cgp_v2.id]: cgp_v2 })
         }),
         exchange: Object.freeze({
             write_codec: exchange_legacy_v1.id,
@@ -66,12 +111,13 @@
             })
         }),
         file: Object.freeze({
-            write_codec: cgpe_v1.id,
-            codecs: Object.freeze({ [cgpe_v1.id]: cgpe_v1 })
+            write_codec: cgpe_v2.id,
+            codecs: Object.freeze({ [cgpe_v1.id]: cgpe_v1, [cgpe_v2.id]: cgpe_v2 })
         }),
         crypto: Object.freeze({
             profiles: Object.freeze({
                 [aes_gcm_sha256_v1.id]: aes_gcm_sha256_v1,
+                [hkdf_aes_gcm_v2.id]: hkdf_aes_gcm_v2,
                 [ecdh_p256_sha256_v1.id]: ecdh_p256_sha256_v1
             })
         })
@@ -81,7 +127,8 @@
         pending_exchange_ms: 15 * 60 * 1000,
         exchange_status_ms: 15 * 60 * 1000,
         popup_exchange_wait_ms: 15 * 60 * 1000,
-        handled_nonce_ms: 24 * 60 * 60 * 1000
+        handled_nonce_ms: 24 * 60 * 60 * 1000,
+        group_invite_ms: 24 * 60 * 60 * 1000
     });
 
     const messenger_definitions = Object.freeze({
@@ -138,6 +185,13 @@
         ui_theme: "ciphergap_ui_theme",
         ui_language: "ciphergap_ui_language",
         enabled: "ciphergap_enabled",
+        forward_secrecy: "ciphergap_forward_secrecy",
+        retention_days: "ciphergap_retention_days",
+        burned_messages: "ciphergap_burned_messages",
+        group_session(chatStorageKey) { return `${chatStorageKey}__group`; },
+        message_timer(chatStorageKey) { return `${chatStorageKey}__timer`; },
+        app_lock: "ciphergap_app_lock",
+        vault_session: "ciphergap_vault_session",
         chat_enabled(chatStorageKey) { return `${chatStorageKey}__enabled`; }
     });
 

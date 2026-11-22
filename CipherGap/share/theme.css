@@ -1,15 +1,15 @@
-/* Radix Colors 3: Indigo accents, Slate surfaces, semantic status colors.
-   https://www.radix-ui.com/colors/docs/palette-composition/understanding-the-scale */
+/* CipherGap design tokens: calm teal accent, cool neutral surfaces. Shared by
+   the popup and the in-chat controls. */
 :root {
-    --cg-canvas: #fcfcfd; --cg-surface: #fff; --cg-muted-surface: #f0f0f3;
-    --cg-text: #1c2024; --cg-muted: #60646c; --cg-border: #d9d9e0;
-    --cg-primary: #3e63dd; --cg-primary-hover: #3358d4; --cg-soft: #edf2fe;
-    --cg-on-primary: #fff; --cg-success: #18794e; --cg-danger: #ce2c31;
-    --cg-dark-surface: #11131f;
+    --cg-canvas: #f6f7fb; --cg-surface: #ffffff; --cg-muted-surface: #eef0f6;
+    --cg-text: #111827; --cg-muted: #5b6478; --cg-border: #e4e7f0;
+    --cg-primary: #0d9488; --cg-primary-hover: #0f766e; --cg-soft: #e6f6f4;
+    --cg-on-primary: #ffffff; --cg-success: #15803d; --cg-danger: #b42318;
+    --cg-dark-surface: #0e111c;
 }
 :root[data-theme="dark"] {
-    --cg-canvas: #111113; --cg-surface: #18191b; --cg-muted-surface: #212225;
-    --cg-text: #edeef0; --cg-muted: #b0b4ba; --cg-border: #363a3f;
-    --cg-primary: #9eb1ff; --cg-primary-hover: #b7c6ff; --cg-soft: #1f2d5c;
-    --cg-on-primary: #11131f; --cg-success: #65ba74; --cg-danger: #ff9592;
+    --cg-canvas: #0e111c; --cg-surface: #161a28; --cg-muted-surface: #1c2133;
+    --cg-text: #e8eaf2; --cg-muted: #98a1b8; --cg-border: #272d42;
+    --cg-primary: #2dd4bf; --cg-primary-hover: #5eead4; --cg-soft: #12302e;
+    --cg-on-primary: #062925; --cg-success: #4ade80; --cg-danger: #f97066;
 }

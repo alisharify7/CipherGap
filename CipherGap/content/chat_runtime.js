@@ -138,7 +138,9 @@ function inject_chat_security_toolbar() {
     const media = document.createElement("button");media.type = "button";media.id = "ciphergap-media";
     CHAT_UI.button(media, "smile", "Emoji & stickers");media.disabled = true;
     media.addEventListener("click", open_chat_media_picker);
-    toolbar.append(status, files, media, toggle);
+    const timer = document.createElement("button");timer.type = "button";timer.id = "ciphergap-timer";
+    timer.addEventListener("click", cycle_message_timer);
+    toolbar.append(status, files, media, timer, toggle);
     if (CHAT_FLOATING_TOOLBAR) toolbar.dataset.ciphergapFloating = "true";
     // Teact updates native children by position. Keep our floating toolbar
     // outside its subtree so opening a file preview cannot corrupt the composer.
@@ -182,6 +184,7 @@ function update_chat_security_toolbar(trust, exchange) {
     if (status) {
         const label = !cg_cached_enabled ? "Paused" : exchange?.status === "incoming" ? "Review key request"
             : exchange?.status === "waiting" ? "Waiting for partner"
+            : cg_vault_locked ? "Locked · Unlock"
             : !cg_cached_key ? "Set up security"
             : trust?.state === "verified" ? "Verified"
             : trust?.state === "changed" ? "Identity changed · Review"
@@ -195,6 +198,15 @@ function update_chat_security_toolbar(trust, exchange) {
     if (files) files.disabled = !cg_cached_key || !cg_cached_enabled;
     const media = document.getElementById("ciphergap-media");
     if (media) media.disabled = !cg_cached_key || !cg_cached_enabled;
+    const timer = document.getElementById("ciphergap-timer");
+    if (timer) {
+        const option = MESSAGE_TIMER_OPTIONS.find(item => item.id === cg_cached_timer) ?? MESSAGE_TIMER_OPTIONS[0];
+        CHAT_UI.button(timer, "timer", option.id === "off" ? "Self-destruct: off" : `Self-destruct: ${option.label}`, true);
+        timer.disabled = !cg_cached_key || !cg_cached_enabled;
+        timer.dataset.active = String(option.id !== "off");
+        timer.setAttribute("aria-pressed", String(option.id !== "off"));
+        timer.title = option.id === "off" ? "Self-destructing messages: off. Click to choose a timer." : `New messages self-destruct: ${option.label}. Click to change.`;
+    }
     const toggle = document.getElementById("ciphergap-chat-toggle");
     if (toggle) {
         CHAT_UI.button(toggle, cg_cached_chat_enabled ? "pause" : "play", cg_cached_chat_enabled ? "Pause chat" : "Enable chat", true);
@@ -451,6 +463,8 @@ let cg_cached_chat_enabled = true;
 let cg_cached_auto_decrypt = false;
 let cg_cached_auto_files = false;
 let cg_cached_message_key = null;
+let cg_cached_timer = "off";
+let cg_vault_locked = false;
 let cg_cached_exchange_status = null;
 let cg_cache_ready = false;
 let cg_cache_refresh_token = 0;
@@ -469,6 +483,7 @@ function invalidate_cg_chat_cache(storageKey = get_storage_key()) {
     cg_cached_auto_decrypt = false;
     cg_cached_auto_files = false;
     cg_cached_message_key = null;
+    cg_cached_timer = "off";
     cg_cache_ready = false;
 }
 
@@ -501,8 +516,20 @@ async function refresh_cg_chat_cache(force = false) {
 
     const refreshPromise = (async () => {
         const keys = globalThis.CipherGapShared.storage_keys;
-        const result = await chrome.storage.local.get([storageKey, autoDecryptKey, autoFilesKey, trustKey, exchangeKey, keys.enabled, keys.chat_enabled(storageKey)]);
+        let result;
+        try {
+            result = await globalThis.CipherGapShared.vault.get([storageKey, autoDecryptKey, autoFilesKey, trustKey, exchangeKey, keys.enabled, keys.chat_enabled(storageKey), keys.message_timer(storageKey), keys.retention_days]);
+            cg_vault_locked = false;
+        } catch (error) {
+            if (error?.code !== "VAULT_LOCKED") throw error;
+            // Keys are encrypted and the app lock is closed: behave as if no
+            // key is available and ask the user to unlock.
+            cg_vault_locked = true;
+            result = await chrome.storage.local.get([autoDecryptKey, autoFilesKey, trustKey, exchangeKey, keys.enabled, keys.chat_enabled(storageKey), keys.message_timer(storageKey)]);
+        }
         const secretKey = result[storageKey] ?? null;
+        cg_cached_timer = MESSAGE_TIMER_OPTIONS.some(item => item.id === result[keys.message_timer(storageKey)]) ? result[keys.message_timer(storageKey)] : "off";
+        if (secretKey) maintain_forward_secrecy(storageKey, secretKey, result[keys.retention_days]).catch(() => {});
         const messageKey = secretKey
             ? await CHAT_SHARED_CRYPTO.derive_ciphergap_message_key(secretKey)
             : null;
@@ -556,6 +583,20 @@ if (IS_CHAT_HOST) {
         }
 
         const storageKey = get_storage_key();
+        if (changes[globalThis.CipherGapShared.vault.STATE_KEY]) {
+            globalThis.CipherGapShared.vault.forget();
+            if (!(Number(changes[globalThis.CipherGapShared.vault.STATE_KEY].newValue?.unlockedUntil) > Date.now())) {
+                // Locked: drop decrypted views and in-memory keys immediately.
+                globalThis.CipherGapShared.keyring.forget_cached();
+                reset_chat_message_views();
+                invalidate_cg_chat_cache(storageKey);
+            }
+            refresh_cg_chat_cache(true).catch(() => {});
+        }
+        if (changes[globalThis.CipherGapShared.storage_keys.message_timer(storageKey)] ||
+            changes[globalThis.CipherGapShared.storage_keys.retention_days]) {
+            refresh_cg_chat_cache(true).catch(() => {});
+        }
         const autoDecryptKey = globalThis.CipherGapShared.storage_keys
             .auto_decrypt(storageKey);
         const keys = globalThis.CipherGapShared.storage_keys;
@@ -768,6 +809,116 @@ function extract_chat_message_text(messageElement) {
 }
 
 // =========================
+// Forward secrecy maintenance
+// =========================
+
+// A ratcheted chat key only ever moves forward: once an epoch falls outside the
+// retention window its chain key is replaced, so older messages cannot be read.
+async function maintain_forward_secrecy(storageKey, secretKey, retentionDays) {
+    const keyring = globalThis.CipherGapShared.keyring;
+    if (!keyring.is_ratchet_secret(secretKey)) return;
+    const profile = globalThis.CipherGapShared.formats.crypto.profiles.hkdf_aes_gcm_v2;
+    const advanced = await keyring.ratchet_forward(secretKey, Number(retentionDays) || profile.default_retention_epochs);
+    if (!advanced) return;
+    const current = await globalThis.CipherGapShared.vault.get(storageKey);
+    if (current[storageKey] !== secretKey) return; // changed elsewhere; do not overwrite
+    await globalThis.CipherGapShared.vault.set({ [storageKey]: advanced });
+    keyring.forget_cached();
+}
+setInterval(() => { if (IS_CHAT_HOST && !document.hidden) refresh_cg_chat_cache(true).catch(() => {}); }, 60 * 60 * 1000)?.unref?.();
+
+// =========================
+// Self-destructing messages
+// =========================
+
+const MESSAGE_TIMER_OPTIONS = [
+    { id: "off", label: "Off" },
+    { id: "5m", label: "5 minutes", expiresMs: 5 * 60 * 1000 },
+    { id: "1h", label: "1 hour", expiresMs: 60 * 60 * 1000 },
+    { id: "24h", label: "24 hours", expiresMs: 24 * 60 * 60 * 1000 },
+    { id: "7d", label: "7 days", expiresMs: 7 * 24 * 60 * 60 * 1000 },
+    { id: "burn", label: "Burn after reading (30 s)", viewSeconds: 30 }
+];
+
+async function cycle_message_timer() {
+    const index = MESSAGE_TIMER_OPTIONS.findIndex(item => item.id === cg_cached_timer);
+    const next = MESSAGE_TIMER_OPTIONS[(index + 1) % MESSAGE_TIMER_OPTIONS.length];
+    cg_cached_timer = next.id;
+    update_chat_security_toolbar(null, cg_cached_exchange_status);
+    await chrome.storage.local.set({ [globalThis.CipherGapShared.storage_keys.message_timer(get_storage_key())]: next.id });
+    show_ciphergap_notice(next.id === "off" ? "Self-destruct is off." : `New messages self-destruct: ${next.label}.`, "info", 3500);
+}
+
+function message_timer_options() {
+    const option = MESSAGE_TIMER_OPTIONS.find(item => item.id === cg_cached_timer);
+    if (!option || option.id === "off") return {};
+    const maxTtl = CHAT_SHARED_CRYPTO.max_ttl_ms;
+    // Burn-after-reading messages still get a hard upper bound.
+    return { expiresAt: Date.now() + (option.expiresMs ?? maxTtl), viewSeconds: option.viewSeconds ?? 0 };
+}
+
+async function get_burn_records() {
+    const key = globalThis.CipherGapShared.storage_keys.burned_messages;
+    const stored = (await chrome.storage.local.get(key))[key];
+    const records = stored && typeof stored === "object" && !Array.isArray(stored) ? stored : {};
+    const cutoff = Date.now() - 40 * 24 * 60 * 60 * 1000;
+    return Object.fromEntries(Object.entries(records).filter(([, viewedAt]) => Number.isFinite(viewedAt) && viewedAt > cutoff));
+}
+
+// Returns when the message must disappear (ms since epoch), or Infinity.
+async function message_end_of_life(opened, { start }) {
+    let end = opened.expiresAt || Infinity;
+    if (opened.viewSeconds) {
+        const records = await get_burn_records();
+        let viewedAt = records[opened.id];
+        if (!viewedAt) {
+            if (!start) return null; // not opened yet
+            viewedAt = Date.now();
+            records[opened.id] = viewedAt;
+            await chrome.storage.local.set({ [globalThis.CipherGapShared.storage_keys.burned_messages]: records });
+        }
+        end = Math.min(end, viewedAt + opened.viewSeconds * 1000);
+    }
+    return end;
+}
+
+function render_expired_message(messageElement) {
+    const view = message_visual_container(messageElement);
+    if (!view) return;
+    view.className = "ciphergap-message";
+    view.dataset.mode = "expired";
+    view.replaceChildren();
+    const lock = document.createElement("span");lock.className = "ciphergap-message-lock";lock.append(CHAT_UI.icon("timer"));
+    const copy = document.createElement("span");copy.className = "ciphergap-message-copy";
+    const title = document.createElement("strong");title.textContent = "This message has self-destructed";
+    const hint = document.createElement("small");hint.textContent = "It can no longer be read on this device";
+    copy.append(title, hint);
+    view.append(lock, copy);
+    messageElement.dataset.ciphergapDecrypted = "true";
+}
+
+function watch_message_lifetime(messageElement, end) {
+    if (!Number.isFinite(end)) return;
+    const view = messageElement.querySelector('[data-ciphergap-ui="message"]');
+    if (!view) return;
+    const badge = document.createElement("small");
+    badge.className = "ciphergap-expiry";
+    badge.dataset.ciphergapUi = "expiry";
+    view.append(badge);
+    const tick = () => {
+        const remaining = end - Date.now();
+        if (!messageElement.isConnected || view.dataset.mode !== "decrypted") return clearInterval(timer);
+        if (remaining <= 0) { clearInterval(timer); render_expired_message(messageElement); return; }
+        const seconds = Math.ceil(remaining / 1000);
+        badge.textContent = seconds < 120 ? `Disappears in ${seconds} s`
+            : seconds < 7200 ? `Disappears in ${Math.ceil(seconds / 60)} min`
+            : seconds < 172800 ? `Disappears in ${Math.ceil(seconds / 3600)} h` : `Disappears in ${Math.ceil(seconds / 86400)} days`;
+    };
+    const timer = setInterval(tick, 1000);
+    tick();
+}
+
+// =========================
 // Encrypt button
 // =========================
 
@@ -832,17 +983,17 @@ function inject_encrypt_button_chat() {
                 return;
             }
 
-            const encryptedMessage = await CHAT_SHARED_CRYPTO.encrypt_message(
+            const finalMessage = await CHAT_SHARED_CRYPTO.seal_message(
                 plainText,
                 secretKey,
-                cg_cached_message_key
+                cg_cached_message_key,
+                message_timer_options()
             );
-            const finalMessage = CHAT_SHARED_PROTOCOL
-                .build_ciphergap_packet(encryptedMessage);
             if (!cg_cached_enabled || storageKey !== get_storage_key() || cg_cached_key !== secretKey) {
                 throw new Error("The chat or key changed while encrypting the message.");
             }
             await chat_send_message(finalMessage, { storageKey, preserveDraft: false });
+            globalThis.CipherGapShared.vault.touch().catch(() => {});
             show_ciphergap_notice("Encrypted message sent.", "success", 3000);
         } catch (error) {
             console.error("[CipherGap] Encrypt failed:", error);
@@ -1019,6 +1170,14 @@ function attach_decrypt_button(messageElement, decryptButton) {
     wrapper.append(lock, copy, decryptButton);
 }
 
+function decrypt_failure_message(error) {
+    if (error?.code === "KEY_EXPIRED") return "This message is older than the forward-secrecy retention window. Its key was deleted.";
+    if (error?.code === "LEGACY_UNAVAILABLE") return "This is a version 1 message. Forward secrecy deleted the key it needs.";
+    if (error?.code === "AUTH_FAILED") return "Could not decrypt this message. Wrong key, or the message was modified.";
+    if (error?.code === "BAD_EPOCH") return error.message;
+    return "Could not decrypt this message. Check the chat key and try again.";
+}
+
 async function handle_decrypt_click(event, messageElement, decryptButton) {
     event.preventDefault();
     event.stopPropagation();
@@ -1032,14 +1191,15 @@ async function handle_decrypt_click(event, messageElement, decryptButton) {
         await decrypt_message_element(
             messageElement,
             cg_cached_key,
-            cg_cached_message_key
+            cg_cached_message_key,
+            { manual: true }
         );
         decryptButton.remove();
     } catch (error) {
         console.error("[CipherGap] Decrypt failed:", error);
         CHAT_UI.set_label(decryptButton, "Try again");
         show_ciphergap_notice(
-            "Could not decrypt this message. Check the chat key and try again.",
+            decrypt_failure_message(error),
             "error",
             7000
         );
@@ -1054,7 +1214,8 @@ async function handle_decrypt_click(event, messageElement, decryptButton) {
 async function decrypt_message_element(
     messageElement,
     providedSecretKey = null,
-    cachedCryptoKey = null
+    cachedCryptoKey = null,
+    options = {}
 ) {
     const storageKey = get_storage_key();
     const currentText = extract_cgp_packet_text(messageElement);
@@ -1067,31 +1228,25 @@ async function decrypt_message_element(
         throw new Error("No encryption key set for this chat.");
     }
 
-    const packet = CHAT_SHARED_PROTOCOL.parse_ciphergap_packet(currentText);
-    if (!packet?.data) {
-        throw new Error("Invalid CipherGap packet format.");
-    }
-
-    const packetCryptoProfile = CHAT_SHARED_PROTOCOL
-        .get_ciphergap_packet_crypto_profile(currentText);
-    if (!packetCryptoProfile) {
-        throw new Error(
-            "This CipherGap message uses an unsupported version or algorithm."
-        );
-    }
-    const currentCryptoProfile = CHAT_SHARED_CRYPTO
-        .get_message_crypto_profile();
-    const canReuseCachedKey =
-        packetCryptoProfile.id === currentCryptoProfile.id;
-
-    const decryptedText = await CHAT_SHARED_CRYPTO.decrypt_message(
-        packet.data,
+    const opened = await CHAT_SHARED_CRYPTO.open_message(
+        currentText,
         secretKey,
-        canReuseCachedKey ? cachedCryptoKey : null,
-        packetCryptoProfile
+        cachedCryptoKey
     );
     if (!cg_cached_enabled || get_storage_key() !== storageKey || cg_cached_key !== secretKey || !messageElement.isConnected) throw new Error("The chat or key changed during decryption.");
-    replace_message_visual(messageElement, currentText, decryptedText);
+
+    const end = await message_end_of_life(opened, { start: options.manual === true });
+    if (end === null) {
+        const error = new Error("Open this self-destructing message to start its timer.");
+        error.code = "NEEDS_CLICK";
+        throw error;
+    }
+    if (end <= Date.now()) {
+        render_expired_message(messageElement);
+        return true;
+    }
+    replace_message_visual(messageElement, currentText, opened.text);
+    watch_message_lifetime(messageElement, end);
     messageElement.dataset.ciphergapDecrypted = "true";
     return true;
 }
@@ -1152,9 +1307,13 @@ async function drain_chat_decrypt_queue() {
                 );
                 messageElement.querySelector(".ciphergap-decrypt-wrap")?.remove();
             } catch (error) {
-                console.warn("[CipherGap] Auto-decrypt failed, falling back to button:", error);
+                if (error?.code !== "NEEDS_CLICK") console.warn("[CipherGap] Auto-decrypt failed, falling back to button:", error);
                 if (messageElement.isConnected && storageKey === get_storage_key()) {
                     attach_decrypt_button_to(messageElement);
+                    if (error?.code === "NEEDS_CLICK") {
+                        const hint = messageElement.querySelector(".ciphergap-message-copy small");
+                        if (hint) hint.textContent = "Self-destructing · the timer starts when you open it";
+                    }
                 }
             } finally {
                 chat_decrypt_queued.delete(messageElement);
@@ -1719,8 +1878,9 @@ function hide_exchange_protocol_message(messageElement, payload) {
 }
 
 function clear_stale_protocol_ui(messageElement) {
-    messageElement.querySelectorAll('[data-ciphergap-ui="protocol"]')
+    messageElement.querySelectorAll('[data-ciphergap-ui="protocol"], [data-ciphergap-ui="group-card"]')
         .forEach((card) => card.remove());
+    delete messageElement.dataset.ciphergapGroupHandled;
     messageElement.querySelectorAll('[data-ciphergap-protocol-raw="true"]')
         .forEach((rawPayload) => {
             rawPayload.hidden = false;
@@ -1771,6 +1931,7 @@ function process_chat_message(
             format => content.includes(`${format.prefix}${format.separator}`)
         ) &&
         !CHAT_SHARED_PROTOCOL.contains_exchange_marker(content) &&
+        !globalThis.CipherGapShared.group.contains_marker(content) &&
         !CHAT_SHARED_FILE_CRYPTO.contains_cgpe_filename(content) &&
         !messageElement.querySelector('[data-ciphergap-ui], [data-ciphergap-quote-raw], [data-ciphergap-protocol-raw]')
     ) return;
@@ -1778,6 +1939,12 @@ function process_chat_message(
     render_chat_quote_previews(messageElement);
     // Check for encrypted file attachments (.cgpe)
     process_cgpe_file_message(messageElement);
+
+    const groupPayload = find_group_payload(messageElement);
+    if (groupPayload) {
+        handle_group_row(messageElement, groupPayload);
+        return;
+    }
 
     const protocolPayload = find_exchange_protocol_payload(messageElement);
     if (protocolPayload) {
